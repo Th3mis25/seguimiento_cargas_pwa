@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Seguimiento de Cargas</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <meta name="theme-color" content="#0F2C5C"/>
+</head>
+<body>
+  <header class="app-header">
+    <img src="assets/logo.png" alt="TM Transportation" class="app-logo"/>
+    <h1>Seguimiento de Cargas</h1>
+  </header>
+
+  <main class="container">
+    <section class="controls">
+      <label for="statusFilter">Filtro estatus:</label>
+      <select id="statusFilter">
+        <option value="">Todos</option>
+        <option>Delivered</option>
+        <option>In transit MX</option>
+        <option>In transit USA</option>
+        <option>Loading</option>
+        <option>Qro yard</option>
+        <option>Mty yard</option>
+        <option>Cancelled</option>
+      </select>
+
+      <label for="searchBox">Buscar:</label>
+      <input id="searchBox" type="text" placeholder="Trip, Caja, Cliente, Destino"/>
+
+      <button id="refreshBtn" class="btn">Actualizar</button>
+    </section>
+
+    <section class="table-wrap">
+      <table id="loadsTable">
+        <thead>
+          <tr>
+            <th>Trip</th>
+            <th>Caja</th>
+            <th>Referencia</th>
+            <th>Cliente</th>
+            <th>Destino</th>
+            <th>Estatus</th>
+            <th>Segmento</th>
+            <th>TR-MX</th>
+            <th>TR-USA</th>
+            <th>Cita carga</th>
+            <th>Llegada carga</th>
+            <th>Cita entrega</th>
+            <th>Llegada entrega</th>
+            <th>Comentarios</th>
+            <th>Docs</th>
+            <th>Tracking</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="toast" class="toast">OK</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
