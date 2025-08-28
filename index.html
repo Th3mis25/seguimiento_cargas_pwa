@@ -32,6 +32,7 @@
       <input id="searchBox" type="text" placeholder="Trip, Caja, Cliente, Destino"/>
 
       <button id="refreshBtn" class="btn">Actualizar</button>
+      <button id="addBtn" class="btn" type="button">Agregar</button>
     </section>
 
     <section class="table-wrap">
@@ -61,6 +62,30 @@
       </table>
     </section>
   </main>
+
+  <div id="addModal" class="modal">
+    <div class="modal-content">
+      <h2>Nuevo registro</h2>
+      <form id="addForm">
+        <label>Trip
+          <input name="trip" required />
+        </label>
+        <label>Estatus
+          <input name="estatus" required />
+        </label>
+        <label>Cliente
+          <input name="cliente" required />
+        </label>
+        <label>Cita carga
+          <input type="datetime-local" name="citaCarga" required />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="cancelAdd" class="btn-mini">Cancelar</button>
+          <button type="submit" class="btn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div id="toast" class="toast">OK</div>
 

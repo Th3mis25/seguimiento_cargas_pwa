@@ -146,6 +146,26 @@ async function updateDelivered(trip){
   }
 }
 
+async function addRecord(data){
+  try{
+    const res = await fetch(API_BASE,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'add', ...data })
+    });
+    const json = await res.json().catch(()=> ({}));
+    if(!res.ok || json.error){
+      throw new Error(json.error || `HTTP ${res.status}`);
+    }
+    toast('Registro agregado');
+    return true;
+  }catch(err){
+    console.error('addRecord error', err);
+    toast('Error al agregar');
+    return false;
+  }
+}
+
 function buildCopyMsg(r){
   const lines = [];
   lines.push(`Caja: ${r[COL.caja]||''}`);
@@ -272,6 +292,35 @@ async function main(){
   });
   $('#statusFilter').addEventListener('change', ()=>renderRows(cache));
   $('#searchBox').addEventListener('input', ()=>renderRows(cache));
+
+  $('#addBtn').addEventListener('click', ()=>{
+    $('#addModal').classList.add('show');
+  });
+  $('#cancelAdd').addEventListener('click', ()=>{
+    $('#addModal').classList.remove('show');
+  });
+  $('#addForm').addEventListener('submit', async ev=>{
+    ev.preventDefault();
+    const form = ev.target;
+    const data = {
+      trip: form.trip.value.trim(),
+      estatus: form.estatus.value.trim(),
+      cliente: form.cliente.value.trim(),
+      citaCarga: form.citaCarga.value
+    };
+    const ok = await addRecord(data);
+    if(ok){
+      const row = {};
+      row[COL.trip] = data.trip;
+      row[COL.estatus] = data.estatus;
+      row[COL.cliente] = data.cliente;
+      row[COL.citaCarga] = data.citaCarga;
+      cache.push(row);
+      renderRows(cache);
+      form.reset();
+      $('#addModal').classList.remove('show');
+    }
+  });
 
   $('#loadsTable').addEventListener('click', async ev=>{
     const btn = ev.target.closest('button[data-act]'); if(!btn) return;
