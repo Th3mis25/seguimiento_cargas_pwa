@@ -65,9 +65,9 @@ html,body{ margin:0; padding:0; font-family:Roboto,system-ui,-apple-system,Segoe
   box-shadow: 0 8px 26px rgba(0,0,0,.25), inset 0 0 1px rgba(255,255,255,.05);
 }
 #loadsTable{
-  width: max-content;   /* permite crecer más que el contenedor */
   min-width: 100%;
-  width:100%; border-collapse:separate; border-spacing:0;
+  border-collapse:separate;
+  border-spacing:0;
   background: transparent; color: var(--text);
 }
 #loadsTable thead th{
