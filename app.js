@@ -33,6 +33,7 @@ const COL = {
 };
 
 const $ = s => document.querySelector(s);
+let cache = [];
 
 function fmtDate(v){
   if(!v) return '';
@@ -97,6 +98,26 @@ async function fetchData(){
       Error al cargar datos: ${err.message}
     </td></tr>`;
     return [];
+  }
+}
+
+async function updateDelivered(trip){
+  try{
+    const res = await fetch(API_BASE,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'delivered', trip })
+    });
+    const json = await res.json().catch(()=> ({}));
+    if(!res.ok || json.error){
+      throw new Error(json.error || `HTTP ${res.status}`);
+    }
+    toast('Entrega registrada');
+    return true;
+  }catch(err){
+    console.error('updateDelivered error', err);
+    toast('Error al registrar entrega');
+    return false;
   }
 }
 
@@ -167,7 +188,7 @@ function renderRows(rows){
 }
 
 async function main(){
-  let cache = await fetchData();
+  cache = await fetchData();
   renderRows(cache);
 
   $('#refreshBtn').addEventListener('click', async ()=>{
@@ -189,7 +210,12 @@ async function main(){
       }
     }
     if(act==='delivered'){
-      await updateDelivered(trip); cache = await fetchData(); renderRows(cache);
+      const ok = await updateDelivered(trip);
+      if(ok){
+        const row = cache.find(r => String(r[COL.trip])===String(trip));
+        if(row) row[COL.estatus] = 'Delivered';
+        renderRows(cache);
+      }
     }
   });
 
