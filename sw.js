@@ -1,5 +1,6 @@
 // Service Worker básico para cachear assets de la PWA
 const CACHE_NAME = 'cargas-pwa-v10';
+const DYNAMIC_CACHE = 'cargas-pwa-dynamic-v1';
 const ASSETS = [
   './',
   './index.html',
@@ -18,7 +19,7 @@ self.addEventListener('install', e=>{
 self.addEventListener('activate', e=>{
   e.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k))
+      keys.filter(k=>![CACHE_NAME, DYNAMIC_CACHE].includes(k)).map(k=>caches.delete(k))
     ))
   );
 });
@@ -27,10 +28,12 @@ self.addEventListener('fetch', e=>{
   const { request } = e;
   e.respondWith(
     caches.match(request).then(cacheRes=>{
-      return cacheRes || fetch(request).then(netRes=>{
-        // Cache-first con actualización perezosa
+      const fetchPromise = fetch(request).then(netRes=>{
+        const clone = netRes.clone();
+        caches.open(DYNAMIC_CACHE).then(c=>c.put(request, clone));
         return netRes;
-      });
+      }).catch(()=>cacheRes || Response.error());
+      return cacheRes || fetchPromise;
     })
   );
 });
