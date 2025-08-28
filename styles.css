@@ -1,13 +1,19 @@
 /* ====== Reset simple ====== */
 *{ box-sizing:border-box; }
-html,body{ margin:0; padding:0; font-family:Roboto,system-ui,-apple-system,Segoe UI,Arial,sans-serif; }
+html,body{
+  margin:0;
+  padding:0;
+  font-family:Roboto,system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
 
 /* ====== Paleta TM ====== */
 :root{
-  --bg: #0b1e39;           /* fondo general */
+  --bg: #0B2341;           /* fondo general */
   --card:#0f2c5c;          /* header / barra */
-  --panel:#0c274e;         /* contenedores */
-  --panel-2:#0a2245;
+  --panel:#12335f;         /* contenedores */
+  --panel-2:#102a58;
   --text:#e7eefc;
   --muted:#9fb3d9;
   --accent:#2563eb;        /* azul botón */
@@ -16,9 +22,9 @@ html,body{ margin:0; padding:0; font-family:Roboto,system-ui,-apple-system,Segoe
   --badge-blue:#2563eb;
   --badge-red:#ef4444;
   --badge-yellow:#f59e0b;
-  --row:#0f203a;
-  --row-alt:#0e1c33;
-  --row-border:#223b66;
+  --row:#142f54;
+  --row-alt:#11284a;
+  --row-border:#274770;
 }
 
 /* ====== Header ====== */
