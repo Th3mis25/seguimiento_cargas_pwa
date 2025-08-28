@@ -34,14 +34,17 @@ const COL = {
 
 const $ = s => document.querySelector(s);
 
-function fmtDate(v){
+function fmtDate(v, locale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'es-MX'){
   if(!v) return '';
   const d = new Date(v);
   if(isNaN(d)) return String(v);
-  return d.toLocaleString('en-US',{
+  return d.toLocaleString(locale,{
     year:'numeric', month:'2-digit', day:'2-digit',
-    hour:'2-digit', minute:'2-digit', hour12:true
+    hour:'2-digit', minute:'2-digit'
   }).replace(',', '');
+}
+if(typeof module !== 'undefined' && module.exports){
+  module.exports = { fmtDate };
 }
 function badgeForStatus(s){
   if(!s) return '';
@@ -197,4 +200,6 @@ async function main(){
     try{ await navigator.serviceWorker.register('./sw.js'); }catch{}
   }
 }
-main();
+if (typeof document !== 'undefined') {
+  main();
+}
