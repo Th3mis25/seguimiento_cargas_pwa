@@ -35,6 +35,16 @@ const COL = {
 const $ = s => document.querySelector(s);
 let cache = [];
 
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[c]));
+}
+
 function fmtDate(v){
   if(!v) return '';
   const d = new Date(v);
@@ -45,14 +55,26 @@ function fmtDate(v){
   }).replace(',', '');
 }
 function badgeForStatus(s){
-  if(!s) return '';
+  if(!s) return null;
   const n = String(s).toLowerCase();
-  if(n.includes('delivered'))   return `<span class="badge green">✔ ${s}</span>`;
-  if(n.includes('in transit'))  return `<span class="badge blue">🚚 ${s}</span>`;
-  if(n.includes('cancel'))      return `<span class="badge red">❌ ${s}</span>`;
-  if(['loading','qro yard','mty yard'].some(k=>n.includes(k)))
-                               return `<span class="badge yellow">📦 ${s}</span>`;
-  return `<span class="badge">${s}</span>`;
+  const span = document.createElement('span');
+  span.classList.add('badge');
+  let prefix = '';
+  if(n.includes('delivered')){
+    span.classList.add('green');
+    prefix = '✔ ';
+  }else if(n.includes('in transit')){
+    span.classList.add('blue');
+    prefix = '🚚 ';
+  }else if(n.includes('cancel')){
+    span.classList.add('red');
+    prefix = '❌ ';
+  }else if(['loading','qro yard','mty yard'].some(k=>n.includes(k))){
+    span.classList.add('yellow');
+    prefix = '📦 ';
+  }
+  span.textContent = prefix + s;
+  return span;
 }
 function toast(msg){
   const el = $('#toast'); el.textContent = msg;
@@ -95,7 +117,7 @@ async function fetchData(){
   }catch(err){
     console.error('fetch error', err);
     tb.innerHTML = `<tr><td colspan="17" style="padding:16px;color:#ffb4b4">
-      Error al cargar datos: ${err.message}
+      Error al cargar datos: ${escapeHtml(err.message)}
     </td></tr>`;
     return [];
   }
@@ -154,35 +176,86 @@ function renderRows(rows){
   });
 
   if(!filtered.length){
-    tb.innerHTML = `<tr><td colspan="17" style="padding:16px">Sin resultados.</td></tr>`;
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 17;
+    td.style.padding = '16px';
+    td.textContent = 'Sin resultados.';
+    tr.appendChild(td);
+    tb.appendChild(tr);
     return;
   }
 
+  const addTextCell = (tr, text, className)=>{
+    const td = document.createElement('td');
+    if(className) td.className = className;
+    td.textContent = text || '';
+    tr.appendChild(td);
+  };
+
   for(const r of filtered){
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${r[COL.trip]||''}</td>
-      <td>${r[COL.caja]||''}</td>
-      <td>${r[COL.referencia]||''}</td>
-      <td>${r[COL.cliente]||''}</td>
-      <td>${r[COL.destino]||''}</td>
-      <td>${badgeForStatus(r[COL.estatus])}</td>
-      <td>${r[COL.segmento]||''}</td>
-      <td>${r[COL.trmx]||''}</td>
-      <td>${r[COL.trusa]||''}</td>
-      <td class="nowrap">${fmtDate(r[COL.citaCarga])}</td>
-      <td class="nowrap">${fmtDate(r[COL.llegadaCarga])}</td>
-      <td class="nowrap">${fmtDate(r[COL.citaEntrega])}</td>
-      <td class="nowrap">${fmtDate(r[COL.llegadaEntrega])}</td>
-      <td>${r[COL.comentarios]||''}</td>
-      <td>${r[COL.docs]||''}</td>
-      <td>${r[COL.tracking]?`<a class="link" href="${r[COL.tracking]}" target="_blank" rel="noopener">Abrir</a>`:''}</td>
-      <td class="action-bar">
-        <button class="btn-mini" data-act="copy" data-trip="${r[COL.trip]}">📋 Copiar</button>
-        <a class="btn-mini" target="_blank" rel="noopener" href="${buildWaShareUrl(r)}">🟢 WhatsApp</a>
-        <button class="btn-mini" data-act="delivered" data-trip="${r[COL.trip]}">✅ Entregado</button>
-      </td>
-    `;
+
+    addTextCell(tr, r[COL.trip]);
+    addTextCell(tr, r[COL.caja]);
+    addTextCell(tr, r[COL.referencia]);
+    addTextCell(tr, r[COL.cliente]);
+    addTextCell(tr, r[COL.destino]);
+
+    const statusTd = document.createElement('td');
+    const badge = badgeForStatus(r[COL.estatus]);
+    if(badge) statusTd.appendChild(badge);
+    tr.appendChild(statusTd);
+
+    addTextCell(tr, r[COL.segmento]);
+    addTextCell(tr, r[COL.trmx]);
+    addTextCell(tr, r[COL.trusa]);
+    addTextCell(tr, fmtDate(r[COL.citaCarga]), 'nowrap');
+    addTextCell(tr, fmtDate(r[COL.llegadaCarga]), 'nowrap');
+    addTextCell(tr, fmtDate(r[COL.citaEntrega]), 'nowrap');
+    addTextCell(tr, fmtDate(r[COL.llegadaEntrega]), 'nowrap');
+    addTextCell(tr, r[COL.comentarios]);
+    addTextCell(tr, r[COL.docs]);
+
+    const trackTd = document.createElement('td');
+    const linkUrl = r[COL.tracking];
+    if(linkUrl){
+      const link = document.createElement('a');
+      link.className = 'link';
+      link.href = linkUrl;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = 'Abrir';
+      trackTd.appendChild(link);
+    }
+    tr.appendChild(trackTd);
+
+    const actionTd = document.createElement('td');
+    actionTd.className = 'action-bar';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-mini';
+    copyBtn.dataset.act = 'copy';
+    copyBtn.dataset.trip = r[COL.trip];
+    copyBtn.textContent = '📋 Copiar';
+    actionTd.appendChild(copyBtn);
+
+    const waLink = document.createElement('a');
+    waLink.className = 'btn-mini';
+    waLink.target = '_blank';
+    waLink.rel = 'noopener';
+    waLink.href = buildWaShareUrl(r);
+    waLink.textContent = '🟢 WhatsApp';
+    actionTd.appendChild(waLink);
+
+    const deliveredBtn = document.createElement('button');
+    deliveredBtn.className = 'btn-mini';
+    deliveredBtn.dataset.act = 'delivered';
+    deliveredBtn.dataset.trip = r[COL.trip];
+    deliveredBtn.textContent = '✅ Entregado';
+    actionTd.appendChild(deliveredBtn);
+
+    tr.appendChild(actionTd);
     tb.appendChild(tr);
   }
 }
