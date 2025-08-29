@@ -2,8 +2,9 @@
    CONFIG
 ========================= */
 
-// PON AQUÍ tu URL del Web App de Apps Script
-const API_BASE = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLiYMN9mYJlsxY4Tq1T-VDBkeH-lZZNl7PnTf6uHowpaG2CIgtoJs1_B_61nVq1x20Tzy9szQisel6uAIdeQj1gdX2o05LTbRSi540Aoum_k8Ik3Rew9fI0LIW_PdobKc4HlWBgbYDRvc40v5IIMAC5J9jI4DC1fFVNhY96Pk2jfHzW58mBaGkGKRr0BlcmD2FGcEHvccVBuQlzgO8J5eHQKXp6KJTOlt18SnS_bxOoqdljkaw8vEF0CEUpFnOZQtNnjFIKRp0wL6XDollJT2hzK8dEXRA&lib=Mlf_q-N9qI2XD3G03goX_ALBSn8mqy20z';
+// URL base del Web App de Apps Script.
+// Se obtiene de `config.js` para poder configurarse al desplegar.
+const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) || '';
 
 // Cabeceras EXACTAS en el orden de tu hoja (las que quieres ver en la app)
 const HEADERS = [

@@ -5,10 +5,10 @@ Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sh
 ## Cómo correr localmente
 - Clonar el repo: `git clone https://github.com/TuUsuario/seguimiento_cargas_pwa.git`
 - Abrir `index.html` con Live Server (VS Code extension).
-- Asegúrate de configurar el archivo `app.js` con la URL de tu Google Apps Script en `API_BASE`.
+- Configura la URL de tu Google Apps Script en `config.js` o mediante la variable de entorno `API_BASE` al desplegar.
 
 ## Configuración
-- URL de Google Apps Script: (coloca la URL del Web App aquí)
+- URL de Google Apps Script: defínela en `config.js`.
 - Nombre de la hoja: `Tabla_1`
 - Columnas esperadas:
   - Trip, Caja, Referencia, Cliente, Destino, Estatus, Segmento, TR-MX, TR-USA, Cita carga, Llegada carga, Cita entrega, Llegada entrega, Comentarios, Docs, Tracking
@@ -21,3 +21,13 @@ Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sh
 ]
 
 ```
+
+## Despliegue
+
+Para suministrar la URL de la API en producción puedes generar el archivo `config.js` a partir de una variable de entorno:
+
+```bash
+export API_BASE="https://tu-web-app.example.com"
+echo "window.APP_CONFIG = { API_BASE: '${API_BASE}' };" > config.js
+```
+
