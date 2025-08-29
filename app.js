@@ -122,7 +122,13 @@ async function fetchData(){
 
   try{
     const res  = await fetch(API_BASE,{ cache:'no-store' });
+    if(!res.ok){
+      throw new Error(`HTTP ${res.status}`);
+    }
     const json = await res.json();
+    if(json.error){
+      throw new Error(json.error);
+    }
     console.log('API response:', json); // <— mira la consola del navegador
 
     let data = json.data ?? json.rows ?? [];
@@ -132,7 +138,7 @@ async function fetchData(){
   }catch(err){
     console.error('fetch error', err);
     tb.innerHTML = `<tr><td colspan="17" style="padding:16px;color:#ffb4b4">
-      Error al cargar datos: ${escapeHtml(err.message)}
+      No se pudieron cargar los datos. ${escapeHtml(err.message)}. Intenta recargar.
     </td></tr>`;
     return [];
   }
