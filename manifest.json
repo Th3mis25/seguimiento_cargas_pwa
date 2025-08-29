@@ -4,16 +4,16 @@
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0B2341",
+  "background_color": "#082341",
   "theme_color": "#0F2C5C",
   "icons": [
     {
-      "src": "assets/logo.png",
+      "src": "assets/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "assets/logo.png",
+      "src": "assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
