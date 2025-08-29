@@ -61,10 +61,13 @@ function fmtDate(v, locale = (typeof navigator !== 'undefined' && navigator.lang
   }
 
   if(isNaN(d)) return String(v);
-  return d.toLocaleString(locale,{
-    year:'numeric', month:'2-digit', day:'2-digit',
+  const dateStr = d.toLocaleDateString(locale, {
+    year:'numeric', month:'2-digit', day:'2-digit'
+  });
+  const timeStr = d.toLocaleTimeString(locale, {
     hour:'2-digit', minute:'2-digit'
-  }).replace(',', '');
+  });
+  return `${dateStr} ${timeStr}`;
 }
 if(typeof module !== 'undefined' && module.exports){
   module.exports = { fmtDate };
