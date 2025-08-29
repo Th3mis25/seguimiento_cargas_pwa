@@ -95,7 +95,16 @@
 
   <div id="toast" class="toast">OK</div>
 
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+<script src="./config.js"></script>
+<script src="./app.js"></script>
+
+<!-- Registro del Service Worker -->
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js")
+      .then(() => console.log("✅ Service worker registrado"))
+      .catch(err => console.error("❌ Error al registrar el SW:", err));
+  }
+</script>
 </body>
 </html>
