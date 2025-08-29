@@ -7,6 +7,7 @@ const ASSETS = [
   './styles.css',
   './app.js',
   './assets/logo.png',
+  './manifest.json',
   // agrega aquí otros archivos si los tienes (manifest, íconos, etc.)
 ];
 
