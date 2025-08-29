@@ -11,6 +11,8 @@ const ASSETS = [
   // agrega aquí otros archivos si los tienes (manifest, íconos, etc.)
 ];
 
+const ASSET_URLS = ASSETS.map(a => new URL(a, self.location).pathname);
+
 self.addEventListener('install', e=>{
   e.waitUntil(
     caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS))
@@ -27,6 +29,18 @@ self.addEventListener('activate', e=>{
 
 self.addEventListener('fetch', e=>{
   const { request } = e;
+
+  if (request.method !== 'GET') {
+    e.respondWith(fetch(request));
+    return;
+  }
+
+  const url = new URL(request.url);
+  if (!ASSET_URLS.includes(url.pathname)) {
+    e.respondWith(fetch(request));
+    return;
+  }
+
   e.respondWith(
     caches.match(request).then(cacheRes=>{
       const fetchPromise = fetch(request).then(netRes=>{
