@@ -162,7 +162,17 @@ async function updateDelivered(trip){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'delivered', trip })
     });
-    const json = await res.json().catch(()=> ({}));
+    let json;
+    try{
+      const ct = res.headers.get('content-type') || '';
+      if(!ct.includes('application/json')){
+        throw new Error('Missing application/json header');
+      }
+      json = await res.json();
+    }catch(err){
+      if(err.message === 'Missing application/json header') throw err;
+      throw new Error('Invalid JSON');
+    }
     if(!res.ok || json.error){
       throw new Error(json.error || `HTTP ${res.status}`);
     }
@@ -182,7 +192,17 @@ async function addRecord(data){
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'add', ...data })
     });
-    const json = await res.json().catch(()=> ({}));
+    let json;
+    try{
+      const ct = res.headers.get('content-type') || '';
+      if(!ct.includes('application/json')){
+        throw new Error('Missing application/json header');
+      }
+      json = await res.json();
+    }catch(err){
+      if(err.message === 'Missing application/json header') throw err;
+      throw new Error('Invalid JSON');
+    }
     if(!res.ok || json.error){
       throw new Error(json.error || `HTTP ${res.status}`);
     }
