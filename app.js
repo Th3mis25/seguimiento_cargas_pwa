@@ -46,6 +46,18 @@ function escapeHtml(str){
   }[c]));
 }
 
+function parseDate(v){
+  if(!v) return null;
+  if(typeof v === 'string' && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(v)){
+    const [datePart, timePart] = v.split(' ');
+    const [day, month, year] = datePart.split('/').map(n => parseInt(n, 10));
+    const [hour, minute, second] = timePart.split(':').map(n => parseInt(n, 10));
+    return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  }
+  const d = new Date(v);
+  return isNaN(d) ? null : d;
+}
+
 function fmtDate(v, locale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'es-MX'){
   if(!v) return '';
 
@@ -234,8 +246,15 @@ function buildWaShareUrl(r){
 function renderRows(rows){
   const statusFilter = $('#statusFilter').value;
   const q = $('#searchBox').value.trim().toLowerCase();
+  const startVal = $('#startDate').value;
+  const endVal = $('#endDate').value;
   const tb = $('#loadsTable tbody');
   tb.innerHTML = '';
+
+  const startDate = startVal ? new Date(startVal) : null;
+  if(startDate) startDate.setUTCHours(0,0,0,0);
+  const endDate = endVal ? new Date(endVal) : null;
+  if(endDate) endDate.setUTCHours(23,59,59,999);
 
   const filtered = rows.filter(r=>{
     const s = String(r[COL.estatus]||'');
@@ -246,6 +265,12 @@ function renderRows(rows){
         COL.estatus, COL.segmento, COL.trmx, COL.trusa, COL.tracking
       ].some(k => String(r[k]||'').toLowerCase().includes(q));
       if(!hay) return false;
+    }
+    if(startDate || endDate){
+      const cita = parseDate(r[COL.citaCarga]);
+      if(!cita) return false;
+      if(startDate && cita < startDate) return false;
+      if(endDate && cita > endDate) return false;
     }
     return true;
   });
@@ -344,6 +369,8 @@ async function main(){
   });
   $('#statusFilter').addEventListener('change', ()=>renderRows(cache));
   $('#searchBox').addEventListener('input', ()=>renderRows(cache));
+  $('#startDate').addEventListener('change', ()=>renderRows(cache));
+  $('#endDate').addEventListener('change', ()=>renderRows(cache));
 
   $('#addBtn').addEventListener('click', ()=>{
     $('#addModal').classList.add('show');
