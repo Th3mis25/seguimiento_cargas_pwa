@@ -10,7 +10,7 @@ html,body{
 
 /* ====== Paleta TM ====== */
 :root{
-  --bg: #FFFF00;           /* fondo general */
+  --bg: #0B2341;           /* fondo general */
   --card:#0f2c5c;          /* header / barra */
   --panel:#12335f;         /* contenedores */
   --panel-2:#102a58;
