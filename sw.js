@@ -1,5 +1,5 @@
 // Service Worker básico para cachear assets de la PWA
-const CACHE_NAME = 'cargas-pwa-v10';
+const CACHE_NAME = 'cargas-pwa-v11';
 const DYNAMIC_CACHE = 'cargas-pwa-dynamic-v1';
 const ASSETS = [
   './',
