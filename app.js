@@ -110,7 +110,18 @@ function normalizeData(raw){
   if(!Array.isArray(raw)) return [];
 
   // Caso 1: ya son objetos
-  if(raw.length && !Array.isArray(raw[0])) return raw;
+  if(raw.length && !Array.isArray(raw[0])) {
+    return raw.map(row => {
+      const obj = {};
+      for (const h of HEADERS) {
+        const key = Object.keys(row).find(
+          k => k.trim().toLowerCase() === h.toLowerCase()
+        );
+        obj[h] = key ? row[key] : '';
+      }
+      return obj;
+    });
+  }
 
   // Caso 2: son arrays -> los mapeamos con HEADERS
   return raw.map(arrayRowToObj);
