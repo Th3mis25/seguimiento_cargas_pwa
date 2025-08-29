@@ -47,7 +47,18 @@ function escapeHtml(str){
 
 function fmtDate(v, locale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'es-MX'){
   if(!v) return '';
-  const d = new Date(v);
+
+  let d;
+
+  if(typeof v === 'string' && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(v)){
+    const [datePart, timePart] = v.split(' ');
+    const [day, month, year] = datePart.split('/').map(n => parseInt(n, 10));
+    const [hour, minute, second] = timePart.split(':').map(n => parseInt(n, 10));
+    d = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  }else{
+    d = new Date(v);
+  }
+
   if(isNaN(d)) return String(v);
   return d.toLocaleString(locale,{
     year:'numeric', month:'2-digit', day:'2-digit',
