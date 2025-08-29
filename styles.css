@@ -39,8 +39,7 @@ html,body{
 
 /* ====== Contenedor ====== */
 .container{
-  max-width: 1400px;
-  margin: 22px auto;
+  margin: 22px 0;
   padding: 0 16px;
 }
 
