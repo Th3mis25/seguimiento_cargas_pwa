@@ -40,13 +40,7 @@ html,body{
 /* ====== Contenedor ====== */
 .container {
   margin: 22px 0;
-<<<<<<< HEAD
-  padding: 0;        /* elimina padding lateral */
-  width: 100%;       /* ocupa todo el ancho */
-  max-width: 100%;   /* elimina límites */
-=======
   padding: 0;
->>>>>>> c9f2fc48f88f258681b75a01f9b099f7111c3335
 }
 
 /* ====== Controles ====== */
@@ -72,18 +66,9 @@ html,body{
 .table-wrap{
   overflow: auto;
   margin-top:14px;
-<<<<<<< HEAD
-  background: var(--panel-2);
-  padding: 12px;
-  border-radius: 0;
-  box-shadow: 0 8px 26px rgba(0,0,0,.25), inset 0 0 1px rgba(255,255,255,.05);
-  width: 100%;
-  max-width: 100%;
-=======
   background:var(--panel-2); padding:12px 0; border-radius:14px;
   box-shadow: 0 8px 26px rgba(0,0,0,.25), inset 0 0 1px rgba(255,255,255,.05);
   width: 100%;
->>>>>>> c9f2fc48f88f258681b75a01f9b099f7111c3335
 }
 #loadsTable{
   width: 100%;
