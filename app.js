@@ -243,7 +243,20 @@ function buildWaShareUrl(r){
   return `https://wa.me/?text=${encodeURIComponent(buildCopyMsg(r))}`;
 }
 
-function renderRows(rows){
+function setColumnVisibility(indices, show){
+  const display = show ? '' : 'none';
+  const table = $('#loadsTable');
+  table.querySelectorAll('tr').forEach(row => {
+    indices.forEach(i => {
+      const cell = row.children[i];
+      if(cell) cell.style.display = display;
+    });
+  });
+}
+
+function renderRows(rows, hiddenCols=[]){
+  setColumnVisibility([8,11,12,14], true); // mostrar por defecto
+
   const statusFilter = $('#statusFilter').value;
   const q = $('#searchBox').value.trim().toLowerCase();
   const startVal = $('#startDate').value;
@@ -358,6 +371,10 @@ function renderRows(rows){
     tr.appendChild(actionTd);
     tb.appendChild(tr);
   }
+
+  if(hiddenCols.length){
+    setColumnVisibility(hiddenCols, false);
+  }
 }
 
 function renderDaily(rows){
@@ -377,7 +394,7 @@ function renderDaily(rows){
   $('#searchBox').value = '';
   $('#startDate').value = '';
   $('#endDate').value = '';
-  renderRows(filtered);
+  renderRows(filtered, [8,11,12,14]);
 }
 
 async function main(){
