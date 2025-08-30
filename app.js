@@ -254,6 +254,15 @@ function setColumnVisibility(indices, show){
   });
 }
 
+function populateStatusFilter(rows){
+  const select = $('#statusFilter');
+  const current = select.value;
+  const statuses = Array.from(new Set(rows.map(r => r[COL.estatus]).filter(Boolean)));
+  statuses.sort((a,b)=>a.localeCompare(b));
+  select.innerHTML = '<option value="">Todos</option>' + statuses.map(s=>`<option>${escapeHtml(s)}</option>`).join('');
+  if(statuses.includes(current)) select.value = current;
+}
+
 function renderRows(rows, hiddenCols=[]){
   setColumnVisibility([8,11,12,14], true); // mostrar por defecto
 
@@ -399,10 +408,13 @@ function renderDaily(rows){
 
 async function main(){
   cache = await fetchData();
+  populateStatusFilter(cache);
   renderRows(cache);
 
   $('#refreshBtn').addEventListener('click', async ()=>{
-    cache = await fetchData(); renderRows(cache);
+    cache = await fetchData();
+    populateStatusFilter(cache);
+    renderRows(cache);
   });
   $('#statusFilter').addEventListener('change', ()=>renderRows(cache));
   $('#searchBox').addEventListener('input', ()=>renderRows(cache));
@@ -432,6 +444,7 @@ async function main(){
       row[COL.cliente] = data.cliente;
       row[COL.citaCarga] = data.citaCarga;
       cache.push(row);
+      populateStatusFilter(cache);
       renderRows(cache);
       form.reset();
       $('#addModal').classList.remove('show');
@@ -456,6 +469,7 @@ async function main(){
       if(ok){
         const row = cache.find(r => String(r[COL.trip])===String(trip));
         if(row) row[COL.estatus] = 'Delivered';
+        populateStatusFilter(cache);
         renderRows(cache);
       }
     }
