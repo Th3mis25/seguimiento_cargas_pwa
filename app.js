@@ -309,13 +309,13 @@ function renderRows(rows){
 
     addTextCell(tr, r[COL.segmento]);
     addTextCell(tr, r[COL.trmx]);
-    addTextCell(tr, r[COL.trusa]);
+    addTextCell(tr, r[COL.trusa], 'col-trusa');
     addTextCell(tr, fmtDate(r[COL.citaCarga]), 'nowrap');
     addTextCell(tr, fmtDate(r[COL.llegadaCarga]), 'nowrap');
-    addTextCell(tr, fmtDate(r[COL.citaEntrega]), 'nowrap');
-    addTextCell(tr, fmtDate(r[COL.llegadaEntrega]), 'nowrap');
+    addTextCell(tr, fmtDate(r[COL.citaEntrega]), 'nowrap col-citaentrega');
+    addTextCell(tr, fmtDate(r[COL.llegadaEntrega]), 'nowrap col-llegadaentrega');
     addTextCell(tr, r[COL.comentarios]);
-    addTextCell(tr, r[COL.docs]);
+    addTextCell(tr, r[COL.docs], 'col-docs');
 
     const trackTd = document.createElement('td');
     const linkUrl = r[COL.tracking];
@@ -360,17 +360,47 @@ function renderRows(rows){
   }
 }
 
+function setDailyMode(on){
+  const tbl = $('#loadsTable');
+  if(on) tbl.classList.add('daily-mode');
+  else tbl.classList.remove('daily-mode');
+}
+
+function renderDaily(rows){
+  const today = new Date();
+  today.setUTCHours(0,0,0,0);
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(today.getUTCDate() + 1);
+  const allowed = ['in transit mx','live','drop','loading','mty yard','qro yard'];
+  const filtered = rows.filter(r=>{
+    const status = String(r[COL.estatus]||'').trim().toLowerCase();
+    if(!allowed.includes(status)) return false;
+    const cita = parseDate(r[COL.citaCarga]);
+    if(!cita) return false;
+    return cita >= today && cita < tomorrow;
+  });
+  $('#statusFilter').value = '';
+  $('#searchBox').value = '';
+  $('#startDate').value = '';
+  $('#endDate').value = '';
+  renderRows(filtered);
+  setDailyMode(true);
+}
+
 async function main(){
   cache = await fetchData();
   renderRows(cache);
+  setDailyMode(false);
 
   $('#refreshBtn').addEventListener('click', async ()=>{
-    cache = await fetchData(); renderRows(cache);
+    cache = await fetchData();
+    renderRows(cache);
+    setDailyMode(false);
   });
-  $('#statusFilter').addEventListener('change', ()=>renderRows(cache));
-  $('#searchBox').addEventListener('input', ()=>renderRows(cache));
-  $('#startDate').addEventListener('change', ()=>renderRows(cache));
-  $('#endDate').addEventListener('change', ()=>renderRows(cache));
+  $('#statusFilter').addEventListener('change', ()=>{ renderRows(cache); setDailyMode(false); });
+  $('#searchBox').addEventListener('input', ()=>{ renderRows(cache); setDailyMode(false); });
+  $('#startDate').addEventListener('change', ()=>{ renderRows(cache); setDailyMode(false); });
+  $('#endDate').addEventListener('change', ()=>{ renderRows(cache); setDailyMode(false); });
 
   $('#addBtn').addEventListener('click', ()=>{
     $('#addModal').classList.add('show');
@@ -394,12 +424,14 @@ async function main(){
       row[COL.estatus] = data.estatus;
       row[COL.cliente] = data.cliente;
       row[COL.citaCarga] = data.citaCarga;
-      cache.push(row);
-      renderRows(cache);
-      form.reset();
-      $('#addModal').classList.remove('show');
-    }
-  });
+        cache.push(row);
+        renderRows(cache);
+        setDailyMode(false);
+        form.reset();
+        $('#addModal').classList.remove('show');
+      }
+    });
+    $('#dailyMenu').addEventListener('click', ()=>renderDaily(cache));
 
   $('#loadsTable').addEventListener('click', async ev=>{
     const btn = ev.target.closest('button[data-act]'); if(!btn) return;
@@ -419,6 +451,7 @@ async function main(){
         const row = cache.find(r => String(r[COL.trip])===String(trip));
         if(row) row[COL.estatus] = 'Delivered';
         renderRows(cache);
+        setDailyMode(false);
       }
     }
   });

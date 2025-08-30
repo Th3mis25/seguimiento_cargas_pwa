@@ -14,6 +14,11 @@
     <h1>Seguimiento de Cargas</h1>
   </header>
 
+  <!-- Menú lateral -->
+  <nav class="side-menu">
+    <button id="dailyMenu" class="side-btn">📅 Cargas Diarias</button>
+  </nav>
+
   <main class="container">
     <section class="controls">
       <label for="statusFilter">Filtro estatus:</label>
@@ -53,13 +58,13 @@
             <th>Estatus</th>
             <th>Segmento</th>
             <th>TR-MX</th>
-            <th>TR-USA</th>
+            <th class="col-trusa">TR-USA</th>
             <th>Cita carga</th>
             <th>Llegada carga</th>
-            <th>Cita entrega</th>
-            <th>Llegada entrega</th>
+            <th class="col-citaentrega">Cita entrega</th>
+            <th class="col-llegadaentrega">Llegada entrega</th>
             <th>Comentarios</th>
-            <th>Docs</th>
+            <th class="col-docs">Docs</th>
             <th>Tracking</th>
             <th>Acciones</th>
           </tr>
