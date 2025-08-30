@@ -360,6 +360,26 @@ function renderRows(rows){
   }
 }
 
+function renderDaily(rows){
+  const today = new Date();
+  today.setUTCHours(0,0,0,0);
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(today.getUTCDate() + 1);
+  const allowed = ['in transit mx','live','drop','loading','mty yard','qro yard'];
+  const filtered = rows.filter(r=>{
+    const status = String(r[COL.estatus]||'').trim().toLowerCase();
+    if(!allowed.includes(status)) return false;
+    const cita = parseDate(r[COL.citaCarga]);
+    if(!cita) return false;
+    return cita >= today && cita < tomorrow;
+  });
+  $('#statusFilter').value = '';
+  $('#searchBox').value = '';
+  $('#startDate').value = '';
+  $('#endDate').value = '';
+  renderRows(filtered);
+}
+
 async function main(){
   cache = await fetchData();
   renderRows(cache);
@@ -400,6 +420,7 @@ async function main(){
       $('#addModal').classList.remove('show');
     }
   });
+  $('#dailyMenu').addEventListener('click', ()=>renderDaily(cache));
 
   $('#loadsTable').addEventListener('click', async ev=>{
     const btn = ev.target.closest('button[data-act]'); if(!btn) return;
