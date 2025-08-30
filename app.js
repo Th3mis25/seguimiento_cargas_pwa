@@ -393,6 +393,14 @@ function renderRows(rows, hiddenCols=[]){
   }
 }
 
+function renderGeneral(rows){
+  $('#statusFilter').value = '';
+  $('#searchBox').value = '';
+  $('#startDate').value = '';
+  $('#endDate').value = '';
+  renderRows(rows);
+}
+
 function renderDaily(rows){
   const today = new Date();
   today.setUTCHours(0,0,0,0);
@@ -457,6 +465,7 @@ async function main(){
       $('#addModal').classList.remove('show');
     }
   });
+  $('#generalMenu').addEventListener('click', ()=>renderGeneral(cache));
   $('#dailyMenu').addEventListener('click', ()=>renderDaily(cache));
 
   $('#loadsTable').addEventListener('click', async ev=>{
