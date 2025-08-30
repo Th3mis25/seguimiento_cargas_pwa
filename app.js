@@ -52,7 +52,8 @@ function parseDate(v){
     const [datePart, timePart] = v.split(' ');
     const [day, month, year] = datePart.split('/').map(n => parseInt(n, 10));
     const [hour, minute, second] = timePart.split(':').map(n => parseInt(n, 10));
-    return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+    // Interpretamos la fecha como hora local, no UTC, para evitar desfases
+    return new Date(year, month - 1, day, hour, minute, second);
   }
   const d = new Date(v);
   return isNaN(d) ? null : d;
@@ -67,7 +68,8 @@ function fmtDate(v, locale = (typeof navigator !== 'undefined' && navigator.lang
     const [datePart, timePart] = v.split(' ');
     const [day, month, year] = datePart.split('/').map(n => parseInt(n, 10));
     const [hour, minute, second] = timePart.split(':').map(n => parseInt(n, 10));
-    d = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+    // Crear fecha en zona local para mostrarla sin corrimientos de horario
+    d = new Date(year, month - 1, day, hour, minute, second);
   }else{
     d = new Date(v);
   }
@@ -251,10 +253,15 @@ function renderRows(rows){
   const tb = $('#loadsTable tbody');
   tb.innerHTML = '';
 
-  const startDate = startVal ? new Date(startVal) : null;
-  if(startDate) startDate.setUTCHours(0,0,0,0);
-  const endDate = endVal ? new Date(endVal) : null;
-  if(endDate) endDate.setUTCHours(23,59,59,999);
+  // Interpretar fechas de filtro como locales para no desplazar horarios
+  const startDate = startVal ? (()=>{
+    const [y,m,d] = startVal.split('-').map(Number);
+    return new Date(y, m-1, d, 0,0,0,0);
+  })() : null;
+  const endDate = endVal ? (()=>{
+    const [y,m,d] = endVal.split('-').map(Number);
+    return new Date(y, m-1, d, 23,59,59,999);
+  })() : null;
 
   const filtered = rows.filter(r=>{
     const s = String(r[COL.estatus]||'');
