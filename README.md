@@ -12,6 +12,7 @@ Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sh
 - Nombre de la hoja: `Tabla_1`
 - Columnas esperadas:
   - Trip, Caja, Referencia, Cliente, Destino, Estatus, Segmento, TR-MX, TR-USA, Cita carga, Llegada carga, Cita entrega, Llegada entrega, Comentarios, Docs, Tracking
+- Las fechas deben enviarse en formato `DD/MM/YYYY HH:mm:ss` (ejemplo: `26/08/2025 22:00:00`).
 
 ## Ejemplo de JSON de muestra
 ```json

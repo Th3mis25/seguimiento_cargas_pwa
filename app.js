@@ -445,11 +445,17 @@ async function main(){
   $('#addForm').addEventListener('submit', async ev=>{
     ev.preventDefault();
     const form = ev.target;
+    const toGASDate = v => {
+      if(!v) return '';
+      const d = new Date(v);
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    };
     const data = {
       trip: form.trip.value.trim(),
       estatus: form.estatus.value.trim(),
       cliente: form.cliente.value.trim(),
-      citaCarga: form.citaCarga.value
+      citaCarga: toGASDate(form.citaCarga.value)
     };
     const ok = await addRecord(data);
     if(ok){
