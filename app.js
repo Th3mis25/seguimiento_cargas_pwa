@@ -197,7 +197,7 @@ async function updateDelivered(trip){
     return true;
   }catch(err){
     console.error('updateDelivered error', err);
-    toast('Error al registrar entrega');
+    toast('Error al registrar entrega: ' + err.message);
     return false;
   }
 }
@@ -227,7 +227,7 @@ async function addRecord(data){
     return true;
   }catch(err){
     console.error('addRecord error', err);
-    toast('Error al agregar');
+    toast('Error al agregar: ' + err.message);
     return false;
   }
 }
