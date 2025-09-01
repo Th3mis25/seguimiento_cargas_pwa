@@ -48,13 +48,35 @@ function escapeHtml(str){
 
 function parseDate(v){
   if(!v) return null;
-  if(typeof v === 'string' && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(v)){
-    const [datePart, timePart] = v.split(' ');
-    const [day, month, year] = datePart.split('/').map(n => parseInt(n, 10));
-    const [hour, minute, second] = timePart.split(':').map(n => parseInt(n, 10));
-    // Interpretamos la fecha como hora local, no UTC, para evitar desfases
-    return new Date(year, month - 1, day, hour, minute, second);
+
+  if(v instanceof Date){
+    return isNaN(v) ? null : v;
   }
+
+  if(typeof v === 'string'){
+    // Formato "d/m/yyyy hh:mm[:ss]"
+    let m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if(m){
+      const [,day,month,year,h='0',min='0',s='0'] = m;
+      return new Date(
+        parseInt(year,10),
+        parseInt(month,10)-1,
+        parseInt(day,10),
+        parseInt(h,10),
+        parseInt(min,10),
+        parseInt(s,10)
+      );
+    }
+
+    // Formato ISO con o sin zona horaria
+    m = v.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2}(?::\d{2})?)(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/);
+    if(m){
+      // eliminar zona horaria para tratarlo como hora local
+      const cleaned = v.replace(/(?:Z|[+-]\d{2}:?\d{2})$/,'');
+      return new Date(cleaned);
+    }
+  }
+
   const d = new Date(v);
   return isNaN(d) ? null : d;
 }
@@ -62,19 +84,9 @@ function parseDate(v){
 function fmtDate(v, locale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'es-MX'){
   if(!v) return '';
 
-  let d;
+  const d = parseDate(v);
+  if(!d) return String(v);
 
-  if(typeof v === 'string' && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(v)){
-    const [datePart, timePart] = v.split(' ');
-    const [day, month, year] = datePart.split('/').map(n => parseInt(n, 10));
-    const [hour, minute, second] = timePart.split(':').map(n => parseInt(n, 10));
-    // Crear fecha en zona local para mostrarla sin corrimientos de horario
-    d = new Date(year, month - 1, day, hour, minute, second);
-  }else{
-    d = new Date(v);
-  }
-
-  if(isNaN(d)) return String(v);
   const dateStr = d.toLocaleDateString(locale, {
     year:'numeric', month:'2-digit', day:'2-digit'
   });
