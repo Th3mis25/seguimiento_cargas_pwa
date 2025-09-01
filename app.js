@@ -459,7 +459,17 @@ async function main(){
     const form = ev.target;
     const toGASDate = v => {
       if(!v) return '';
-      const d = new Date(v);
+      // Interpretar el valor del input datetime-local como hora local sin desplazamientos
+      // Formato esperado: "yyyy-mm-ddThh:mm[:ss]"
+      let d;
+      const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+      if(m){
+        const [,Y,M,D,H,Min,S] = m;
+        d = new Date(Number(Y), Number(M)-1, Number(D), Number(H), Number(Min), Number(S||0));
+      }else{
+        d = parseDate(v);
+      }
+      if(!d) return '';
       const pad = n => String(n).padStart(2, '0');
       return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     };
