@@ -39,6 +39,25 @@ function doPost(e) {
   return output;
 }
 
+function doGet(e) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  output.setHeader('Access-Control-Allow-Origin', '*');
+  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+
+  try {
+    var sheet = SpreadsheetApp.getActive().getSheetByName('Tabla_1');
+    if (!sheet) throw new Error('Sheet Tabla_1 not found');
+    var data = sheet.getDataRange().getValues();
+    output.setContent(JSON.stringify({ data: data }));
+  } catch (err) {
+    output.setContent(JSON.stringify({ error: err.message }));
+  }
+
+  return output;
+}
+
 function doOptions(e) {
   return ContentService.createTextOutput('')
     .setMimeType(ContentService.MimeType.TEXT)
