@@ -8,7 +8,7 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     if (data.action === 'add') {
-      var sheet = SpreadsheetApp.getActive().getSheetByName('Tabla_1');
+      var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName('Tabla_1');
       if (!sheet) throw new Error('Sheet Tabla_1 not found');
       var row = [
         data.trip || '',
@@ -47,7 +47,7 @@ function doGet(e) {
   output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
 
   try {
-    var sheet = SpreadsheetApp.getActive().getSheetByName('Tabla_1');
+    var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName('Tabla_1');
     if (!sheet) throw new Error('Sheet Tabla_1 not found');
     var data = sheet.getDataRange().getValues();
     output.setContent(JSON.stringify({ data: data }));
