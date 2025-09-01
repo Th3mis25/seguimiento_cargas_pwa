@@ -1,6 +1,14 @@
 const SHEET_NAME = 'Tabla_1';
 
 function doPost(e) {
+  if (!e.postData) {
+    return ContentService.createTextOutput('')
+      .setMimeType(ContentService.MimeType.JSON)
+      .setHeader('Access-Control-Allow-Origin', '*')
+      .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+      .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  }
+
   var output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
   output.setHeader('Access-Control-Allow-Origin', '*');
