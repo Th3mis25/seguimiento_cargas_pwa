@@ -8,21 +8,21 @@ function doPost(e) {
   output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
 
   try {
-    var data = JSON.parse(e.postData.contents);
-    if (data.action === 'add') {
+    var p = e.parameter;
+    if (p.action === 'add') {
       var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
       if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
       var row = [
-        data.trip || '',
+        p.trip || '',
         '', // Caja
         '', // Referencia
-        data.cliente || '',
+        p.cliente || '',
         '', // Destino
-        data.estatus || '',
+        p.estatus || '',
         '', // Segmento
         '', // TR-MX
         '', // TR-USA
-        data.citaCarga || '',
+        p.citaCarga || '',
         '', // Llegada carga
         '', // Cita entrega
         '', // Llegada entrega

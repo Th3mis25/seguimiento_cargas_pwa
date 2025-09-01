@@ -204,10 +204,10 @@ async function updateDelivered(trip){
 
 async function addRecord(data){
   try{
+    const body = new URLSearchParams({ action:'add', ...data });
     const res = await fetch(API_BASE,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'add', ...data })
+      body
     });
     let json;
     try{
