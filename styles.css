@@ -122,6 +122,7 @@ html,body{
 .btn-mini:hover{ background:#eef2ff; }
 .link{ color:#8ab4ff; text-decoration:none; }
 .link:hover{ text-decoration:underline; }
+.trip-edit{ cursor:pointer; text-decoration:underline; }
 
 /* ====== Toast ====== */
 .toast{

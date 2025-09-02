@@ -428,7 +428,13 @@ function renderRows(rows, hiddenCols=[]){
     const tr = document.createElement('tr');
     tr.dataset.trip = r[COL.trip];
 
-    addTextCell(tr, r[COL.trip]);
+    const tripTd = document.createElement('td');
+    const tripSpan = document.createElement('span');
+    tripSpan.className = 'trip-edit';
+    tripSpan.textContent = r[COL.trip];
+    tripTd.appendChild(tripSpan);
+    tr.appendChild(tripTd);
+
     addTextCell(tr, r[COL.caja]);
     addTextCell(tr, r[COL.referencia]);
     addTextCell(tr, r[COL.cliente]);
@@ -624,7 +630,7 @@ async function main(){
 
   $('#loadsTable').addEventListener('click', async ev=>{
     const btn = ev.target.closest('button[data-act]');
-    const link = ev.target.closest('a');
+    const link = ev.target.closest('a:not(.trip-edit)');
     if(btn){
       const act = btn.dataset.act; const trip = btn.dataset.trip;
       if(act==='copy'){
@@ -647,9 +653,10 @@ async function main(){
       return;
     }
     if(link) return;
-    const tr = ev.target.closest('tbody tr');
-    if(tr){
-      openEditModal(tr.dataset.trip);
+    const tripEl = ev.target.closest('.trip-edit');
+    if(tripEl){
+      const tr = tripEl.closest('tr');
+      if(tr) openEditModal(tr.dataset.trip);
     }
   });
 
