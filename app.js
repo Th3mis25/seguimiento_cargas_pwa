@@ -33,6 +33,11 @@ const COL = {
   tracking:        'Tracking'
 };
 
+const STATUS_OPTIONS = [
+  'Live','Drop','Cancelled','Loading','Qro yard','Mty yard',
+  'In transit MX','Nuevo Laredo yard','In transit USA','At destination','Delivered'
+];
+
 const $ = s => document.querySelector(s);
 let cache = [];
 
@@ -118,27 +123,11 @@ function toGASDate(v){
   const pad = n => String(n).padStart(2,'0');
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
-function badgeForStatus(s){
-  if(!s) return null;
-  const n = String(s).toLowerCase();
-  const span = document.createElement('span');
-  span.classList.add('badge');
-  let prefix = '';
-  if(n.includes('delivered')){
-    span.classList.add('green');
-    prefix = '✔ ';
-  }else if(n.includes('in transit')){
-    span.classList.add('blue');
-    prefix = '🚚 ';
-  }else if(n.includes('cancel')){
-    span.classList.add('red');
-    prefix = '❌ ';
-  }else if(['loading','qro yard','mty yard'].some(k=>n.includes(k))){
-    span.classList.add('yellow');
-    prefix = '📦 ';
-  }
-  span.textContent = prefix + s;
-  return span;
+function fillStatusSelect(sel, current='', allowEmpty=false){
+  if(!sel) return;
+  sel.innerHTML = (allowEmpty?'<option value=""></option>':'') +
+    STATUS_OPTIONS.map(s=>`<option value="${s}">${s}</option>`).join('');
+  if(current) sel.value = current;
 }
 function toast(msg){
   const el = $('#toast'); el.textContent = msg;
@@ -321,7 +310,7 @@ function openEditModal(trip){
   form.referencia.value = row[COL.referencia] || '';
   form.cliente.value = row[COL.cliente] || '';
   form.destino.value = row[COL.destino] || '';
-  form.estatus.value = row[COL.estatus] || '';
+  fillStatusSelect(form.estatus, row[COL.estatus], true);
   form.segmento.value = row[COL.segmento] || '';
   form.trmx.value = row[COL.trmx] || '';
   form.trusa.value = row[COL.trusa] || '';
@@ -441,8 +430,40 @@ function renderRows(rows, hiddenCols=[]){
     addTextCell(tr, r[COL.destino]);
 
     const statusTd = document.createElement('td');
-    const badge = badgeForStatus(r[COL.estatus]);
-    if(badge) statusTd.appendChild(badge);
+    const sel = document.createElement('select');
+    sel.className = 'status-select';
+    fillStatusSelect(sel, r[COL.estatus]);
+    sel.addEventListener('change', async ev=>{
+      const newStatus = ev.target.value;
+      const data = {
+        originalTrip: r[COL.trip],
+        trip: r[COL.trip],
+        caja: r[COL.caja] || '',
+        referencia: r[COL.referencia] || '',
+        cliente: r[COL.cliente] || '',
+        destino: r[COL.destino] || '',
+        estatus: newStatus,
+        segmento: r[COL.segmento] || '',
+        trmx: r[COL.trmx] || '',
+        trusa: r[COL.trusa] || '',
+        citaCarga: r[COL.citaCarga] || '',
+        llegadaCarga: r[COL.llegadaCarga] || '',
+        citaEntrega: r[COL.citaEntrega] || '',
+        llegadaEntrega: r[COL.llegadaEntrega] || '',
+        comentarios: r[COL.comentarios] || '',
+        docs: r[COL.docs] || '',
+        tracking: r[COL.tracking] || ''
+      };
+      const ok = await updateRecord(data);
+      if(ok){
+        r[COL.estatus] = newStatus;
+        populateStatusFilter(cache);
+        renderRows(cache);
+      }else{
+        ev.target.value = r[COL.estatus] || '';
+      }
+    });
+    statusTd.appendChild(sel);
     tr.appendChild(statusTd);
 
     addTextCell(tr, r[COL.segmento]);
@@ -534,6 +555,9 @@ async function main(){
   cache = await fetchData();
   populateStatusFilter(cache);
   renderRows(cache);
+
+  fillStatusSelect($('#addForm select[name="estatus"]'), '', true);
+  fillStatusSelect($('#editForm select[name="estatus"]'), '', true);
 
   $('#refreshBtn').addEventListener('click', async ()=>{
     cache = await fetchData();
