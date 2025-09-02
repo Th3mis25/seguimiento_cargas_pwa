@@ -322,6 +322,18 @@ function renderRows(rows, hiddenCols=[]){
     return true;
   });
 
+  // Ordenar cronológicamente por "Cita carga" para que las horas aparezcan en
+  // secuencia al aplicar el filtro de fechas. Si alguna fila no tiene fecha,
+  // se coloca al final.
+  filtered.sort((a,b)=>{
+    const da = parseDate(a[COL.citaCarga]);
+    const db = parseDate(b[COL.citaCarga]);
+    if(da && db) return da - db;
+    if(da) return -1;
+    if(db) return 1;
+    return 0;
+  });
+
   if(!filtered.length){
     const tr = document.createElement('tr');
     const td = document.createElement('td');
