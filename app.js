@@ -40,6 +40,7 @@ const STATUS_OPTIONS = [
 
 const $ = s => document.querySelector(s);
 let cache = [];
+let currentView = 'daily';
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({
@@ -443,7 +444,7 @@ function renderRows(rows, hiddenCols=[]){
       if(ok){
         r[COL.estatus] = newStatus;
         populateStatusFilter(cache);
-        renderRows(cache);
+        currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
       }else{
         ev.target.value = r[COL.estatus] || '';
       }
@@ -504,6 +505,7 @@ function renderRows(rows, hiddenCols=[]){
 }
 
 function renderGeneral(rows){
+  currentView = 'general';
   $('#statusFilter').value = '';
   $('#searchBox').value = '';
   $('#startDate').value = '';
@@ -512,6 +514,7 @@ function renderGeneral(rows){
 }
 
 function renderDaily(rows){
+  currentView = 'daily';
   const today = new Date();
   today.setHours(0,0,0,0);
   const tomorrow = new Date(today);
@@ -534,14 +537,14 @@ function renderDaily(rows){
 async function main(){
   cache = await fetchData();
   populateStatusFilter(cache);
-  renderRows(cache);
+  renderDaily(cache);
 
   fillStatusSelect($('#addForm select[name="estatus"]'), '', true);
 
   $('#refreshBtn').addEventListener('click', async ()=>{
     cache = await fetchData();
     populateStatusFilter(cache);
-    renderRows(cache);
+    currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
   });
   $('#statusFilter').addEventListener('change', ()=>renderRows(cache));
   $('#searchBox').addEventListener('input', ()=>renderRows(cache));
@@ -572,7 +575,7 @@ async function main(){
       row[COL.citaCarga] = data.citaCarga;
       cache.push(row);
       populateStatusFilter(cache);
-      renderRows(cache);
+      currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
       form.reset();
       $('#addModal').classList.remove('show');
     }
@@ -624,7 +627,7 @@ async function main(){
     }
     if(ok){
       populateStatusFilter(cache);
-      renderRows(cache);
+      currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
       $('#editModal').classList.remove('show');
     }
   });
