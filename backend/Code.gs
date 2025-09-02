@@ -17,11 +17,12 @@ function doPost(e) {
 
   try {
     var p = e.parameter;
+    var timeZone = Session.getScriptTimeZone();
     if (p.action === 'add') {
       var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
       if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
-      // Interpret incoming time as GMT to avoid timezone offsets in the spreadsheet
-      var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, 'GMT', "yyyy-MM-dd'T'HH:mm:ss") : '';
+      // Interpret incoming time using the script timezone to avoid offsets in the spreadsheet
+      var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var row = [
         p.trip || '',
         '', // Caja
@@ -57,11 +58,11 @@ function doPost(e) {
         }
       }
       if (rowIndex === -1) throw new Error('Trip not found');
-      // Parse dates as GMT to keep the submitted local time without adding offsets
-      var citaCarga = p.citaCarga ? Utilities.parseDate(p.citaCarga, 'GMT', "yyyy-MM-dd'T'HH:mm:ss") : '';
-      var llegadaCarga = p.llegadaCarga ? Utilities.parseDate(p.llegadaCarga, 'GMT', "yyyy-MM-dd'T'HH:mm:ss") : '';
-      var citaEntrega = p.citaEntrega ? Utilities.parseDate(p.citaEntrega, 'GMT', "yyyy-MM-dd'T'HH:mm:ss") : '';
-      var llegadaEntrega = p.llegadaEntrega ? Utilities.parseDate(p.llegadaEntrega, 'GMT', "yyyy-MM-dd'T'HH:mm:ss") : '';
+      // Parse dates using the script timezone to keep the submitted local time without adding offsets
+      var citaCarga = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var llegadaCarga = p.llegadaCarga ? Utilities.parseDate(p.llegadaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var citaEntrega = p.citaEntrega ? Utilities.parseDate(p.citaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var llegadaEntrega = p.llegadaEntrega ? Utilities.parseDate(p.llegadaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var map = {
         'Trip': p.trip || '',
         'Caja': p.caja || '',
@@ -106,8 +107,16 @@ function doGet(e) {
   try {
     var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
     if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
+    var timeZone = Session.getScriptTimeZone();
     var data = sheet.getDataRange().getValues();
-    output.setContent(JSON.stringify({ data: data }));
+    var formattedData = data.map(function(row) {
+      return row.map(function(cell) {
+        return cell instanceof Date
+          ? Utilities.formatDate(cell, timeZone, "yyyy-MM-dd'T'HH:mm:ss")
+          : cell;
+      });
+    });
+    output.setContent(JSON.stringify({ data: formattedData }));
   } catch (err) {
     output.setContent(JSON.stringify({ error: err.message }));
   }
