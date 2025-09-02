@@ -183,10 +183,20 @@ html,body{
 .modal-content{
   background:var(--panel); color:var(--text); padding:20px; border-radius:14px; width:300px;
   box-shadow:0 8px 26px rgba(0,0,0,.35);
+  font-size:14px;
 }
-.modal-content h2{ margin-top:0; }
-.modal-content label{ display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
-.modal-content input, .modal-content select{ background:#0b1f3d; border:1px solid #1f3e73; color:var(--text); border-radius:10px; padding:8px; }
+.modal-content h2{
+  margin-top:0;
+  font-size:calc(1.5rem - 2px);
+}
+.modal-content label{
+  display:flex; flex-direction:column; gap:4px; margin-bottom:10px;
+}
+.modal-content input,
+.modal-content select{
+  background:#0b1f3d; border:1px solid #1f3e73; color:var(--text); border-radius:10px; padding:8px;
+  font-size:14px;
+}
 .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
 
 /* ====== Menú lateral ====== */
