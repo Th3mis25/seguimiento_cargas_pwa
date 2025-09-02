@@ -83,11 +83,17 @@ function parseDate(v){
     }
 
     // Formato ISO con o sin zona horaria
-    m = v.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2}(?::\d{2})?)(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/);
+    m = v.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2}(?::\d{2})?)(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/);
     if(m){
-      // eliminar zona horaria para tratarlo como hora local
-      const cleaned = v.replace(/(?:Z|[+-]\d{2}:?\d{2})$/,'');
-      return new Date(cleaned);
+      const tz = m[3];
+      if(tz){
+        // Si trae información de zona horaria, dejamos que Date la interprete
+        return new Date(v);
+      }
+      // Sin zona horaria explícita -> interpretar como hora local
+      const [year,month,day] = m[1].split('-').map(Number);
+      const [hour,minute,second='0'] = m[2].split(':');
+      return new Date(year, month-1, Number(day), Number(hour), Number(minute), Number(second));
     }
   }
 
