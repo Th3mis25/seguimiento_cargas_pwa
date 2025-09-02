@@ -134,9 +134,29 @@ html,body{
 .link:hover{ text-decoration:underline; }
 .trip-edit{ cursor:pointer; text-decoration:underline; }
 
+.status-wrapper{
+  position:relative;
+  display:inline-block;
+}
+
+.status-text{
+  padding-right:16px;
+}
+
 .status-select{
-  background:#0b1f3d; border:1px solid #1f3e73; color:var(--text);
-  border-radius:8px; padding:4px;
+  position:absolute;
+  top:0;
+  right:0;
+  bottom:0;
+  width:20px;
+  background:transparent;
+  border:none;
+  text-indent:-9999px;
+  cursor:pointer;
+}
+
+.status-select option{
+  text-indent:0;
 }
 
 /* ====== Toast ====== */
