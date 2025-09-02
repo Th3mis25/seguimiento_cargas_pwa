@@ -91,6 +91,7 @@ html,body{
 #loadsTable tbody td{
   padding: 10px; border-bottom:1px solid var(--row-border);
   vertical-align: middle;
+  font-size:12px;
 }
 
 /* No cortar fechas/textos importantes */
