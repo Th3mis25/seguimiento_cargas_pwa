@@ -54,15 +54,21 @@ function parseDate(v){
   }
 
   if(typeof v === 'string'){
-    // Formato "d/m/yyyy hh:mm[:ss]"
-    let m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    // Formato "d/m/yyyy hh:mm[:ss]" con opcional AM/PM
+    let m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(AM|PM))?)?$/i);
     if(m){
-      const [,day,month,year,h='0',min='0',s='0'] = m;
+      const [,day,month,year,h='0',min='0',s='0',ampm] = m;
+      let hour = parseInt(h,10);
+      if(ampm){
+        const isPM = ampm.toUpperCase() === 'PM';
+        if(isPM && hour < 12) hour += 12;
+        if(!isPM && hour === 12) hour = 0;
+      }
       return new Date(
         parseInt(year,10),
         parseInt(month,10)-1,
         parseInt(day,10),
-        parseInt(h,10),
+        hour,
         parseInt(min,10),
         parseInt(s,10)
       );
