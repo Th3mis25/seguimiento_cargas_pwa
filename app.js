@@ -430,6 +430,14 @@ function renderRows(rows, hiddenCols=[]){
     addTextCell(tr, r[COL.destino]);
 
     const statusTd = document.createElement('td');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'status-wrapper';
+
+    const statusText = document.createElement('span');
+    statusText.className = 'status-text';
+    statusText.textContent = r[COL.estatus] || '';
+    wrapper.appendChild(statusText);
+
     const sel = document.createElement('select');
     sel.className = 'status-select';
     fillStatusSelect(sel, r[COL.estatus]);
@@ -463,7 +471,8 @@ function renderRows(rows, hiddenCols=[]){
         ev.target.value = r[COL.estatus] || '';
       }
     });
-    statusTd.appendChild(sel);
+    wrapper.appendChild(sel);
+    statusTd.appendChild(wrapper);
     tr.appendChild(statusTd);
 
     addTextCell(tr, r[COL.segmento]);
