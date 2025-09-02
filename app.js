@@ -506,9 +506,9 @@ function renderGeneral(rows){
 
 function renderDaily(rows){
   const today = new Date();
-  today.setUTCHours(0,0,0,0);
+  today.setHours(0,0,0,0);
   const tomorrow = new Date(today);
-  tomorrow.setUTCDate(today.getUTCDate() + 1);
+  tomorrow.setDate(today.getDate() + 1);
   const allowed = ['in transit mx','live','drop','loading','mty yard','qro yard'];
   const filtered = rows.filter(r=>{
     const status = String(r[COL.estatus]||'').trim().toLowerCase();
