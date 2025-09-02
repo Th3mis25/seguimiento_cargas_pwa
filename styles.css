@@ -146,7 +146,7 @@ html,body{
 .status-select{
   position:absolute;
   top:0;
-  right:-4px;
+  right:-16px;
   bottom:0;
   width:24px;
   -webkit-appearance:none;
@@ -156,9 +156,12 @@ html,body{
   border:none;
   text-indent:-9999px;
   cursor:pointer;
+  color:var(--text);
 }
 
 .status-select option{
+  background:var(--card);
+  color:var(--text);
   text-indent:0;
 }
 
