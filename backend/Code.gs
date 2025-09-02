@@ -20,7 +20,8 @@ function doPost(e) {
     if (p.action === 'add') {
       var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
       if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
-      var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, 'America/Mexico_City', "yyyy-MM-dd'T'HH:mm:ss") : '';
+      // Interpret incoming time as GMT to avoid timezone offsets in the spreadsheet
+      var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, 'GMT', "yyyy-MM-dd'T'HH:mm:ss") : '';
       var row = [
         p.trip || '',
         '', // Caja
@@ -56,10 +57,11 @@ function doPost(e) {
         }
       }
       if (rowIndex === -1) throw new Error('Trip not found');
-      var citaCarga = p.citaCarga ? Utilities.parseDate(p.citaCarga, 'America/Mexico_City', "yyyy-MM-dd'T'HH:mm:ss") : '';
-      var llegadaCarga = p.llegadaCarga ? Utilities.parseDate(p.llegadaCarga, 'America/Mexico_City', "yyyy-MM-dd'T'HH:mm:ss") : '';
-      var citaEntrega = p.citaEntrega ? Utilities.parseDate(p.citaEntrega, 'America/Mexico_City', "yyyy-MM-dd'T'HH:mm:ss") : '';
-      var llegadaEntrega = p.llegadaEntrega ? Utilities.parseDate(p.llegadaEntrega, 'America/Mexico_City', "yyyy-MM-dd'T'HH:mm:ss") : '';
+      // Parse dates as GMT to keep the submitted local time without adding offsets
+      var citaCarga = p.citaCarga ? Utilities.parseDate(p.citaCarga, 'GMT', "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var llegadaCarga = p.llegadaCarga ? Utilities.parseDate(p.llegadaCarga, 'GMT', "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var citaEntrega = p.citaEntrega ? Utilities.parseDate(p.citaEntrega, 'GMT', "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var llegadaEntrega = p.llegadaEntrega ? Utilities.parseDate(p.llegadaEntrega, 'GMT', "yyyy-MM-dd'T'HH:mm:ss") : '';
       var map = {
         'Trip': p.trip || '',
         'Caja': p.caja || '',
