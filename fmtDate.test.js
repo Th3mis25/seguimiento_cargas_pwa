@@ -31,4 +31,10 @@ assert.strictEqual(fmtDate(shortSample, 'en-US'), '09/01/2025 12:00');
 assert.strictEqual(fmtDate(shortSample, 'es-MX'), '01/09/2025 12:00');
 assert.strictEqual(fmtDate(shortSample, 'de-DE'), '01.09.2025 12:00');
 
+// Soportar formato con AM/PM
+const ampmSample = '09/06/2024 03:30 PM';
+assert.strictEqual(fmtDate(ampmSample, 'en-US'), '06/09/2024 15:30');
+assert.strictEqual(fmtDate(ampmSample, 'es-MX'), '09/06/2024 15:30');
+assert.strictEqual(fmtDate(ampmSample, 'de-DE'), '09.06.2024 15:30');
+
 console.log('All fmtDate tests passed.');
