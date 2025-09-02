@@ -20,6 +20,7 @@ function doPost(e) {
     if (p.action === 'add') {
       var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
       if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
+      var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, 'America/Mexico_City', "yyyy-MM-dd'T'HH:mm:ss") : '';
       var row = [
         p.trip || '',
         '', // Caja
@@ -30,7 +31,7 @@ function doPost(e) {
         '', // Segmento
         '', // TR-MX
         '', // TR-USA
-        p.citaCarga || '',
+        citaCargaDate,
         '', // Llegada carga
         '', // Cita entrega
         '', // Llegada entrega
@@ -55,6 +56,10 @@ function doPost(e) {
         }
       }
       if (rowIndex === -1) throw new Error('Trip not found');
+      var citaCarga = p.citaCarga ? Utilities.parseDate(p.citaCarga, 'America/Mexico_City', "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var llegadaCarga = p.llegadaCarga ? Utilities.parseDate(p.llegadaCarga, 'America/Mexico_City', "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var citaEntrega = p.citaEntrega ? Utilities.parseDate(p.citaEntrega, 'America/Mexico_City', "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var llegadaEntrega = p.llegadaEntrega ? Utilities.parseDate(p.llegadaEntrega, 'America/Mexico_City', "yyyy-MM-dd'T'HH:mm:ss") : '';
       var map = {
         'Trip': p.trip || '',
         'Caja': p.caja || '',
@@ -65,10 +70,10 @@ function doPost(e) {
         'Segmento': p.segmento || '',
         'TR-MX': p.trmx || '',
         'TR-USA': p.trusa || '',
-        'Cita carga': p.citaCarga || '',
-        'Llegada carga': p.llegadaCarga || '',
-        'Cita entrega': p.citaEntrega || '',
-        'Llegada entrega': p.llegadaEntrega || '',
+        'Cita carga': citaCarga,
+        'Llegada carga': llegadaCarga,
+        'Cita entrega': citaEntrega,
+        'Llegada entrega': llegadaEntrega,
         'Comentarios': p.comentarios || '',
         'Docs': p.docs || '',
         'Tracking': p.tracking || ''
