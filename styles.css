@@ -27,6 +27,27 @@ html,body{
   --row-border:#274770;
 }
 
+/* ====== Scrollbar ====== */
+*{
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--panel);
+}
+*::-webkit-scrollbar{
+  width:8px;
+}
+*::-webkit-scrollbar-track{
+  background: var(--panel);
+  border-radius:10px;
+}
+*::-webkit-scrollbar-thumb{
+  background-color: var(--accent);
+  border-radius:10px;
+  border:2px solid var(--panel);
+}
+*::-webkit-scrollbar-thumb:hover{
+  background-color: var(--accent-2);
+}
+
 /* ====== Header ====== */
 .app-header{
   display:flex; align-items:center; gap:12px;
@@ -188,7 +209,7 @@ html,body{
 #editModal .modal-content{
   width:50vw;
   max-width:300px;
-  height:50vh;
+  height:65vh;
   overflow-y:auto;
 }
 .modal-content h2{
