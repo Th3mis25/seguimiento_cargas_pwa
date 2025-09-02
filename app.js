@@ -280,7 +280,6 @@ function openEditModal(trip){
   form.referencia.value = row[COL.referencia] || '';
   form.cliente.value = row[COL.cliente] || '';
   form.destino.value = row[COL.destino] || '';
-  fillStatusSelect(form.estatus, row[COL.estatus], true);
   form.segmento.value = row[COL.segmento] || '';
   form.trmx.value = row[COL.trmx] || '';
   form.trusa.value = row[COL.trusa] || '';
@@ -530,7 +529,6 @@ async function main(){
   renderRows(cache);
 
   fillStatusSelect($('#addForm select[name="estatus"]'), '', true);
-  fillStatusSelect($('#editForm select[name="estatus"]'), '', true);
 
   $('#refreshBtn').addEventListener('click', async ()=>{
     cache = await fetchData();
@@ -577,6 +575,7 @@ async function main(){
   $('#editForm').addEventListener('submit', async ev=>{
     ev.preventDefault();
     const form = ev.target;
+    const row = cache.find(r => String(r[COL.trip])===String(form.originalTrip.value));
     const data = {
       originalTrip: form.originalTrip.value,
       trip: form.trip.value.trim(),
@@ -584,7 +583,7 @@ async function main(){
       referencia: form.referencia.value.trim(),
       cliente: form.cliente.value.trim(),
       destino: form.destino.value.trim(),
-      estatus: form.estatus.value.trim(),
+      estatus: row ? row[COL.estatus] : '',
       segmento: form.segmento.value.trim(),
       trmx: form.trmx.value.trim(),
       trusa: form.trusa.value.trim(),
@@ -597,26 +596,25 @@ async function main(){
       tracking: form.tracking.value.trim()
     };
     const ok = await updateRecord(data);
+    if(ok && row){
+      row[COL.trip] = data.trip;
+      row[COL.caja] = data.caja;
+      row[COL.referencia] = data.referencia;
+      row[COL.cliente] = data.cliente;
+      row[COL.destino] = data.destino;
+      row[COL.estatus] = data.estatus;
+      row[COL.segmento] = data.segmento;
+      row[COL.trmx] = data.trmx;
+      row[COL.trusa] = data.trusa;
+      row[COL.citaCarga] = data.citaCarga;
+      row[COL.llegadaCarga] = data.llegadaCarga;
+      row[COL.citaEntrega] = data.citaEntrega;
+      row[COL.llegadaEntrega] = data.llegadaEntrega;
+      row[COL.comentarios] = data.comentarios;
+      row[COL.docs] = data.docs;
+      row[COL.tracking] = data.tracking;
+    }
     if(ok){
-      const row = cache.find(r => String(r[COL.trip])===String(form.originalTrip.value));
-      if(row){
-        row[COL.trip] = data.trip;
-        row[COL.caja] = data.caja;
-        row[COL.referencia] = data.referencia;
-        row[COL.cliente] = data.cliente;
-        row[COL.destino] = data.destino;
-        row[COL.estatus] = data.estatus;
-        row[COL.segmento] = data.segmento;
-        row[COL.trmx] = data.trmx;
-        row[COL.trusa] = data.trusa;
-        row[COL.citaCarga] = data.citaCarga;
-        row[COL.llegadaCarga] = data.llegadaCarga;
-        row[COL.citaEntrega] = data.citaEntrega;
-        row[COL.llegadaEntrega] = data.llegadaEntrega;
-        row[COL.comentarios] = data.comentarios;
-        row[COL.docs] = data.docs;
-        row[COL.tracking] = data.tracking;
-      }
       populateStatusFilter(cache);
       renderRows(cache);
       $('#editModal').classList.remove('show');
