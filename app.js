@@ -6,6 +6,8 @@
 // Se obtiene de `config.js` para poder configurarse al desplegar.
 const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) || '';
 
+const DEFAULT_LOCALE = 'es-MX';
+
 // Cabeceras EXACTAS en el orden de tu hoja (las que quieres ver en la app)
 const HEADERS = [
   'Trip','Caja','Referencia','Cliente','Destino','Estatus','Segmento',
@@ -93,7 +95,7 @@ function parseDate(v){
   return isNaN(d) ? null : d;
 }
 
-function fmtDate(v, locale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'es-MX'){
+function fmtDate(v, locale = DEFAULT_LOCALE){
   if(!v) return '';
 
   const d = parseDate(v);
@@ -108,7 +110,7 @@ function fmtDate(v, locale = (typeof navigator !== 'undefined' && navigator.lang
   return `${dateStr} ${timeStr}`;
 }
 if(typeof module !== 'undefined' && module.exports){
-  module.exports = { fmtDate };
+  module.exports = { fmtDate, DEFAULT_LOCALE };
 }
 function toGASDate(v){
   if(!v) return '';
