@@ -104,6 +104,20 @@ function fmtDate(v, locale = (typeof navigator !== 'undefined' && navigator.lang
 if(typeof module !== 'undefined' && module.exports){
   module.exports = { fmtDate };
 }
+function toGASDate(v){
+  if(!v) return '';
+  let d;
+  const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if(m){
+    const [,Y,M,D,H,Min,S] = m;
+    d = new Date(Number(Y), Number(M)-1, Number(D), Number(H), Number(Min), Number(S||0));
+  }else{
+    d = parseDate(v);
+  }
+  if(!d) return '';
+  const pad = n => String(n).padStart(2,'0');
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
 function badgeForStatus(s){
   if(!s) return null;
   const n = String(s).toLowerCase();
@@ -250,6 +264,33 @@ async function addRecord(data){
   }
 }
 
+async function updateRecord(data){
+  try{
+    const body = new URLSearchParams({ action:'update', ...data });
+    const res = await fetch(API_BASE,{ method:'POST', body });
+    let json;
+    try{
+      const ct = res.headers.get('content-type') || '';
+      if(!ct.includes('application/json')){
+        throw new Error('Missing application/json header');
+      }
+      json = await res.json();
+    }catch(err){
+      if(err.message === 'Missing application/json header') throw err;
+      throw new Error('Invalid JSON');
+    }
+    if(!res.ok || json.error){
+      throw new Error(json.error || `HTTP ${res.status}`);
+    }
+    toast('Registro actualizado');
+    return true;
+  }catch(err){
+    console.error('updateRecord error', err);
+    toast('Error al actualizar: ' + err.message);
+    return false;
+  }
+}
+
 function buildCopyMsg(r){
   const lines = [];
   lines.push(`Caja: ${r[COL.caja]||''}`);
@@ -261,6 +302,37 @@ function buildCopyMsg(r){
 }
 function buildWaShareUrl(r){
   return `https://wa.me/?text=${encodeURIComponent(buildCopyMsg(r))}`;
+}
+
+function toLocalInputValue(v){
+  const d = parseDate(v);
+  if(!d) return '';
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function openEditModal(trip){
+  const row = cache.find(r => String(r[COL.trip])===String(trip));
+  if(!row) return;
+  const form = $('#editForm');
+  form.originalTrip.value = row[COL.trip] || '';
+  form.trip.value = row[COL.trip] || '';
+  form.caja.value = row[COL.caja] || '';
+  form.referencia.value = row[COL.referencia] || '';
+  form.cliente.value = row[COL.cliente] || '';
+  form.destino.value = row[COL.destino] || '';
+  form.estatus.value = row[COL.estatus] || '';
+  form.segmento.value = row[COL.segmento] || '';
+  form.trmx.value = row[COL.trmx] || '';
+  form.trusa.value = row[COL.trusa] || '';
+  form.citaCarga.value = toLocalInputValue(row[COL.citaCarga]);
+  form.llegadaCarga.value = toLocalInputValue(row[COL.llegadaCarga]);
+  form.citaEntrega.value = toLocalInputValue(row[COL.citaEntrega]);
+  form.llegadaEntrega.value = toLocalInputValue(row[COL.llegadaEntrega]);
+  form.comentarios.value = row[COL.comentarios] || '';
+  form.docs.value = row[COL.docs] || '';
+  form.tracking.value = row[COL.tracking] || '';
+  $('#editModal').classList.add('show');
 }
 
 function setColumnVisibility(indices, show){
@@ -354,6 +426,7 @@ function renderRows(rows, hiddenCols=[]){
 
   for(const r of filtered){
     const tr = document.createElement('tr');
+    tr.dataset.trip = r[COL.trip];
 
     addTextCell(tr, r[COL.trip]);
     addTextCell(tr, r[COL.caja]);
@@ -475,22 +548,6 @@ async function main(){
   $('#addForm').addEventListener('submit', async ev=>{
     ev.preventDefault();
     const form = ev.target;
-    const toGASDate = v => {
-      if(!v) return '';
-      // Interpretar el valor del input datetime-local como hora local sin desplazamientos
-      // Formato esperado: "yyyy-mm-ddThh:mm[:ss]"
-      let d;
-      const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
-      if(m){
-        const [,Y,M,D,H,Min,S] = m;
-        d = new Date(Number(Y), Number(M)-1, Number(D), Number(H), Number(Min), Number(S||0));
-      }else{
-        d = parseDate(v);
-      }
-      if(!d) return '';
-      const pad = n => String(n).padStart(2, '0');
-      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    };
     const data = {
       trip: form.trip.value.trim(),
       estatus: form.estatus.value.trim(),
@@ -511,29 +568,88 @@ async function main(){
       $('#addModal').classList.remove('show');
     }
   });
+  $('#cancelEdit').addEventListener('click', ()=>{
+    $('#editModal').classList.remove('show');
+  });
+  $('#editForm').addEventListener('submit', async ev=>{
+    ev.preventDefault();
+    const form = ev.target;
+    const data = {
+      originalTrip: form.originalTrip.value,
+      trip: form.trip.value.trim(),
+      caja: form.caja.value.trim(),
+      referencia: form.referencia.value.trim(),
+      cliente: form.cliente.value.trim(),
+      destino: form.destino.value.trim(),
+      estatus: form.estatus.value.trim(),
+      segmento: form.segmento.value.trim(),
+      trmx: form.trmx.value.trim(),
+      trusa: form.trusa.value.trim(),
+      citaCarga: toGASDate(form.citaCarga.value),
+      llegadaCarga: toGASDate(form.llegadaCarga.value),
+      citaEntrega: toGASDate(form.citaEntrega.value),
+      llegadaEntrega: toGASDate(form.llegadaEntrega.value),
+      comentarios: form.comentarios.value.trim(),
+      docs: form.docs.value.trim(),
+      tracking: form.tracking.value.trim()
+    };
+    const ok = await updateRecord(data);
+    if(ok){
+      const row = cache.find(r => String(r[COL.trip])===String(form.originalTrip.value));
+      if(row){
+        row[COL.trip] = data.trip;
+        row[COL.caja] = data.caja;
+        row[COL.referencia] = data.referencia;
+        row[COL.cliente] = data.cliente;
+        row[COL.destino] = data.destino;
+        row[COL.estatus] = data.estatus;
+        row[COL.segmento] = data.segmento;
+        row[COL.trmx] = data.trmx;
+        row[COL.trusa] = data.trusa;
+        row[COL.citaCarga] = data.citaCarga;
+        row[COL.llegadaCarga] = data.llegadaCarga;
+        row[COL.citaEntrega] = data.citaEntrega;
+        row[COL.llegadaEntrega] = data.llegadaEntrega;
+        row[COL.comentarios] = data.comentarios;
+        row[COL.docs] = data.docs;
+        row[COL.tracking] = data.tracking;
+      }
+      populateStatusFilter(cache);
+      renderRows(cache);
+      $('#editModal').classList.remove('show');
+    }
+  });
   $('#generalMenu').addEventListener('click', ()=>renderGeneral(cache));
   $('#dailyMenu').addEventListener('click', ()=>renderDaily(cache));
 
   $('#loadsTable').addEventListener('click', async ev=>{
-    const btn = ev.target.closest('button[data-act]'); if(!btn) return;
-    const act = btn.dataset.act; const trip = btn.dataset.trip;
-
-    if(act==='copy'){
-      const msg = buildCopyMsg(cache.find(r => String(r[COL.trip])===String(trip))||{});
-      try{ await navigator.clipboard.writeText(msg); toast('Texto copiado'); }
-      catch{
-        const ta=document.createElement('textarea'); ta.value=msg; document.body.appendChild(ta);
-        ta.select(); document.execCommand('copy'); ta.remove(); toast('Texto copiado');
+    const btn = ev.target.closest('button[data-act]');
+    const link = ev.target.closest('a');
+    if(btn){
+      const act = btn.dataset.act; const trip = btn.dataset.trip;
+      if(act==='copy'){
+        const msg = buildCopyMsg(cache.find(r => String(r[COL.trip])===String(trip))||{});
+        try{ await navigator.clipboard.writeText(msg); toast('Texto copiado'); }
+        catch{
+          const ta=document.createElement('textarea'); ta.value=msg; document.body.appendChild(ta);
+          ta.select(); document.execCommand('copy'); ta.remove(); toast('Texto copiado');
+        }
       }
+      if(act==='delivered'){
+        const ok = await updateDelivered(trip);
+        if(ok){
+          const row = cache.find(r => String(r[COL.trip])===String(trip));
+          if(row) row[COL.estatus] = 'Delivered';
+          populateStatusFilter(cache);
+          renderRows(cache);
+        }
+      }
+      return;
     }
-    if(act==='delivered'){
-      const ok = await updateDelivered(trip);
-      if(ok){
-        const row = cache.find(r => String(r[COL.trip])===String(trip));
-        if(row) row[COL.estatus] = 'Delivered';
-        populateStatusFilter(cache);
-        renderRows(cache);
-      }
+    if(link) return;
+    const tr = ev.target.closest('tbody tr');
+    if(tr){
+      openEditModal(tr.dataset.trip);
     }
   });
 

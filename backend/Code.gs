@@ -40,6 +40,46 @@ function doPost(e) {
       ];
       sheet.appendRow(row);
       output.setContent(JSON.stringify({ success: true }));
+    } else if (p.action === 'update') {
+      var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
+      if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
+      var data = sheet.getDataRange().getValues();
+      var headers = data[0];
+      var tripIdx = headers.indexOf('Trip');
+      if (tripIdx === -1) throw new Error('Trip column not found');
+      var rowIndex = -1;
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][tripIdx]) === String(p.originalTrip)) {
+          rowIndex = i;
+          break;
+        }
+      }
+      if (rowIndex === -1) throw new Error('Trip not found');
+      var map = {
+        'Trip': p.trip || '',
+        'Caja': p.caja || '',
+        'Referencia': p.referencia || '',
+        'Cliente': p.cliente || '',
+        'Destino': p.destino || '',
+        'Estatus': p.estatus || '',
+        'Segmento': p.segmento || '',
+        'TR-MX': p.trmx || '',
+        'TR-USA': p.trusa || '',
+        'Cita carga': p.citaCarga || '',
+        'Llegada carga': p.llegadaCarga || '',
+        'Cita entrega': p.citaEntrega || '',
+        'Llegada entrega': p.llegadaEntrega || '',
+        'Comentarios': p.comentarios || '',
+        'Docs': p.docs || '',
+        'Tracking': p.tracking || ''
+      };
+      for (var h in map) {
+        var idx = headers.indexOf(h);
+        if (idx > -1) {
+          sheet.getRange(rowIndex + 1, idx + 1).setValue(map[h]);
+        }
+      }
+      output.setContent(JSON.stringify({ success: true }));
     } else {
       output.setContent(JSON.stringify({ error: 'Unsupported action' }));
     }
