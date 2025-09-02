@@ -193,36 +193,6 @@ async function fetchData(){
   }
 }
 
-async function updateDelivered(trip){
-  try{
-    const res = await fetch(API_BASE,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'delivered', trip })
-    });
-    let json;
-    try{
-      const ct = res.headers.get('content-type') || '';
-      if(!ct.includes('application/json')){
-        throw new Error('Missing application/json header');
-      }
-      json = await res.json();
-    }catch(err){
-      if(err.message === 'Missing application/json header') throw err;
-      throw new Error('Invalid JSON');
-    }
-    if(!res.ok || json.error){
-      throw new Error(json.error || `HTTP ${res.status}`);
-    }
-    toast('Entrega registrada');
-    return true;
-  }catch(err){
-    console.error('updateDelivered error', err);
-    toast('Error al registrar entrega: ' + err.message);
-    return false;
-  }
-}
-
 async function addRecord(data){
   try{
     const body = new URLSearchParams({ action:'add', ...data });
@@ -507,12 +477,6 @@ function renderRows(rows, hiddenCols=[]){
     waLink.textContent = '🟢 WhatsApp';
     actionTd.appendChild(waLink);
 
-    const deliveredBtn = document.createElement('button');
-    deliveredBtn.className = 'btn-mini';
-    deliveredBtn.dataset.act = 'delivered';
-    deliveredBtn.dataset.trip = r[COL.trip];
-    deliveredBtn.textContent = '✅ Entregado';
-    actionTd.appendChild(deliveredBtn);
 
     tr.appendChild(actionTd);
     tb.appendChild(tr);
@@ -663,15 +627,6 @@ async function main(){
         catch{
           const ta=document.createElement('textarea'); ta.value=msg; document.body.appendChild(ta);
           ta.select(); document.execCommand('copy'); ta.remove(); toast('Texto copiado');
-        }
-      }
-      if(act==='delivered'){
-        const ok = await updateDelivered(trip);
-        if(ok){
-          const row = cache.find(r => String(r[COL.trip])===String(trip));
-          if(row) row[COL.estatus] = 'Delivered';
-          populateStatusFilter(cache);
-          renderRows(cache);
         }
       }
       return;
