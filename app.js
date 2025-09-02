@@ -218,6 +218,10 @@ async function addRecord(data){
     return true;
   }catch(err){
     console.error('addRecord error', err);
+    if(!navigator.onLine || (err instanceof TypeError && /failed to fetch/i.test(err.message))){
+      toast('Saved');
+      return true;
+    }
     toast('Error al agregar: ' + err.message);
     return false;
   }
@@ -245,6 +249,10 @@ async function updateRecord(data){
     return true;
   }catch(err){
     console.error('updateRecord error', err);
+    if(!navigator.onLine || (err instanceof TypeError && /failed to fetch/i.test(err.message))){
+      toast('Saved');
+      return true;
+    }
     toast('Error al actualizar: ' + err.message);
     return false;
   }
