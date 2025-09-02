@@ -91,15 +91,16 @@ html,body{
   background: var(--panel-2);
   color: var(--text);
   text-align:left; font-size:.95rem; letter-spacing:.2px;
-  padding: 12px 10px; border-bottom:1px solid #214070;
+  padding: 8px 10px; border-bottom:1px solid #214070;
   z-index: 2;
 }
 #loadsTable tbody tr{ background: var(--row); }
 #loadsTable tbody tr:nth-child(even){ background: var(--row-alt); }
 #loadsTable tbody td{
-  padding: 10px; border-bottom:1px solid var(--row-border);
+  padding: 4px 10px; border-bottom:1px solid var(--row-border);
   vertical-align: middle;
   font-size:12px;
+  line-height: 1.2;
 }
 
 /* No cortar fechas/textos importantes */
