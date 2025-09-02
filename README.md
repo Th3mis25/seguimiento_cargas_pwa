@@ -1,4 +1,4 @@
-# Seguimiento de Cargas PWA
+# Tablero de seguimiento PWA
 
 Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sheets.
 
