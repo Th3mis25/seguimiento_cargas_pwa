@@ -238,3 +238,10 @@ html,body{
   font-weight:600;
 }
 .side-btn:hover{ background:var(--panel-2); }
+
+/* White calendar icon */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
