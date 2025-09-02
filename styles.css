@@ -134,6 +134,11 @@ html,body{
 .link:hover{ text-decoration:underline; }
 .trip-edit{ cursor:pointer; text-decoration:underline; }
 
+.status-select{
+  background:#0b1f3d; border:1px solid #1f3e73; color:var(--text);
+  border-radius:8px; padding:4px;
+}
+
 /* ====== Toast ====== */
 .toast{
   position:fixed; right:16px; bottom:16px; background:#111827;
@@ -154,7 +159,7 @@ html,body{
 }
 .modal-content h2{ margin-top:0; }
 .modal-content label{ display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
-.modal-content input{ background:#0b1f3d; border:1px solid #1f3e73; color:var(--text); border-radius:10px; padding:8px; }
+.modal-content input, .modal-content select{ background:#0b1f3d; border:1px solid #1f3e73; color:var(--text); border-radius:10px; padding:8px; }
 .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
 
 /* ====== Menú lateral ====== */
