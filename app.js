@@ -91,7 +91,7 @@ function fmtDate(v, locale = (typeof navigator !== 'undefined' && navigator.lang
     year:'numeric', month:'2-digit', day:'2-digit'
   });
   const timeStr = d.toLocaleTimeString(locale, {
-    hour:'2-digit', minute:'2-digit'
+    hour:'2-digit', minute:'2-digit', hour12:false
   });
   return `${dateStr} ${timeStr}`;
 }
