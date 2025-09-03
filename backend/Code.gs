@@ -1,6 +1,6 @@
 const SHEET_NAME = 'Tabla_1';
 const AUTH_TOKEN = 'demo-token';
-const SHEET_TIMEZONE = 'America/Mexico_City'; // interpret times as local to avoid 6h offset
+const SPREADSHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
 
 function isAuthorized(e) {
   return e.parameter && e.parameter.token === AUTH_TOKEN;
@@ -28,10 +28,11 @@ function doPost(e) {
 
   try {
     var p = e.parameter;
-    var timeZone = SHEET_TIMEZONE;
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
+    var timeZone = ss.getSpreadsheetTimeZone();
     if (p.action === 'add') {
-      var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
-      if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
       // Interpret incoming time using the sheet timezone to avoid offsets
       var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var row = [
@@ -56,8 +57,6 @@ function doPost(e) {
       sheet.appendRow(row);
       output.setContent(JSON.stringify({ success: true }));
     } else if (p.action === 'update') {
-      var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
-      if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
       var data = sheet.getDataRange().getValues();
       var headers = data[0];
       var tripIdx = headers.indexOf('Trip');
@@ -123,9 +122,10 @@ function doGet(e) {
   }
 
   try {
-    var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(SHEET_NAME);
     if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
-    var timeZone = SHEET_TIMEZONE;
+    var timeZone = ss.getSpreadsheetTimeZone();
     var data = sheet.getDataRange().getValues();
     var formattedData = data.map(function(row) {
       return row.map(function(cell) {
