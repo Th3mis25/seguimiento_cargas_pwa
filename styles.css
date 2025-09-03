@@ -182,13 +182,13 @@ body{
 }
 
 .status-text{
-  padding-right:16px;
+  padding-right:24px;
 }
 
 .status-select{
   position:absolute;
   top:0;
-  right:-16px;
+  right:0;
   bottom:0;
   width:24px;
   -webkit-appearance:none;
