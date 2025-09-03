@@ -1,4 +1,9 @@
 const SHEET_NAME = 'Tabla_1';
+const AUTH_TOKEN = 'demo-token';
+
+function isAuthorized(e) {
+  return e.parameter && e.parameter.token === AUTH_TOKEN;
+}
 
 function doPost(e) {
   if (!e.postData) {
@@ -14,6 +19,11 @@ function doPost(e) {
   output.setHeader('Access-Control-Allow-Origin', '*');
   output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+
+  if (!isAuthorized(e)) {
+    output.setContent(JSON.stringify({ error: 'Unauthorized' }));
+    return output;
+  }
 
   try {
     var p = e.parameter;
@@ -103,6 +113,11 @@ function doGet(e) {
   output.setHeader('Access-Control-Allow-Origin', '*');
   output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+
+  if (!isAuthorized(e)) {
+    output.setContent(JSON.stringify({ error: 'Unauthorized' }));
+    return output;
+  }
 
   try {
     var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);

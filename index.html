@@ -12,6 +12,7 @@
   <header class="app-header">
     <img src="assets/logo.png" alt="TM Transportation" class="app-logo"/>
     <h1>Tablero de seguimiento</h1>
+    <button id="logoutBtn" class="btn-mini" style="margin-left:auto;display:none">Cerrar sesión</button>
   </header>
 
     <!-- Menú lateral -->
@@ -19,6 +20,17 @@
     <button id="generalMenu" class="side-btn">📋 General</button>
     <button id="dailyMenu" class="side-btn">📅 Cargas Diarias</button>
     </nav>
+
+  <div id="loginScreen" style="display:none">
+    <form id="loginForm" class="controls" style="margin:40px auto;max-width:400px">
+      <label for="user">Usuario:</label>
+      <input id="user" name="user" required />
+      <label for="password">Contraseña:</label>
+      <input id="password" name="password" type="password" required />
+      <button type="submit" class="btn">Ingresar</button>
+      <div id="loginError" style="color:#ffb4b4;margin-top:8px"></div>
+    </form>
+  </div>
 
   <main class="container">
     <section class="controls">
