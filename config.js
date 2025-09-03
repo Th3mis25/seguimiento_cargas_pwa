@@ -5,7 +5,8 @@ window.APP_CONFIG = {
   API_BASE: 'https://script.google.com/macros/s/AKfycbzwh8M5J7n0OUVHzROjd7TaDdfb5lMAMwm_3oRhUbIL53JSQZkijcy-6v3yPrTgUNMK/exec',
   // Usuarios autorizados para iniciar sesión en la app.
   AUTH_USERS: [
-    { user: 'admin', password: '1234' }
+    { user: 'admin', password: '1234' },
+    { user: 'VPADRONR', password: 'VP@trc.008' }
   ],
   // Token sencillo para proteger llamadas a la API.
   API_TOKEN: 'demo-token'
