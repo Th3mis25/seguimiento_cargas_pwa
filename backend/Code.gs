@@ -1,5 +1,6 @@
 const SHEET_NAME = 'Tabla_1';
 const AUTH_TOKEN = 'demo-token';
+const SHEET_TIMEZONE = 'UTC'; // keep times without local offsets
 
 function isAuthorized(e) {
   return e.parameter && e.parameter.token === AUTH_TOKEN;
@@ -27,11 +28,11 @@ function doPost(e) {
 
   try {
     var p = e.parameter;
-    var timeZone = Session.getScriptTimeZone();
+    var timeZone = SHEET_TIMEZONE;
     if (p.action === 'add') {
       var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
       if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
-      // Interpret incoming time using the script timezone to avoid offsets in the spreadsheet
+      // Interpret incoming time using the sheet timezone to avoid offsets
       var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var row = [
         p.ejecutivo || '',
@@ -69,7 +70,7 @@ function doPost(e) {
         }
       }
       if (rowIndex === -1) throw new Error('Trip not found');
-      // Parse dates using the script timezone to keep the submitted local time without adding offsets
+      // Parse dates using the sheet timezone to keep the submitted local time without adding offsets
       var citaCarga = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var llegadaCarga = p.llegadaCarga ? Utilities.parseDate(p.llegadaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var citaEntrega = p.citaEntrega ? Utilities.parseDate(p.citaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
@@ -124,7 +125,7 @@ function doGet(e) {
   try {
     var sheet = SpreadsheetApp.openById('1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms').getSheetByName(SHEET_NAME);
     if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
-    var timeZone = Session.getScriptTimeZone();
+    var timeZone = SHEET_TIMEZONE;
     var data = sheet.getDataRange().getValues();
     var formattedData = data.map(function(row) {
       return row.map(function(cell) {
