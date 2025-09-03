@@ -403,6 +403,13 @@ function renderRows(rows, hiddenCols=[]){
     const tr = document.createElement('tr');
     tr.dataset.trip = r[COL.trip];
 
+    const statusVal = (r[COL.estatus] || '').trim().toLowerCase();
+    const citaDate = parseDate(r[COL.citaCarga]);
+    const now = new Date();
+    if(citaDate && citaDate < now && (currentView === 'daily' || statusVal === 'live' || statusVal === 'drop')){
+      tr.classList.add('expired');
+    }
+
     const tripTd = document.createElement('td');
     const tripSpan = document.createElement('span');
     tripSpan.className = 'trip-edit';
@@ -422,7 +429,6 @@ function renderRows(rows, hiddenCols=[]){
     const statusText = document.createElement('span');
     statusText.className = 'status-text';
     statusText.textContent = r[COL.estatus] || '';
-    const statusVal = (r[COL.estatus] || '').trim().toLowerCase();
     if(statusVal === 'delivered'){
       statusText.classList.add('badge','green');
     }
