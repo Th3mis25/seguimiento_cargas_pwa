@@ -43,6 +43,8 @@ const STATUS_OPTIONS = [
 const $ = s => document.querySelector(s);
 let cache = [];
 let currentView = 'daily';
+let isLoggedIn = (typeof localStorage !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true');
+let mainInitialized = false;
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({
@@ -178,8 +180,10 @@ async function fetchData(){
   const tb = $('#loadsTable tbody');
   tb.innerHTML = `<tr><td colspan="17" style="padding:16px">Cargando…</td></tr>`;
 
-  try{
-    const res  = await fetch(API_BASE,{ cache:'no-store' });
+    try{
+      const token = (typeof window !== 'undefined' && window.APP_CONFIG?.API_TOKEN) || '';
+      const url = token ? `${API_BASE}?token=${encodeURIComponent(token)}` : API_BASE;
+      const res  = await fetch(url,{ cache:'no-store' });
     if(!res.ok){
       throw new Error(`HTTP ${res.status}`);
     }
@@ -203,12 +207,13 @@ async function fetchData(){
 }
 
 async function addRecord(data){
-  try{
-    const body = new URLSearchParams({ action:'add', ...data });
-    const res = await fetch(API_BASE,{
-      method:'POST',
-      body
-    });
+    try{
+      const token = (typeof window !== 'undefined' && window.APP_CONFIG?.API_TOKEN) || '';
+      const body = new URLSearchParams({ action:'add', token, ...data });
+      const res = await fetch(API_BASE,{
+        method:'POST',
+        body
+      });
     let json;
     try{
       const ct = res.headers.get('content-type') || '';
@@ -237,9 +242,10 @@ async function addRecord(data){
 }
 
 async function updateRecord(data){
-  try{
-    const body = new URLSearchParams({ action:'update', ...data });
-    const res = await fetch(API_BASE,{ method:'POST', body });
+    try{
+      const token = (typeof window !== 'undefined' && window.APP_CONFIG?.API_TOKEN) || '';
+      const body = new URLSearchParams({ action:'update', token, ...data });
+      const res = await fetch(API_BASE,{ method:'POST', body });
     let json;
     try{
       const ct = res.headers.get('content-type') || '';
@@ -674,5 +680,57 @@ async function main(){
   }
 }
 if (typeof document !== 'undefined') {
-  main();
+  const loginScreen = document.getElementById('loginScreen');
+  const mainEl = document.querySelector('main.container');
+  const sideMenu = document.querySelector('.side-menu');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const loginForm = document.getElementById('loginForm');
+  const loginError = document.getElementById('loginError');
+
+  function showLogin(){
+    if(loginScreen) loginScreen.style.display = 'block';
+    if(mainEl) mainEl.style.display = 'none';
+    if(sideMenu) sideMenu.style.display = 'none';
+    if(logoutBtn) logoutBtn.style.display = 'none';
+  }
+
+  function showApp(){
+    if(loginScreen) loginScreen.style.display = 'none';
+    if(sideMenu) sideMenu.style.display = '';
+    if(mainEl) mainEl.style.display = '';
+    if(logoutBtn) logoutBtn.style.display = 'inline-block';
+    if(!mainInitialized){
+      main();
+      mainInitialized = true;
+    }
+  }
+
+  if(isLoggedIn){
+    showApp();
+  }else{
+    showLogin();
+  }
+
+  loginForm?.addEventListener('submit', ev=>{
+    ev.preventDefault();
+    const user = loginForm.user.value.trim();
+    const pass = loginForm.password.value.trim();
+    const users = (typeof window !== 'undefined' && window.APP_CONFIG?.AUTH_USERS) || [];
+    const ok = users.some(u => u.user === user && u.password === pass);
+    if(ok){
+      isLoggedIn = true;
+      if(typeof localStorage !== 'undefined') localStorage.setItem('isLoggedIn','true');
+      showApp();
+      loginForm.reset();
+      if(loginError) loginError.textContent = '';
+    }else{
+      if(loginError) loginError.textContent = 'Credenciales incorrectas';
+    }
+  });
+
+  logoutBtn?.addEventListener('click', ()=>{
+    isLoggedIn = false;
+    if(typeof localStorage !== 'undefined') localStorage.removeItem('isLoggedIn');
+    showLogin();
+  });
 }
