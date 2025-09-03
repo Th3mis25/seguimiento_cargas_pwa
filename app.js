@@ -412,7 +412,7 @@ function renderRows(rows, hiddenCols=[]){
     const statusVal = (r[COL.estatus] || '').trim().toLowerCase();
     const citaDate = parseDate(r[COL.citaCarga]);
     const now = new Date();
-    if(citaDate && citaDate < now && (currentView === 'daily' || statusVal === 'live' || statusVal === 'drop')){
+    if(citaDate && citaDate < now && (statusVal === 'live' || statusVal === 'drop')){
       tr.classList.add('expired');
     }
 
