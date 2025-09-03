@@ -34,6 +34,7 @@ function doPost(e) {
       // Interpret incoming time using the script timezone to avoid offsets in the spreadsheet
       var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var row = [
+        p.ejecutivo || '',
         p.trip || '',
         '', // Caja
         '', // Referencia
@@ -74,6 +75,7 @@ function doPost(e) {
       var citaEntrega = p.citaEntrega ? Utilities.parseDate(p.citaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var llegadaEntrega = p.llegadaEntrega ? Utilities.parseDate(p.llegadaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var map = {
+        'Ejecutivo': p.ejecutivo || '',
         'Trip': p.trip || '',
         'Caja': p.caja || '',
         'Referencia': p.referencia || '',

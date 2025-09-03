@@ -10,13 +10,14 @@ const DEFAULT_LOCALE = 'es-MX';
 
 // Cabeceras EXACTAS en el orden de tu hoja (las que quieres ver en la app)
 const HEADERS = [
-  'Trip','Caja','Referencia','Cliente','Destino','Estatus','Segmento',
+  'Ejecutivo','Trip','Caja','Referencia','Cliente','Destino','Estatus','Segmento',
   'TR-MX','TR-USA','Cita carga','Llegada carga','Cita entrega','Llegada entrega',
   'Comentarios','Docs','Tracking'
 ];
 
 // Mapa de claves internas
 const COL = {
+  ejecutivo:       'Ejecutivo',
   trip:            'Trip',
   caja:            'Caja',
   referencia:      'Referencia',
@@ -178,7 +179,7 @@ function normalizeData(raw){
 
 async function fetchData(){
   const tb = $('#loadsTable tbody');
-  tb.innerHTML = `<tr><td colspan="17" style="padding:16px">Cargando…</td></tr>`;
+  tb.innerHTML = `<tr><td colspan="18" style="padding:16px">Cargando…</td></tr>`;
 
     try{
       const token = (typeof window !== 'undefined' && window.APP_CONFIG?.API_TOKEN) || '';
@@ -199,7 +200,7 @@ async function fetchData(){
     return data;
   }catch(err){
     console.error('fetch error', err);
-    tb.innerHTML = `<tr><td colspan="17" style="padding:16px;color:#ffb4b4">
+    tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">
       No se pudieron cargar los datos. ${escapeHtml(err.message)}. Intenta recargar.
     </td></tr>`;
     return [];
@@ -299,6 +300,7 @@ function openEditModal(trip){
   const form = $('#editForm');
   form.originalTrip.value = row[COL.trip] || '';
   form.trip.value = row[COL.trip] || '';
+  form.ejecutivo.value = row[COL.ejecutivo] || '';
   form.caja.value = row[COL.caja] || '';
   form.referencia.value = row[COL.referencia] || '';
   form.cliente.value = row[COL.cliente] || '';
@@ -337,7 +339,7 @@ function populateStatusFilter(rows){
 }
 
 function renderRows(rows, hiddenCols=[]){
-  setColumnVisibility([8,11,12,14], true); // mostrar por defecto
+  setColumnVisibility([9,12,13,15], true); // mostrar por defecto
 
   const statusFilter = $('#statusFilter').value;
   const q = $('#searchBox').value.trim().toLowerCase();
@@ -362,7 +364,8 @@ function renderRows(rows, hiddenCols=[]){
     if(q){
       const hay = [
         COL.trip, COL.caja, COL.referencia, COL.cliente, COL.destino,
-        COL.estatus, COL.segmento, COL.trmx, COL.trusa, COL.tracking
+        COL.estatus, COL.segmento, COL.trmx, COL.trusa, COL.tracking,
+        COL.ejecutivo
       ].some(k => String(r[k]||'').toLowerCase().includes(q));
       if(!hay) return false;
     }
@@ -390,7 +393,7 @@ function renderRows(rows, hiddenCols=[]){
   if(!filtered.length){
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 17;
+    td.colSpan = 18;
     td.style.padding = '16px';
     td.textContent = 'Sin resultados.';
     tr.appendChild(td);
@@ -415,6 +418,8 @@ function renderRows(rows, hiddenCols=[]){
     if(citaDate && citaDate < now && (statusVal === 'live' || statusVal === 'drop')){
       tr.classList.add('expired');
     }
+
+    addTextCell(tr, r[COL.ejecutivo]);
 
     const tripTd = document.createElement('td');
     const tripSpan = document.createElement('span');
@@ -452,6 +457,7 @@ function renderRows(rows, hiddenCols=[]){
         referencia: r[COL.referencia] || '',
         cliente: r[COL.cliente] || '',
         destino: r[COL.destino] || '',
+        ejecutivo: r[COL.ejecutivo] || '',
         estatus: newStatus,
         segmento: r[COL.segmento] || '',
         trmx: r[COL.trmx] || '',
@@ -555,7 +561,7 @@ function renderDaily(rows){
   $('#searchBox').value = '';
   $('#startDate').value = '';
   $('#endDate').value = '';
-  renderRows(filtered, [8,11,12,14]);
+  renderRows(filtered, [9,12,13,15]);
 }
 
 async function main(){
@@ -586,6 +592,7 @@ async function main(){
     const form = ev.target;
     const data = {
       trip: form.trip.value.trim(),
+      ejecutivo: form.ejecutivo.value.trim(),
       estatus: form.estatus.value.trim(),
       cliente: form.cliente.value.trim(),
       citaCarga: toGASDate(form.citaCarga.value)
@@ -594,6 +601,7 @@ async function main(){
     if(ok){
       const row = {};
       row[COL.trip] = data.trip;
+      row[COL.ejecutivo] = data.ejecutivo;
       row[COL.estatus] = data.estatus;
       row[COL.cliente] = data.cliente;
       row[COL.citaCarga] = data.citaCarga;
@@ -618,6 +626,7 @@ async function main(){
       referencia: form.referencia.value.trim(),
       cliente: form.cliente.value.trim(),
       destino: form.destino.value.trim(),
+      ejecutivo: form.ejecutivo.value.trim(),
       estatus: row ? row[COL.estatus] : '',
       segmento: form.segmento.value.trim(),
       trmx: form.trmx.value.trim(),
@@ -637,6 +646,7 @@ async function main(){
       row[COL.referencia] = data.referencia;
       row[COL.cliente] = data.cliente;
       row[COL.destino] = data.destino;
+      row[COL.ejecutivo] = data.ejecutivo;
       row[COL.estatus] = data.estatus;
       row[COL.segmento] = data.segmento;
       row[COL.trmx] = data.trmx;
