@@ -694,7 +694,7 @@ if (typeof document !== 'undefined') {
   const loginError = document.getElementById('loginError');
 
   function showLogin(){
-    if(loginScreen) loginScreen.style.display = 'block';
+    if(loginScreen) loginScreen.style.display = 'flex';
     if(mainEl) mainEl.style.display = 'none';
     if(sideMenu) sideMenu.style.display = 'none';
     if(logoutBtn) logoutBtn.style.display = 'none';

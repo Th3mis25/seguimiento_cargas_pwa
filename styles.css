@@ -274,3 +274,59 @@ input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
+
+/* ====== Login ====== */
+#loginScreen{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--bg);
+  z-index:2000;
+}
+
+#loginForm{
+  background:var(--panel);
+  color:var(--text);
+  padding:20px;
+  border-radius:14px;
+  box-shadow:0 8px 26px rgba(0,0,0,.25), inset 0 0 1px rgba(255,255,255,.06);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  width:100%;
+  max-width:320px;
+}
+
+#loginForm .field{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+#loginForm label{
+  width:100px;
+  font-weight:600;
+  color:var(--muted);
+}
+
+#loginForm input{
+  flex:1;
+  background:#0b1f3d;
+  border:1px solid #1f3e73;
+  color:var(--text);
+  border-radius:10px;
+  padding:10px 12px;
+  outline:none;
+}
+
+#loginForm .btn{
+  align-self:center;
+}
+
+#loginError{
+  color:#ffb4b4;
+  text-align:center;
+  margin-top:8px;
+}
