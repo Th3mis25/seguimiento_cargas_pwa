@@ -8,6 +8,11 @@ html,body{
   color:var(--text);
 }
 
+body{
+  height:100vh;
+  overflow:hidden;
+}
+
 /* ====== Paleta TM ====== */
 :root{
   --bg: #0B2341;           /* fondo general */
@@ -58,8 +63,11 @@ html,body{
   color: var(--text);
   padding: 14px 20px;
   box-shadow: inset 0 0 1px rgba(255,255,255,.08);
-  margin-left:180px;
-  position:relative;
+  position:fixed;
+  top:0;
+  left:180px;
+  right:0;
+  z-index:1000;
 }
 .app-header h1{
   position:absolute;
@@ -72,7 +80,15 @@ html,body{
 
 /* ====== Contenedor ====== */
 .container {
-  margin: 22px 0 22px 180px;
+  position:fixed;
+  top:68px;
+  left:180px;
+  right:0;
+  bottom:0;
+  padding:22px 0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
 }
 
 /* ====== Controles ====== */
@@ -96,13 +112,15 @@ html,body{
 
 /* ====== Tabla ====== */
 .table-wrap {
-  overflow: auto;
+  flex:1;
+  overflow:auto;
   margin-top:14px;
   background: var(--panel-2);
   padding: 12px 0;
   border-radius: 14px;
   box-shadow: 0 8px 26px rgba(0,0,0,.25), inset 0 0 1px rgba(255,255,255,.05);
   width: 100%;
+  min-height:0;
 }
 #loadsTable{
   width: 100%;
