@@ -422,6 +422,10 @@ function renderRows(rows, hiddenCols=[]){
     const statusText = document.createElement('span');
     statusText.className = 'status-text';
     statusText.textContent = r[COL.estatus] || '';
+    const statusVal = (r[COL.estatus] || '').trim().toLowerCase();
+    if(statusVal === 'delivered'){
+      statusText.classList.add('badge','green');
+    }
     wrapper.appendChild(statusText);
 
     const sel = document.createElement('select');
