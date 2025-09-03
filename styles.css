@@ -29,7 +29,7 @@ body{
   --badge-yellow:#f59e0b;
   --row:#142f54;
   --row-alt:#11284a;
-  --row-overdue:rgba(239,68,68,0.15);
+  --row-overdue:rgba(239,68,68,0.3);
   --row-border:#274770;
   --scroll-track:#4b5563;    /* gris pista */
   --scroll-thumb:#f3f4f6;    /* blanco pulgar */
