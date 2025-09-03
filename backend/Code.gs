@@ -1,6 +1,6 @@
 const SHEET_NAME = 'Tabla_1';
 const AUTH_TOKEN = 'demo-token';
-const SHEET_TIMEZONE = 'UTC'; // keep times without local offsets
+const SHEET_TIMEZONE = 'America/Mexico_City'; // interpret times as local to avoid 6h offset
 
 function isAuthorized(e) {
   return e.parameter && e.parameter.token === AUTH_TOKEN;
