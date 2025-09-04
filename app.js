@@ -378,10 +378,20 @@ function populateStatusFilter(rows){
   if(statuses.includes(current)) select.value = current;
 }
 
+function populateEjecutivoFilter(rows){
+  const select = $('#ejecutivoFilter');
+  const current = select.value;
+  const ejecutivos = Array.from(new Set(rows.map(r => r[COL.ejecutivo]).filter(Boolean)));
+  ejecutivos.sort((a,b)=>a.localeCompare(b));
+  select.innerHTML = '<option value="">Todos</option>' + ejecutivos.map(e=>`<option>${escapeHtml(e)}</option>`).join('');
+  if(ejecutivos.includes(current)) select.value = current;
+}
+
 function renderRows(rows, hiddenCols=[]){
   setColumnVisibility([9,12,13,15], true); // mostrar por defecto
 
   const statusFilter = $('#statusFilter').value;
+  const ejecutivoFilter = $('#ejecutivoFilter').value;
   const q = $('#searchBox').value.trim().toLowerCase();
   const startVal = $('#startDate').value;
   const endVal = $('#endDate').value;
@@ -401,6 +411,8 @@ function renderRows(rows, hiddenCols=[]){
   const filtered = rows.filter(r=>{
     const s = String(r[COL.estatus]||'');
     if(statusFilter && s !== statusFilter) return false;
+    const e = String(r[COL.ejecutivo]||'');
+    if(ejecutivoFilter && e !== ejecutivoFilter) return false;
     if(q){
       const hay = [
         COL.trip, COL.caja, COL.referencia, COL.cliente, COL.destino,
@@ -577,6 +589,7 @@ function renderRows(rows, hiddenCols=[]){
 function renderGeneral(rows){
   currentView = 'general';
   $('#statusFilter').value = '';
+  $('#ejecutivoFilter').value = '';
   $('#searchBox').value = '';
   $('#startDate').value = '';
   $('#endDate').value = '';
@@ -598,6 +611,7 @@ function renderDaily(rows){
     return cita >= today && cita < tomorrow;
   });
   $('#statusFilter').value = '';
+  $('#ejecutivoFilter').value = '';
   $('#searchBox').value = '';
   $('#startDate').value = '';
   $('#endDate').value = '';
@@ -607,6 +621,7 @@ function renderDaily(rows){
 async function main(){
   cache = await fetchData();
   populateStatusFilter(cache);
+  populateEjecutivoFilter(cache);
   renderDaily(cache);
 
   fillStatusSelect($('#addForm select[name="estatus"]'), '', true);
@@ -614,9 +629,11 @@ async function main(){
   $('#refreshBtn').addEventListener('click', async ()=>{
     cache = await fetchData();
     populateStatusFilter(cache);
+    populateEjecutivoFilter(cache);
     currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
   });
   $('#statusFilter').addEventListener('change', ()=>renderRows(cache));
+  $('#ejecutivoFilter').addEventListener('change', ()=>renderRows(cache));
   $('#searchBox').addEventListener('input', ()=>renderRows(cache));
   $('#startDate').addEventListener('change', ()=>renderRows(cache));
   $('#endDate').addEventListener('change', ()=>renderRows(cache));
@@ -647,6 +664,7 @@ async function main(){
       row[COL.citaCarga] = data.citaCarga;
       cache.push(row);
       populateStatusFilter(cache);
+      populateEjecutivoFilter(cache);
       currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
       form.reset();
       $('#addModal').classList.remove('show');
@@ -701,6 +719,7 @@ async function main(){
     }
     if(ok){
       populateStatusFilter(cache);
+      populateEjecutivoFilter(cache);
       currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
       $('#editModal').classList.remove('show');
     }
