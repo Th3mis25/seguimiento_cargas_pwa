@@ -6,24 +6,23 @@ function isAuthorized(e) {
   return e.parameter && e.parameter.token === AUTH_TOKEN;
 }
 
+function createJsonOutput(payload, status) {
+  return ContentService.createTextOutput()
+    .setContent(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    .setStatusCode(status);
+}
+
 function doPost(e) {
   if (!e.postData) {
-    return ContentService.createTextOutput('')
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeader('Access-Control-Allow-Origin', '*')
-      .setHeader('Access-Control-Allow-Headers', 'Content-Type')
-      .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    return createJsonOutput({}, 200);
   }
 
-  var output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
-  output.setHeader('Access-Control-Allow-Origin', '*');
-  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-
   if (!isAuthorized(e)) {
-    output.setContent(JSON.stringify({ error: 'Unauthorized' }));
-    return output;
+    return createJsonOutput({ error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -55,7 +54,7 @@ function doPost(e) {
         ''  // Tracking
       ];
       sheet.appendRow(row);
-      output.setContent(JSON.stringify({ success: true }));
+      return createJsonOutput({ success: true }, 200);
     } else if (p.action === 'update') {
       var data = sheet.getDataRange().getValues();
       var headers = data[0];
@@ -99,26 +98,19 @@ function doPost(e) {
           sheet.getRange(rowIndex + 1, idx + 1).setValue(map[h]);
         }
       }
-      output.setContent(JSON.stringify({ success: true }));
+      return createJsonOutput({ success: true }, 200);
     } else {
-      output.setContent(JSON.stringify({ error: 'Unsupported action' }));
+      return createJsonOutput({ error: 'Unsupported action' }, 400);
     }
   } catch (err) {
-    output.setContent(JSON.stringify({ error: err.message }));
+    var status = err.message === 'Trip not found' ? 400 : 500;
+    return createJsonOutput({ error: err.message }, status);
   }
-  return output;
 }
 
 function doGet(e) {
-  var output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
-  output.setHeader('Access-Control-Allow-Origin', '*');
-  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-
   if (!isAuthorized(e)) {
-    output.setContent(JSON.stringify({ error: 'Unauthorized' }));
-    return output;
+    return createJsonOutput({ error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -134,12 +126,10 @@ function doGet(e) {
           : cell;
       });
     });
-    output.setContent(JSON.stringify({ data: formattedData }));
+    return createJsonOutput({ data: formattedData }, 200);
   } catch (err) {
-    output.setContent(JSON.stringify({ error: err.message }));
+    return createJsonOutput({ error: err.message }, 500);
   }
-
-  return output;
 }
 
 function doOptions(e) {
