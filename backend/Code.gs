@@ -58,6 +58,38 @@ function doPost(e) {
       ];
       sheet.appendRow(row);
       return createJsonOutput({ success: true }, 200);
+    } else if (p.action === 'bulkAdd') {
+      var rows;
+      try {
+        rows = JSON.parse(p.rows || '[]');
+      } catch(err) {
+        throw new Error('Invalid rows data');
+      }
+      if (!Array.isArray(rows)) throw new Error('Invalid rows data');
+      var headers = sheet.getDataRange().getValues()[0];
+      var headerMap = {};
+      for (var i = 0; i < headers.length; i++) {
+        headerMap[String(headers[i]).trim().toLowerCase()] = i;
+      }
+      var values = rows.map(function(r){
+        var arr = new Array(headers.length).fill('');
+        for (var key in r) {
+          var idx = headerMap[String(key).trim().toLowerCase()];
+          if (idx > -1) {
+            var val = r[key];
+            if (key === 'Cita carga' || key === 'Llegada carga' ||
+                key === 'Cita entrega' || key === 'Llegada entrega') {
+              val = val ? Utilities.parseDate(val, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
+            }
+            arr[idx] = val;
+          }
+        }
+        return arr;
+      });
+      if(values.length){
+        sheet.getRange(sheet.getLastRow() + 1, 1, values.length, headers.length).setValues(values);
+      }
+      return createJsonOutput({ success: true, inserted: values.length }, 200);
     } else if (p.action === 'update') {
       var data = sheet.getDataRange().getValues();
       var headers = data[0];
