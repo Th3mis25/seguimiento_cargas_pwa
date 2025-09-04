@@ -34,9 +34,11 @@ function doPost(e) {
     if (p.action === 'add') {
       // Interpret incoming time using the sheet timezone to avoid offsets
       var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
-      if (!p.ejecutivo) throw new Error('Missing ejecutivo');
+      // Allow either "ejecutivo" or "Ejecutivo" parameter names
+      var ejecutivo = (p.ejecutivo || p.Ejecutivo || '').trim();
+      if (!ejecutivo) throw new Error('Missing ejecutivo');
       var row = [
-        p.ejecutivo || '',
+        ejecutivo,
         p.trip || '',
         '', // Caja
         '', // Referencia
@@ -59,7 +61,12 @@ function doPost(e) {
     } else if (p.action === 'update') {
       var data = sheet.getDataRange().getValues();
       var headers = data[0];
-      var tripIdx = headers.indexOf('Trip');
+      // build a case-insensitive header map to avoid issues with extra spaces
+      var headerMap = {};
+      for (var i = 0; i < headers.length; i++) {
+        headerMap[String(headers[i]).trim().toLowerCase()] = i;
+      }
+      var tripIdx = headerMap['trip'];
       if (tripIdx === -1) throw new Error('Trip column not found');
       var rowIndex = -1;
       for (var i = 1; i < data.length; i++) {
@@ -70,13 +77,14 @@ function doPost(e) {
       }
       if (rowIndex === -1) throw new Error('Trip not found');
       // Parse dates using the sheet timezone to keep the submitted local time without adding offsets
-      if (!p.ejecutivo) throw new Error('Missing ejecutivo');
+      var ejecutivo = (p.ejecutivo || p.Ejecutivo || '').trim();
+      if (!ejecutivo) throw new Error('Missing ejecutivo');
       var citaCarga = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var llegadaCarga = p.llegadaCarga ? Utilities.parseDate(p.llegadaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var citaEntrega = p.citaEntrega ? Utilities.parseDate(p.citaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var llegadaEntrega = p.llegadaEntrega ? Utilities.parseDate(p.llegadaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var map = {
-        'Ejecutivo': p.ejecutivo || '',
+        'Ejecutivo': ejecutivo,
         'Trip': p.trip || '',
         'Caja': p.caja || '',
         'Referencia': p.referencia || '',
@@ -95,7 +103,7 @@ function doPost(e) {
         'Tracking': p.tracking || ''
       };
       for (var h in map) {
-        var idx = headers.indexOf(h);
+        var idx = headerMap[h.toLowerCase()];
         if (idx > -1) {
           sheet.getRange(rowIndex + 1, idx + 1).setValue(map[h]);
         }
