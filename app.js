@@ -11,7 +11,7 @@ const SECURE_CONFIG = { authUsers: [], apiToken: '' };
 
 async function loadSecureConfig(){
   try{
-    const res = await fetch('./secure-config', { cache:'no-store' });
+    const res = await fetch('./secure-config.json', { cache:'no-store' });
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     SECURE_CONFIG.authUsers = json.AUTH_USERS || json.authUsers || [];
