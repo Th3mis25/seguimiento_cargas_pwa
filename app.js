@@ -6,6 +6,21 @@
 // Se obtiene de `config.js` para poder configurarse al desplegar.
 const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) || '';
 
+// Configuración sensible cargada desde un endpoint seguro.
+const SECURE_CONFIG = { authUsers: [], apiToken: '' };
+
+async function loadSecureConfig(){
+  try{
+    const res = await fetch('./secure-config', { cache:'no-store' });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    SECURE_CONFIG.authUsers = json.AUTH_USERS || json.authUsers || [];
+    SECURE_CONFIG.apiToken = json.API_TOKEN || json.apiToken || '';
+  }catch(err){
+    console.error('loadSecureConfig error', err);
+  }
+}
+
 const DEFAULT_LOCALE = 'es-MX';
 
 // Cabeceras EXACTAS en el orden de tu hoja (las que quieres ver en la app)
@@ -182,7 +197,7 @@ async function fetchData(){
   tb.innerHTML = `<tr><td colspan="18" style="padding:16px">Cargando…</td></tr>`;
 
     try{
-      const token = (typeof window !== 'undefined' && window.APP_CONFIG?.API_TOKEN) || '';
+      const token = SECURE_CONFIG.apiToken || '';
       const url = token ? `${API_BASE}?token=${encodeURIComponent(token)}` : API_BASE;
       const res  = await fetch(url,{ cache:'no-store' });
     if(!res.ok){
@@ -209,7 +224,7 @@ async function fetchData(){
 
 async function addRecord(data){
     try{
-      const token = (typeof window !== 'undefined' && window.APP_CONFIG?.API_TOKEN) || '';
+      const token = SECURE_CONFIG.apiToken || '';
       const body = new URLSearchParams({ action:'add', token, ...data });
       const res = await fetch(API_BASE,{
         method:'POST',
@@ -253,7 +268,7 @@ async function addRecord(data){
 
 async function updateRecord(data){
     try{
-      const token = (typeof window !== 'undefined' && window.APP_CONFIG?.API_TOKEN) || '';
+      const token = SECURE_CONFIG.apiToken || '';
       const body = new URLSearchParams({ action:'update', token, ...data });
       const res = await fetch(API_BASE,{ method:'POST', body });
     let json;
@@ -710,61 +725,65 @@ async function main(){
   });
 }
 if (typeof document !== 'undefined') {
-  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
-  }
-
-  const loginScreen = document.getElementById('loginScreen');
-  const mainEl = document.querySelector('main.container');
-  const sideMenu = document.querySelector('.side-menu');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const loginForm = document.getElementById('loginForm');
-  const loginError = document.getElementById('loginError');
-
-  function showLogin(){
-    if(loginScreen) loginScreen.style.display = 'flex';
-    if(mainEl) mainEl.style.display = 'none';
-    if(sideMenu) sideMenu.style.display = 'none';
-    if(logoutBtn) logoutBtn.style.display = 'none';
-  }
-
-  function showApp(){
-    if(loginScreen) loginScreen.style.display = 'none';
-    if(sideMenu) sideMenu.style.display = '';
-    if(mainEl) mainEl.style.display = '';
-    if(logoutBtn) logoutBtn.style.display = 'inline-block';
-    if(!mainInitialized){
-      main();
-      mainInitialized = true;
+  (async () => {
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
     }
-  }
 
-  if(isLoggedIn){
-    showApp();
-  }else{
-    showLogin();
-  }
+    await loadSecureConfig();
 
-  loginForm?.addEventListener('submit', ev=>{
-    ev.preventDefault();
-    const user = loginForm.user.value.trim();
-    const pass = loginForm.password.value.trim();
-    const users = (typeof window !== 'undefined' && window.APP_CONFIG?.AUTH_USERS) || [];
-    const ok = users.some(u => u.user === user && u.password === pass);
-    if(ok){
-      isLoggedIn = true;
-      if(typeof localStorage !== 'undefined') localStorage.setItem('isLoggedIn','true');
+    const loginScreen = document.getElementById('loginScreen');
+    const mainEl = document.querySelector('main.container');
+    const sideMenu = document.querySelector('.side-menu');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+
+    function showLogin(){
+      if(loginScreen) loginScreen.style.display = 'flex';
+      if(mainEl) mainEl.style.display = 'none';
+      if(sideMenu) sideMenu.style.display = 'none';
+      if(logoutBtn) logoutBtn.style.display = 'none';
+    }
+
+    function showApp(){
+      if(loginScreen) loginScreen.style.display = 'none';
+      if(sideMenu) sideMenu.style.display = '';
+      if(mainEl) mainEl.style.display = '';
+      if(logoutBtn) logoutBtn.style.display = 'inline-block';
+      if(!mainInitialized){
+        main();
+        mainInitialized = true;
+      }
+    }
+
+    if(isLoggedIn){
       showApp();
-      loginForm.reset();
-      if(loginError) loginError.textContent = '';
     }else{
-      if(loginError) loginError.textContent = 'Credenciales incorrectas';
+      showLogin();
     }
-  });
 
-  logoutBtn?.addEventListener('click', ()=>{
-    isLoggedIn = false;
-    if(typeof localStorage !== 'undefined') localStorage.removeItem('isLoggedIn');
-    showLogin();
-  });
+    loginForm?.addEventListener('submit', ev=>{
+      ev.preventDefault();
+      const user = loginForm.user.value.trim();
+      const pass = loginForm.password.value.trim();
+      const users = SECURE_CONFIG.authUsers || [];
+      const ok = users.some(u => u.user === user && u.password === pass);
+      if(ok){
+        isLoggedIn = true;
+        if(typeof localStorage !== 'undefined') localStorage.setItem('isLoggedIn','true');
+        showApp();
+        loginForm.reset();
+        if(loginError) loginError.textContent = '';
+      }else{
+        if(loginError) loginError.textContent = 'Credenciales incorrectas';
+      }
+    });
+
+    logoutBtn?.addEventListener('click', ()=>{
+      isLoggedIn = false;
+      if(typeof localStorage !== 'undefined') localStorage.removeItem('isLoggedIn');
+      showLogin();
+    });
+  })();
 }
