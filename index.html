@@ -178,13 +178,5 @@
 <script src="./config.js"></script>
 <script src="./app.js"></script>
 
-  <!-- Registro del Service Worker -->
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js", { scope: "./" })
-        .then(() => console.log("SW registrado correctamente"))
-        .catch(err => console.error("Error registrando SW:", err));
-    }
-  </script>
 </body>
 </html>

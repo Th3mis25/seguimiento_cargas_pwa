@@ -690,12 +690,12 @@ async function main(){
       if(tr) openEditModal(tr.dataset.trip);
     }
   });
-
-  if('serviceWorker' in navigator){
-    try{ await navigator.serviceWorker.register('./sw.js'); }catch{}
-  }
 }
 if (typeof document !== 'undefined') {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+
   const loginScreen = document.getElementById('loginScreen');
   const mainEl = document.querySelector('main.container');
   const sideMenu = document.querySelector('.side-menu');
