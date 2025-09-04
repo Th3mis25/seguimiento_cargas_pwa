@@ -7,13 +7,16 @@ function isAuthorized(e) {
 }
 
 function createJsonOutput(payload, status) {
+  if (typeof status === 'number') {
+    payload = Object(payload);
+    payload.status = status;
+  }
   return ContentService.createTextOutput()
     .setContent(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON)
     .setHeader('Access-Control-Allow-Origin', '*')
     .setHeader('Access-Control-Allow-Headers', 'Content-Type')
-    .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    .setStatusCode(status);
+    .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
 }
 
 function doPost(e) {
