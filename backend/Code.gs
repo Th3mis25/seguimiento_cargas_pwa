@@ -32,30 +32,42 @@ function doPost(e) {
     if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
     var timeZone = ss.getSpreadsheetTimeZone();
     if (p.action === 'add') {
+      var headers = sheet.getDataRange().getValues()[0];
+      var headerMap = {};
+      for (var i = 0; i < headers.length; i++) {
+        headerMap[String(headers[i]).trim().toLowerCase()] = i;
+      }
       // Interpret incoming time using the sheet timezone to avoid offsets
       var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       // Allow either "ejecutivo" or "Ejecutivo" parameter names
       var ejecutivo = (p.ejecutivo || p.Ejecutivo || '').trim();
       if (!ejecutivo) throw new Error('Missing ejecutivo');
-      var row = [
-        ejecutivo,
-        p.trip || '',
-        '', // Caja
-        '', // Referencia
-        p.cliente || '',
-        '', // Destino
-        p.estatus || '',
-        '', // Segmento
-        '', // TR-MX
-        '', // TR-USA
-        citaCargaDate,
-        '', // Llegada carga
-        '', // Cita entrega
-        '', // Llegada entrega
-        '', // Comentarios
-        '', // Docs
-        ''  // Tracking
-      ];
+      var row = new Array(headers.length).fill('');
+      var map = {
+        'Ejecutivo': ejecutivo,
+        'Trip': p.trip || '',
+        'Caja': '',
+        'Referencia': '',
+        'Cliente': p.cliente || '',
+        'Destino': '',
+        'Estatus': p.estatus || '',
+        'Segmento': '',
+        'TR-MX': '',
+        'TR-USA': '',
+        'Cita carga': citaCargaDate,
+        'Llegada carga': '',
+        'Cita entrega': '',
+        'Llegada entrega': '',
+        'Comentarios': '',
+        'Docs': '',
+        'Tracking': ''
+      };
+      for (var h in map) {
+        var idx = headerMap[h.toLowerCase()];
+        if (idx > -1) {
+          row[idx] = map[h];
+        }
+      }
       sheet.appendRow(row);
       return createJsonOutput({ success: true }, 200);
     } else if (p.action === 'bulkAdd') {
