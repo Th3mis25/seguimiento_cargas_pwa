@@ -156,9 +156,16 @@ function fillStatusSelect(sel, current='', allowEmpty=false){
     STATUS_OPTIONS.map(s=>`<option value="${s}">${s}</option>`).join('');
   if(current) sel.value = current;
 }
-function toast(msg){
-  const el = $('#toast'); el.textContent = msg;
-  el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1800);
+function toast(msg, type=''){
+  const el = $('#toast');
+  el.textContent = msg;
+  if(type === 'success'){
+    el.classList.add('success');
+  }else{
+    el.classList.remove('success');
+  }
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),1800);
 }
 
 // convierte fila tipo array -> objeto con HEADERS
@@ -258,7 +265,7 @@ async function addRecord(data){
   }catch(err){
     console.error('addRecord error', err);
     if(!navigator.onLine || (err instanceof TypeError && /failed to fetch/i.test(err.message))){
-      toast('Saved');
+      toast('Saved','success');
       return true;
     }
     toast('Error al agregar: ' + err.message);
@@ -299,7 +306,7 @@ async function updateRecord(data){
   }catch(err){
     console.error('updateRecord error', err);
     if(!navigator.onLine || (err instanceof TypeError && /failed to fetch/i.test(err.message))){
-      toast('Saved');
+      toast('Saved','success');
       return true;
     }
     toast('Error al actualizar: ' + err.message);
