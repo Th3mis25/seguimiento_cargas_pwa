@@ -1,0 +1,7 @@
+{
+  "AUTH_USERS": [
+    { "user": "juan",  "password": "clave123" },
+    { "user": "maria", "password": "pass456" }
+  ],
+  "API_TOKEN": "demo-token"
+}
