@@ -1,5 +1,5 @@
-// Service Worker básico para cachear assets de la PWA
-const CACHE_NAME = 'cargas-pwa-v11';
+// Service Worker para cachear assets de la PWA
+const CACHE_NAME = 'cargas-pwa-v12';
 const DYNAMIC_CACHE = 'cargas-pwa-dynamic-v1';
 const ASSETS = [
   './',
@@ -8,26 +8,28 @@ const ASSETS = [
   './app.js',
   './assets/logo.png',
   './manifest.json',
-  // agrega aquí otros archivos si los tienes (manifest, íconos, etc.)
+  './offline.html',
 ];
 
 const ASSET_URLS = ASSETS.map(a => new URL(a, self.location).pathname);
 
-self.addEventListener('install', e=>{
+self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(c => c.addAll(ASSETS))
   );
 });
 
-self.addEventListener('activate', e=>{
+self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.filter(k=>![CACHE_NAME, DYNAMIC_CACHE].includes(k)).map(k=>caches.delete(k))
-    ))
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.filter(k => ![CACHE_NAME, DYNAMIC_CACHE].includes(k)).map(k => caches.delete(k))
+      )
+    )
   );
 });
 
-self.addEventListener('fetch', e=>{
+self.addEventListener('fetch', e => {
   const { request } = e;
 
   if (request.method !== 'GET') {
@@ -40,19 +42,31 @@ self.addEventListener('fetch', e=>{
     e.respondWith(fetch(request));
     return;
   }
-  if (!ASSET_URLS.includes(url.pathname)) {
-    e.respondWith(fetch(request));
+
+  if (ASSET_URLS.includes(url.pathname)) {
+    e.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(request);
+      const fetchPromise = fetch(request)
+        .then(response => {
+          cache.put(request, response.clone());
+          return response;
+        })
+        .catch(async () => cached || (await caches.match('/offline.html')));
+      return cached || fetchPromise;
+    })());
     return;
   }
 
-  e.respondWith(
-    caches.match(request).then(cacheRes=>{
-      const fetchPromise = fetch(request).then(netRes=>{
-        const clone = netRes.clone();
-        caches.open(DYNAMIC_CACHE).then(c=>c.put(request, clone));
-        return netRes;
-      }).catch(()=>cacheRes || Response.error());
-      return cacheRes || fetchPromise;
-    })
-  );
+  e.respondWith((async () => {
+    try {
+      const response = await fetch(request);
+      const cache = await caches.open(DYNAMIC_CACHE);
+      cache.put(request, response.clone());
+      return response;
+    } catch {
+      const cached = await caches.match(request);
+      return cached || (await caches.match('/offline.html'));
+    }
+  })());
 });
