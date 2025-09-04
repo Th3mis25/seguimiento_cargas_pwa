@@ -29,6 +29,7 @@ const HEADERS = [
   'TR-MX','TR-USA','Cita carga','Llegada carga','Cita entrega','Llegada entrega',
   'Comentarios','Docs','Tracking'
 ];
+const REQUIRED_HEADERS = ['Trip','Ejecutivo','Estatus','Cliente','Cita carga'];
 
 // Mapa de claves internas
 const COL = {
@@ -347,7 +348,7 @@ async function handleBulkUpload(file){
     }
 
     const headers = Object.keys(data[0]).map(h => h.trim().toLowerCase());
-    const missing = HEADERS.filter(h => !headers.includes(h.toLowerCase()));
+    const missing = REQUIRED_HEADERS.filter(h => !headers.includes(h.toLowerCase()));
     if(missing.length){
       if(statusEl) statusEl.textContent = 'Faltan columnas: ' + missing.join(', ');
       return;
@@ -361,23 +362,11 @@ async function handleBulkUpload(file){
         obj[h] = key ? row[key] : '';
       }
       const payload = {
-        ejecutivo: obj[COL.ejecutivo],
-        trip: obj[COL.trip],
-        caja: obj[COL.caja],
-        referencia: obj[COL.referencia],
-        cliente: obj[COL.cliente],
-        destino: obj[COL.destino],
-        estatus: obj[COL.estatus],
-        segmento: obj[COL.segmento],
-        trmx: obj[COL.trmx],
-        trusa: obj[COL.trusa],
-        citaCarga: toGASDate(obj[COL.citaCarga]),
-        llegadaCarga: toGASDate(obj[COL.llegadaCarga]),
-        citaEntrega: toGASDate(obj[COL.citaEntrega]),
-        llegadaEntrega: toGASDate(obj[COL.llegadaEntrega]),
-        comentarios: obj[COL.comentarios],
-        docs: obj[COL.docs],
-        tracking: obj[COL.tracking]
+        trip: headers.includes('trip') ? obj[COL.trip] : '',
+        ejecutivo: headers.includes('ejecutivo') ? obj[COL.ejecutivo] : '',
+        estatus: headers.includes('estatus') ? obj[COL.estatus] : '',
+        cliente: headers.includes('cliente') ? obj[COL.cliente] : '',
+        citaCarga: headers.includes('cita carga') ? toGASDate(obj[COL.citaCarga]) : ''
       };
       const ok = await addRecord(payload);
       if(!ok){
