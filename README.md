@@ -9,6 +9,7 @@ Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sh
 
 ## Configuración
 - URL de Google Apps Script: defínela en `config.js`.
+- Usuarios autorizados y el token de API deben provenir de un backend seguro.
 - Nombre de la hoja: `Tabla_1`
 - Columnas esperadas:
   - Trip, Caja, Referencia, Cliente, Destino, Estatus, Segmento, TR-MX, TR-USA, Cita carga, Llegada carga, Cita entrega, Llegada entrega, Comentarios, Docs, Tracking
@@ -31,4 +32,8 @@ Para suministrar la URL de la API en producción puedes generar el archivo `conf
 export API_BASE="https://tu-web-app.example.com"
 echo "window.APP_CONFIG = { API_BASE: '${API_BASE}' };" > config.js
 ```
+
+Los valores sensibles (`AUTH_USERS`, `API_TOKEN`) deben servirse desde un
+endpoint protegido (por ejemplo `/secure-config`) o inyectarse mediante
+variables de entorno en el backend.
 
