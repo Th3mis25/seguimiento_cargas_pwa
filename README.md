@@ -34,6 +34,6 @@ echo "window.APP_CONFIG = { API_BASE: '${API_BASE}' };" > config.js
 ```
 
 Los valores sensibles (`AUTH_USERS`, `API_TOKEN`) deben servirse desde un
-endpoint protegido (por ejemplo `/secure-config`) o inyectarse mediante
+endpoint protegido o un archivo JSON (por ejemplo `/secure-config.json`) o inyectarse mediante
 variables de entorno en el backend.
 
