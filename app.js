@@ -314,6 +314,90 @@ async function updateRecord(data){
   }
 }
 
+async function handleBulkUpload(file){
+  if(!file) return;
+  const statusEl = document.getElementById('bulkUploadStatus');
+  if(statusEl) statusEl.textContent = 'Leyendo archivo...';
+  try{
+    const reader = new FileReader();
+    const data = await new Promise((resolve, reject)=>{
+      reader.onerror = () => reject(reader.error);
+      reader.onload = e => {
+        try{
+          let workbook;
+          const name = file.name.toLowerCase();
+          if(name.endsWith('.csv')){
+            workbook = XLSX.read(e.target.result, { type:'binary' });
+          }else{
+            const bytes = new Uint8Array(e.target.result);
+            workbook = XLSX.read(bytes, { type:'array' });
+          }
+          const firstSheet = workbook.SheetNames[0];
+          const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval:'' });
+          resolve(rows);
+        }catch(err){ reject(err); }
+      };
+      if(file.name.toLowerCase().endsWith('.csv')) reader.readAsBinaryString(file);
+      else reader.readAsArrayBuffer(file);
+    });
+
+    if(!Array.isArray(data) || !data.length){
+      if(statusEl) statusEl.textContent = 'Archivo vacío';
+      return;
+    }
+
+    const headers = Object.keys(data[0]).map(h => h.trim().toLowerCase());
+    const missing = HEADERS.filter(h => !headers.includes(h.toLowerCase()));
+    if(missing.length){
+      if(statusEl) statusEl.textContent = 'Faltan columnas: ' + missing.join(', ');
+      return;
+    }
+
+    let count = 0;
+    for(const row of data){
+      const obj = {};
+      for(const h of HEADERS){
+        const key = Object.keys(row).find(k => k.trim().toLowerCase() === h.toLowerCase());
+        obj[h] = key ? row[key] : '';
+      }
+      const payload = {
+        ejecutivo: obj[COL.ejecutivo],
+        trip: obj[COL.trip],
+        caja: obj[COL.caja],
+        referencia: obj[COL.referencia],
+        cliente: obj[COL.cliente],
+        destino: obj[COL.destino],
+        estatus: obj[COL.estatus],
+        segmento: obj[COL.segmento],
+        trmx: obj[COL.trmx],
+        trusa: obj[COL.trusa],
+        citaCarga: toGASDate(obj[COL.citaCarga]),
+        llegadaCarga: toGASDate(obj[COL.llegadaCarga]),
+        citaEntrega: toGASDate(obj[COL.citaEntrega]),
+        llegadaEntrega: toGASDate(obj[COL.llegadaEntrega]),
+        comentarios: obj[COL.comentarios],
+        docs: obj[COL.docs],
+        tracking: obj[COL.tracking]
+      };
+      const ok = await addRecord(payload);
+      if(!ok){
+        if(statusEl) statusEl.textContent = `Error en fila ${count+1}`;
+        return;
+      }
+      count++;
+      if(statusEl) statusEl.textContent = `Importados ${count}/${data.length}`;
+    }
+    if(statusEl) statusEl.textContent = `Importación completa (${count})`;
+    cache = await fetchData();
+    populateStatusFilter(cache);
+    populateEjecutivoFilter(cache);
+    currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
+  }catch(err){
+    console.error('handleBulkUpload error', err);
+    if(statusEl) statusEl.textContent = 'Error: ' + err.message;
+  }
+}
+
 function buildCopyMsg(r){
   const lines = [];
   lines.push(`Caja: ${r[COL.caja]||''}`);
@@ -637,6 +721,11 @@ async function main(){
   $('#searchBox').addEventListener('input', ()=>renderRows(cache));
   $('#startDate').addEventListener('change', ()=>renderRows(cache));
   $('#endDate').addEventListener('change', ()=>renderRows(cache));
+
+  $('#bulkUploadBtn').addEventListener('click', ()=>{
+    const file = $('#bulkUpload').files[0];
+    if(file) handleBulkUpload(file);
+  });
 
   $('#addBtn').addEventListener('click', ()=>{
     $('#addModal').classList.add('show');
