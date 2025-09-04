@@ -34,6 +34,7 @@ function doPost(e) {
     if (p.action === 'add') {
       // Interpret incoming time using the sheet timezone to avoid offsets
       var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
+      if (!p.ejecutivo) throw new Error('Missing ejecutivo');
       var row = [
         p.ejecutivo || '',
         p.trip || '',
@@ -69,6 +70,7 @@ function doPost(e) {
       }
       if (rowIndex === -1) throw new Error('Trip not found');
       // Parse dates using the sheet timezone to keep the submitted local time without adding offsets
+      if (!p.ejecutivo) throw new Error('Missing ejecutivo');
       var citaCarga = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var llegadaCarga = p.llegadaCarga ? Utilities.parseDate(p.llegadaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var citaEntrega = p.citaEntrega ? Utilities.parseDate(p.citaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
@@ -103,7 +105,7 @@ function doPost(e) {
       return createJsonOutput({ error: 'Unsupported action' }, 400);
     }
   } catch (err) {
-    var status = err.message === 'Trip not found' ? 400 : 500;
+    var status = (err.message === 'Trip not found' || err.message === 'Missing ejecutivo') ? 400 : 500;
     return createJsonOutput({ error: err.message }, status);
   }
 }
