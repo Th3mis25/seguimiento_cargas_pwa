@@ -226,6 +226,15 @@ async function addRecord(data){
       if(err.message === 'Missing application/json header') throw err;
       throw new Error('Invalid JSON');
     }
+    if(res.status === 401){
+      throw new Error(json.error || 'Unauthorized');
+    }
+    if(res.status === 400){
+      throw new Error(json.error || 'Bad Request');
+    }
+    if(res.status >= 500){
+      throw new Error(json.error || 'Server error');
+    }
     if(!res.ok || json.error){
       throw new Error(json.error || `HTTP ${res.status}`);
     }
@@ -257,6 +266,15 @@ async function updateRecord(data){
     }catch(err){
       if(err.message === 'Missing application/json header') throw err;
       throw new Error('Invalid JSON');
+    }
+    if(res.status === 401){
+      throw new Error(json.error || 'Unauthorized');
+    }
+    if(res.status === 400){
+      throw new Error(json.error || 'Bad Request');
+    }
+    if(res.status >= 500){
+      throw new Error(json.error || 'Server error');
     }
     if(!res.ok || json.error){
       throw new Error(json.error || `HTTP ${res.status}`);
