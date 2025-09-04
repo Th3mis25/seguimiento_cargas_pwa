@@ -2,7 +2,7 @@
 // Este archivo puede ser reemplazado en el despliegue para ajustar la URL de la API.
 window.APP_CONFIG = {
   // URL del Web App de Google Apps Script.
-  API_BASE: 'https://script.google.com/macros/s/AKfycbxDVBTfb40aOeBZN0bGvy12VUg7OQbUEpPFz6jyieV57MUv9idwSV3d7B-zenZ4Weho/exec'
+  API_BASE: 'https://script.google.com/macros/s/AKfycbyDBNKnJgRyUqWTOEI8rbLQalgLQp6HSOaOIDw60QecSinQtZUtCUgdkGQwpiNV8nd0/exec'
 };
 
 // Valores sensibles como AUTH_USERS y API_TOKEN deben obtenerse desde un
