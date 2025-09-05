@@ -567,6 +567,8 @@ function renderRows(rows, hiddenCols=[]){
     statusText.textContent = r[COL.estatus] || '';
     if(statusVal === 'delivered'){
       statusText.classList.add('badge','green');
+    }else if(['in transit mx','in transit usa'].includes(statusVal)){
+      statusText.classList.add('badge','blue');
     }else if(statusVal === 'cancelled'){
       statusText.classList.add('badge','red');
     }else if(statusVal === 'nuevo laredo yard'){
