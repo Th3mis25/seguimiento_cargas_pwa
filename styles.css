@@ -26,6 +26,7 @@ body{
   --badge-green:#16a34a;
   --badge-blue:#2563eb;
   --badge-red:#ef4444;
+  --badge-purple:#9333ea;
   --badge-yellow:#f59e0b;
   --row:#142f54;
   --row-alt:#11284a;
@@ -163,6 +164,7 @@ body{
 .badge.green{  background: linear-gradient(180deg,#16a34a,#0f7a36); }
 .badge.blue{   background: linear-gradient(180deg,#2563eb,#1d4ed8); }
 .badge.red{    background: linear-gradient(180deg,#ef4444,#b91c1c); }
+.badge.purple{ background: linear-gradient(180deg,#9333ea,#7e22ce); }
 .badge.yellow{ background: linear-gradient(180deg,#f59e0b,#d97706); }
 
 /* ====== Acciones ====== */
