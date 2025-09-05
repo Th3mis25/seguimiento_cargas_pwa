@@ -161,11 +161,11 @@ body{
   font-weight:600; font-size:.85rem;
   padding:2px 8px; border-radius:999px; background:#10284f;
 }
-.badge.green{  background: linear-gradient(180deg,#16a34a,#0f7a36); }
-.badge.blue{   background: linear-gradient(180deg,#2563eb,#1d4ed8); }
-.badge.red{    background: linear-gradient(180deg,#ef4444,#b91c1c); }
-.badge.purple{ background: linear-gradient(180deg,#9333ea,#7e22ce); }
-.badge.yellow{ background: linear-gradient(180deg,#f59e0b,#d97706); }
+.badge.green{  background: linear-gradient(180deg,rgba(22,163,74,.4),rgba(15,122,54,.4)), #10284f; }
+.badge.blue{   background: linear-gradient(180deg,rgba(37,99,235,.4),rgba(29,78,216,.4)), #10284f; }
+.badge.red{    background: linear-gradient(180deg,rgba(239,68,68,.4),rgba(185,28,28,.4)), #10284f; }
+.badge.purple{ background: linear-gradient(180deg,rgba(147,51,234,.4),rgba(126,34,206,.4)), #10284f; }
+.badge.yellow{ background: linear-gradient(180deg,rgba(245,158,11,.4),rgba(217,119,6,.4)), #10284f; }
 
 /* ====== Acciones ====== */
 .action-bar{
