@@ -567,6 +567,12 @@ function renderRows(rows, hiddenCols=[]){
     statusText.textContent = r[COL.estatus] || '';
     if(statusVal === 'delivered'){
       statusText.classList.add('badge','green');
+    }else if(statusVal === 'cancelled'){
+      statusText.classList.add('badge','red');
+    }else if(statusVal === 'nuevo laredo yard'){
+      statusText.classList.add('badge','purple');
+    }else if(['loading','qro yard','mty yard'].includes(statusVal)){
+      statusText.classList.add('badge','yellow');
     }
     wrapper.appendChild(statusText);
 
