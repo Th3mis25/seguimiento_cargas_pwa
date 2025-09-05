@@ -1,7 +1,7 @@
 {
   "AUTH_USERS": [
     { "user": "VPADRONR",  "password": "VP@trc.008" },
-    { "user": "maria", "password": "pass456" }
+    { "user": "DDAVILA", "password": "DD@trc.001" }
   ],
   "API_TOKEN": "demo-token"
 }
