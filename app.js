@@ -737,6 +737,7 @@ async function main(){
       trip: form.trip.value.trim(),
       ejecutivo: form.ejecutivo.value.trim(),
       estatus: form.estatus.value.trim(),
+      referencia: form.referencia.value.trim(),
       cliente: form.cliente.value.trim(),
       citaCarga: toGASDate(form.citaCarga.value)
     };
@@ -746,6 +747,7 @@ async function main(){
       row[COL.trip] = data.trip;
       row[COL.ejecutivo] = data.ejecutivo;
       row[COL.estatus] = data.estatus;
+      row[COL.referencia] = data.referencia;
       row[COL.cliente] = data.cliente;
       row[COL.citaCarga] = data.citaCarga;
       cache.push(row);

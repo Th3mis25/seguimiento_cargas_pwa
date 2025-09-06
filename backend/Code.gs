@@ -51,7 +51,7 @@ function doPost(e) {
         'Ejecutivo': ejecutivo,
         'Trip': p.trip || '',
         'Caja': '',
-        'Referencia': '',
+        'Referencia': p.referencia || '',
         'Cliente': p.cliente || '',
         'Destino': '',
         'Estatus': p.estatus || '',
