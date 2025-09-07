@@ -249,7 +249,7 @@ body{
 }
 #editModal .modal-content{
   width:50vw;
-  max-width:300px;
+  min-width:300px;
   height:70vh;
   display:flex;
   flex-direction:column;
