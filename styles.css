@@ -266,11 +266,15 @@ body{
   display:flex; flex-direction:column; gap:4px; margin-bottom:10px;
 }
 #editModal .modal-content label{
-  flex-direction:row; align-items:center; gap:10px;
+  display:grid;
+  grid-template-columns:120px 1fr;
+  align-items:center;
+  gap:10px;
+  text-align:right;
 }
 #editModal .modal-content label input,
 #editModal .modal-content label select{
-  flex:1;
+  width:100%;
 }
 .modal-content input,
 .modal-content select{
