@@ -7,6 +7,12 @@ Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sh
 - Abrir `index.html` con Live Server (VS Code extension).
 - Configura la URL de tu Google Apps Script en `config.js` o mediante la variable de entorno `API_BASE` al desplegar.
 
+## Versión móvil
+
+- Abre `mobile/index.html` con Live Server para revisar la vista optimizada para dispositivos móviles.
+- Edita el archivo `mobile/index.html` y los recursos dentro de `mobile/` para personalizar esta versión.
+- Mantén sincronizados los archivos compartidos con la versión de escritorio: cuando modifiques archivos comunes (por ejemplo `app.js`, `styles.css` o elementos en `assets/`), copia los cambios al directorio `mobile/` (ej. `cp app.js mobile/`).
+
 ## Configuración
 - URL de Google Apps Script: defínela en `config.js`.
 - Usuarios autorizados y el token de API deben provenir de un backend seguro.
