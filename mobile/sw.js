@@ -2,13 +2,13 @@
 const CACHE_NAME = 'cargas-pwa-mobile-v1';
 const DYNAMIC_CACHE = 'cargas-pwa-mobile-dynamic-v1';
 const ASSETS = [
-  '/mobile/',
-  '/mobile/index.html',
-  '/mobile/styles.css',
-  '/mobile/app.js',
-  '/assets/logo.png',
-  '/mobile/manifest.json',
-  '/offline.html',
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  '../assets/logo.png',
+  './manifest.json',
+  '../offline.html',
 ];
 
 const ASSET_URLS = ASSETS.map(a => new URL(a, self.location).pathname);
@@ -52,7 +52,7 @@ self.addEventListener('fetch', e => {
           cache.put(request, response.clone());
           return response;
         })
-        .catch(async () => cached || (await caches.match('/offline.html')));
+        .catch(async () => cached || (await caches.match('../offline.html')));
       return cached || fetchPromise;
     })());
     return;
@@ -66,7 +66,7 @@ self.addEventListener('fetch', e => {
       return response;
     } catch {
       const cached = await caches.match(request);
-      return cached || (await caches.match('/offline.html'));
+      return cached || (await caches.match('../offline.html'));
     }
   })());
 });
