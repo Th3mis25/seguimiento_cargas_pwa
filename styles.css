@@ -248,7 +248,7 @@ body{
   overflow:hidden;
 }
 #editModal .modal-content{
-  width:30vw;
+  width:26vw;
   min-width:300px;
   height:80vh;
   display:flex;
