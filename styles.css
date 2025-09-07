@@ -330,6 +330,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   align-self:center;
 }
 
+#loginForm .login-logo{
+  display:block;
+  margin:0 auto 10px;
+  max-width:150px;
+}
+
 #loginError{
   color:#ffb4b4;
   text-align:center;
