@@ -250,7 +250,7 @@ body{
 #editModal .modal-content{
   width:25vw;
   min-width:300px;
-  height:70vh;
+  height:80vh;
   display:flex;
   flex-direction:column;
 }
