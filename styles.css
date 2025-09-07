@@ -289,6 +289,15 @@ body{
 }
 .top-btn:hover{ background:var(--panel-2); }
 
+/* Consistent font size for menu and filters */
+.top-btn,
+.controls label,
+.controls input,
+.controls select,
+.controls button{
+  font-size:0.9rem;
+}
+
 /* White calendar icon */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
