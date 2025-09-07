@@ -299,8 +299,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   display:flex;
   flex-direction:column;
   gap:14px;
-  width:100%;
-  max-width:320px;
+  width:fit-content;
+  max-width:100%;
 }
 
 #loginForm .field{
