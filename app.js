@@ -8,7 +8,8 @@ if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
   const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const alreadyMobile = window.location.pathname.includes('/mobile');
   if ((isMobileWidth || isMobileUA) && !alreadyMobile) {
-    window.location.href = '/mobile/index.html';
+    // Use a relative path to support deployments under subdirectories
+    window.location.href = 'mobile/index.html';
   }
 }
 
