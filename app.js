@@ -867,7 +867,12 @@ if (typeof document !== 'undefined') {
 
     function showApp(){
       if(loginScreen) loginScreen.style.display = 'none';
-      if(sideMenu) sideMenu.style.display = '';
+      if(sideMenu){
+        sideMenu.style.display = '';
+        if(window.innerWidth > 768){
+          sideMenu.classList.add('open');
+        }
+      }
       if(mainEl) mainEl.style.display = '';
       if(logoutBtn) logoutBtn.style.display = 'inline-block';
       if(!mainInitialized){
