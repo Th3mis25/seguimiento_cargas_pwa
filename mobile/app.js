@@ -18,6 +18,9 @@
 
   if(typeof document !== 'undefined'){
     initMobileMenu();
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }
   }
 
   window.MobileApp = {

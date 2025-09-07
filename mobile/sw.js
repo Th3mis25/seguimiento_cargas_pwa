@@ -4,8 +4,8 @@ const DYNAMIC_CACHE = 'cargas-pwa-mobile-dynamic-v1';
 const ASSETS = [
   '/mobile/',
   '/mobile/index.html',
-  '/styles.css',
-  '/app.js',
+  '/mobile/styles.css',
+  '/mobile/app.js',
   '/assets/logo.png',
   '/mobile/manifest.json',
   '/offline.html',

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Tablero de seguimiento</title>
+  <link rel="manifest" href="./manifest.json"/>
+  <link rel="stylesheet" href="./styles.css"/>
+  <meta name="theme-color" content="#0F2C5C"/>
+</head>
+<body>
+  <header class="m-header">
+    <img src="../assets/logo.png" alt="TM Transportation" class="m-header__logo"/>
+    <h1 class="m-header__title">Tablero</h1>
+    <button id="menuToggle" aria-label="Abrir menú">☰</button>
+  </header>
+
+  <nav class="mobile-menu"></nav>
+
+  <main class="m-container">
+    <p>Bienvenido a la versión móvil.</p>
+  </main>
+
+  <nav class="m-nav">
+    <a href="#" class="m-nav__item m-nav__item--active">Inicio</a>
+  </nav>
+
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+  <script>
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }
+  </script>
+</body>
+</html>
