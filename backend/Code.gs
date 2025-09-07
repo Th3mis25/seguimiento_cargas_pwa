@@ -1,5 +1,5 @@
 const SHEET_NAME = 'Tabla_1';
-const AUTH_TOKEN = 'demo-token';
+const AUTH_TOKEN = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
 const SPREADSHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
 
 function isAuthorized(e) {
