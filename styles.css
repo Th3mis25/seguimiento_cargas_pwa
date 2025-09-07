@@ -359,15 +359,20 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   text-align:center;
   margin-top:8px;
 }
-
-@media (max-width: 768px) {
-  .app-header,
-  .container {
-    left: 0;
-    width: 100%;
+/* ====== Móvil ====== */
+@media (max-width: 600px){
+  .controls{
+    flex-direction:column;
   }
-
-  .container {
-    top: 68px;
+  .controls input,
+  .controls select{
+    width:100%;
+  }
+  .table-wrap{
+    overflow-x:auto;
+  }
+  #loadsTable th:nth-child(n+8):not(:last-child),
+  #loadsTable td:nth-child(n+8):not(:last-child){
+    display:none;
   }
 }
