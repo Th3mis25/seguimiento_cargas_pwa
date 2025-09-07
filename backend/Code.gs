@@ -115,7 +115,7 @@ function doPost(e) {
         headerMap[String(headers[i]).trim().toLowerCase()] = i;
       }
       var tripIdx = headerMap['trip'];
-      if (tripIdx === -1) throw new Error('Trip column not found');
+      if (tripIdx == null) throw new Error('Trip column not found');
       var rowIndex = -1;
       for (var i = 1; i < data.length; i++) {
         if (String(data[i][tripIdx]) === String(p.originalTrip)) {
