@@ -310,10 +310,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 }
 
 #loginForm label{
-  width:100px;
+  flex:0 0 100px;
   font-weight:600;
   color:var(--muted);
-  text-align:right;
+  text-align:left;
 }
 
 #loginForm input{
