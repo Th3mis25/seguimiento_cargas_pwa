@@ -81,6 +81,19 @@ body{
 }
 .app-logo{ height:40px; margin-right:8px; }
 
+#menuToggle{
+  display:none;
+  background:transparent;
+  border:0;
+  color:var(--text);
+  font-size:24px;
+  cursor:pointer;
+}
+
+@media (max-width: 768px){
+  #menuToggle{ display:inline-block; }
+}
+
 /* ====== Contenedor ====== */
 .container {
   position:fixed;
