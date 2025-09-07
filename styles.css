@@ -109,6 +109,12 @@ body{
   color:var(--text); border-radius:10px; padding:10px 12px;
   outline:none;
 }
+#statusFilter{
+  width:120px;
+}
+#bulkUpload{
+  width:140px;
+}
 .btn{
   background:var(--accent); color:#fff; border:0; border-radius:12px;
   padding:10px 14px; cursor:pointer; font-weight:600;
@@ -374,6 +380,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   }
   .controls input,
   .controls select{
+    width:100%;
+  }
+  #statusFilter,
+  #bulkUpload{
     width:100%;
   }
   .table-wrap{
