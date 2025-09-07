@@ -2,6 +2,16 @@
    CONFIG
 ========================= */
 
+// Redirect to mobile version for small screens or mobile devices
+if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+  const isMobileWidth = window.innerWidth < 768;
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const alreadyMobile = window.location.pathname.includes('/mobile');
+  if ((isMobileWidth || isMobileUA) && !alreadyMobile) {
+    window.location.href = '/mobile/index.html';
+  }
+}
+
 // URL base del Web App de Apps Script.
 // Se obtiene de `config.js` para poder configurarse al desplegar.
 const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) || '';
