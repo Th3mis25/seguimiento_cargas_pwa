@@ -52,7 +52,10 @@ self.addEventListener('fetch', e => {
           cache.put(request, response.clone());
           return response;
         })
-        .catch(async () => cached || (await caches.match('/offline.html')));
+        .catch(async () =>
+          cached ||
+          (await caches.match(new URL('./offline.html', self.location).pathname))
+        );
       return cached || fetchPromise;
     })());
     return;
@@ -66,7 +69,10 @@ self.addEventListener('fetch', e => {
       return response;
     } catch {
       const cached = await caches.match(request);
-      return cached || (await caches.match('/offline.html'));
+      return (
+        cached ||
+        (await caches.match(new URL('./offline.html', self.location).pathname))
+      );
     }
   })());
 });
