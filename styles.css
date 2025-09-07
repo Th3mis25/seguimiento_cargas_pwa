@@ -313,6 +313,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   width:100px;
   font-weight:600;
   color:var(--muted);
+  text-align:right;
 }
 
 #loginForm input{
