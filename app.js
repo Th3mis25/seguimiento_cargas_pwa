@@ -849,9 +849,14 @@ if (typeof document !== 'undefined') {
     const loginScreen = document.getElementById('loginScreen');
     const mainEl = document.querySelector('main.container');
     const sideMenu = document.querySelector('.side-menu');
+    const menuToggle = document.getElementById('menuToggle');
     const logoutBtn = document.getElementById('logoutBtn');
     const loginForm = document.getElementById('loginForm');
     const loginError = document.getElementById('loginError');
+
+    menuToggle?.addEventListener('click', () => {
+      sideMenu?.classList.toggle('open');
+    });
 
     function showLogin(){
       if(loginScreen) loginScreen.style.display = 'flex';
