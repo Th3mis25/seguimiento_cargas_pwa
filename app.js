@@ -215,8 +215,6 @@ async function fetchData(){
     if(json.error){
       throw new Error(json.error);
     }
-    console.log('API response:', json); // <— mira la consola del navegador
-
     let data = json.data ?? json.rows ?? [];
     data = normalizeData(data);
 
