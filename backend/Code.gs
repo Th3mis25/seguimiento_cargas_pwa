@@ -47,7 +47,6 @@ function doPost(e) {
       if (!ejecutivo) throw new Error('Missing ejecutivo');
       var row = new Array(headers.length).fill('');
       var map = {
-        'ejecutivo': 'Ejecutivo',
         'Ejecutivo': ejecutivo,
         'Trip': p.trip || '',
         'Caja': '',
