@@ -2,10 +2,17 @@ const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
 
+// Stub services required at load time
+global.PropertiesService = {
+  getScriptProperties: () => ({
+    getProperty: () => 'demo-token'
+  })
+};
+
 // Load backend script into the current context
 vm.runInThisContext(fs.readFileSync('./backend/Code.gs', 'utf8'));
 
-// Stub Apps Script services
+// Stub remaining Apps Script services
 const sheetData = [['Ejecutivo', 'Cliente']]; // No Trip column
 const sheet = {
   getDataRange: () => ({

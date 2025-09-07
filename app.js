@@ -332,7 +332,10 @@ async function handleBulkUpload(file){
             workbook = XLSX.read(bytes, { type:'array' });
           }
           const firstSheet = workbook.SheetNames[0];
-          const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval:'' });
+          const rows = XLSX.utils.sheet_to_json(
+            workbook.Sheets[firstSheet],
+            { defval:'', raw:false, cellDates:true }
+          );
           resolve(rows);
         }catch(err){ reject(err); }
       };
@@ -364,7 +367,10 @@ async function handleBulkUpload(file){
         ejecutivo: headers.includes('ejecutivo') ? obj[COL.ejecutivo] : '',
         estatus: headers.includes('estatus') ? obj[COL.estatus] : '',
         cliente: headers.includes('cliente') ? obj[COL.cliente] : '',
-        citaCarga: headers.includes('cita carga') ? toGASDate(obj[COL.citaCarga]) : ''
+        citaCarga: headers.includes('cita carga') ? toGASDate(obj[COL.citaCarga]) : '',
+        llegadaCarga: headers.includes('llegada carga') ? toGASDate(obj[COL.llegadaCarga]) : '',
+        citaEntrega: headers.includes('cita entrega') ? toGASDate(obj[COL.citaEntrega]) : '',
+        llegadaEntrega: headers.includes('llegada entrega') ? toGASDate(obj[COL.llegadaEntrega]) : ''
       };
       const ok = await addRecord(payload);
       if(!ok){
