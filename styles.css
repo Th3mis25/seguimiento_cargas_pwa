@@ -265,6 +265,13 @@ body{
 .modal-content label{
   display:flex; flex-direction:column; gap:4px; margin-bottom:10px;
 }
+#editModal .modal-content label{
+  flex-direction:row; align-items:center; gap:10px;
+}
+#editModal .modal-content label input,
+#editModal .modal-content label select{
+  flex:1;
+}
 .modal-content input,
 .modal-content select{
   background:#0b1f3d; border:1px solid #1f3e73; color:var(--text); border-radius:10px; padding:8px;
