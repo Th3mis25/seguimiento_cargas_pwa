@@ -687,19 +687,18 @@ function renderDaily(rows){
   today.setHours(0,0,0,0);
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
-  const allowed = ['in transit mx','live','drop','loading','mty yard','qro yard'];
+  const hideStatuses = ['nuevo laredo yard','in transit usa','at destination','delivered'];
   const filtered = rows.filter(r=>{
     const status = String(r[COL.estatus]||'').trim().toLowerCase();
-    if(!allowed.includes(status)) return false;
     const cita = parseDate(r[COL.citaCarga]);
     if(!cita) return false;
-    return cita >= today && cita < tomorrow;
+    if(cita >= today && cita < tomorrow) return true;
+    if(cita < today && !hideStatuses.includes(status)) return true;
+    return false;
   });
   $('#statusFilter').value = '';
   $('#ejecutivoFilter').value = '';
   $('#searchBox').value = '';
-  $('#startDate').value = '';
-  $('#endDate').value = '';
   renderRows(filtered, [9,12,13,15]);
 }
 
