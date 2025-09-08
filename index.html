@@ -97,7 +97,7 @@
       <h2>Nuevo registro</h2>
       <form id="addForm">
         <label>Trip
-          <input name="trip" required />
+          <input name="trip" required inputmode="numeric" pattern="\d+" />
         </label>
         <label>Ejecutivo
           <input name="ejecutivo" />
@@ -128,7 +128,7 @@
       <form id="editForm" class="modal-form">
         <input type="hidden" name="originalTrip" />
         <label>Trip
-          <input name="trip" required />
+          <input name="trip" required inputmode="numeric" pattern="\d+" />
         </label>
         <label>Ejecutivo
           <input name="ejecutivo" />

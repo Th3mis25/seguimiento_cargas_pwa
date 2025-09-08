@@ -178,6 +178,23 @@ function arrayRowToObj(row){
   return obj;
 }
 
+function validateTrip(trip, original=''){
+  if(!/^\d+$/.test(trip)){
+    toast('El Trip debe contener solo números');
+    return false;
+  }
+  if(Number(trip) < 225000){
+    toast('El Trip debe ser mayor o igual a 225000');
+    return false;
+  }
+  const exists = cache.some(r => String(r[COL.trip]) === trip && String(r[COL.trip]) !== String(original));
+  if(exists){
+    toast('El Trip ya existe');
+    return false;
+  }
+  return true;
+}
+
 function normalizeData(raw){
   // devuelve siempre array de objetos con claves = HEADERS / nombres reales
   if(!Array.isArray(raw)) return [];
@@ -735,11 +752,21 @@ async function main(){
   $('#cancelAdd').addEventListener('click', ()=>{
     $('#addModal').classList.remove('show');
   });
+  ['#addForm input[name="trip"]', '#editForm input[name="trip"]'].forEach(sel=>{
+    const el = $(sel);
+    if(el){
+      el.addEventListener('input',()=>{
+        el.value = el.value.replace(/\D/g,'');
+      });
+    }
+  });
   $('#addForm').addEventListener('submit', async ev=>{
     ev.preventDefault();
     const form = ev.target;
+    const trip = form.trip.value.trim();
+    if(!validateTrip(trip)) return;
     const data = {
-      trip: form.trip.value.trim(),
+      trip,
       ejecutivo: form.ejecutivo.value.trim(),
       estatus: form.estatus.value.trim(),
       referencia: form.referencia.value.trim(),
@@ -770,9 +797,11 @@ async function main(){
     ev.preventDefault();
     const form = ev.target;
     const row = cache.find(r => String(r[COL.trip])===String(form.originalTrip.value));
+    const trip = form.trip.value.trim();
+    if(!validateTrip(trip, form.originalTrip.value)) return;
     const data = {
       originalTrip: form.originalTrip.value,
-      trip: form.trip.value.trim(),
+      trip,
       caja: form.caja.value.trim(),
       referencia: form.referencia.value.trim(),
       cliente: form.cliente.value.trim(),

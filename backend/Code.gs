@@ -35,20 +35,27 @@ function doPost(e) {
     if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');
     var timeZone = ss.getSpreadsheetTimeZone();
     if (p.action === 'add') {
-      var headers = sheet.getDataRange().getValues()[0];
+      var data = sheet.getDataRange().getValues();
+      var headers = data[0];
       var headerMap = {};
       for (var i = 0; i < headers.length; i++) {
         headerMap[String(headers[i]).trim().toLowerCase()] = i;
       }
-      // Interpret incoming time using the sheet timezone to avoid offsets
+      var tripIdx = headerMap['trip'];
+      if (tripIdx == null) throw new Error('Trip column not found');
+      var trip = String(p.trip || '').trim();
+      if (!/^\d+$/.test(trip)) throw new Error('Invalid trip');
+      if (Number(trip) < 225000) throw new Error('Trip must be >= 225000');
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][tripIdx]) === trip) throw new Error('Trip already exists');
+      }
       var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
-      // Allow either "ejecutivo" or "Ejecutivo" parameter names
       var ejecutivo = (p.ejecutivo || p.Ejecutivo || '').trim();
       if (!ejecutivo) throw new Error('Missing ejecutivo');
       var row = new Array(headers.length).fill('');
       var map = {
         'Ejecutivo': ejecutivo,
-        'Trip': p.trip || '',
+        'Trip': trip,
         'Caja': '',
         'Referencia': p.referencia || '',
         'Cliente': p.cliente || '',
@@ -123,6 +130,14 @@ function doPost(e) {
         }
       }
       if (rowIndex === -1) throw new Error('Trip not found');
+      var trip = String(p.trip || '').trim();
+      if (!/^\d+$/.test(trip)) throw new Error('Invalid trip');
+      if (Number(trip) < 225000) throw new Error('Trip must be >= 225000');
+      for (var i = 1; i < data.length; i++) {
+        if (i !== rowIndex && String(data[i][tripIdx]) === trip) {
+          throw new Error('Trip already exists');
+        }
+      }
       // Parse dates using the sheet timezone to keep the submitted local time without adding offsets
       var ejecutivo = (p.ejecutivo || p.Ejecutivo || '').trim();
       if (!ejecutivo) throw new Error('Missing ejecutivo');
@@ -132,7 +147,7 @@ function doPost(e) {
       var llegadaEntrega = p.llegadaEntrega ? Utilities.parseDate(p.llegadaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var map = {
         'Ejecutivo': ejecutivo,
-        'Trip': p.trip || '',
+        'Trip': trip,
         'Caja': p.caja || '',
         'Referencia': p.referencia || '',
         'Cliente': p.cliente || '',
@@ -160,7 +175,13 @@ function doPost(e) {
       return createJsonOutput({ error: 'Unsupported action' }, 400);
     }
   } catch (err) {
-    var status = (err.message === 'Trip not found' || err.message === 'Missing ejecutivo') ? 400 : 500;
+    var status = (
+      err.message === 'Trip not found' ||
+      err.message === 'Missing ejecutivo' ||
+      err.message === 'Invalid trip' ||
+      err.message === 'Trip must be >= 225000' ||
+      err.message === 'Trip already exists'
+    ) ? 400 : 500;
     return createJsonOutput({ error: err.message }, status);
   }
 }
