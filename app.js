@@ -62,6 +62,7 @@ let cache = [];
 let currentView = 'daily';
 let isLoggedIn = (typeof localStorage !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true');
 let mainInitialized = false;
+let pendingStatusChange = null;
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({
@@ -603,6 +604,12 @@ function renderRows(rows, hiddenCols=[]){
     fillStatusSelect(sel, r[COL.estatus]);
     sel.addEventListener('change', async ev=>{
       const newStatus = ev.target.value;
+      if(['at destination','delivered'].includes(newStatus.trim().toLowerCase())){
+        pendingStatusChange = { row: r, select: ev.target, newStatus };
+        $('#arrivalForm input[name="llegadaEntrega"]').value = '';
+        $('#arrivalModal').classList.add('show');
+        return;
+      }
       const data = {
         originalTrip: r[COL.trip],
         trip: r[COL.trip],
@@ -846,6 +853,52 @@ async function main(){
       currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
       $('#editModal').classList.remove('show');
     }
+  });
+  $('#cancelArrival').addEventListener('click', ()=>{
+    $('#arrivalModal').classList.remove('show');
+    $('#arrivalForm').reset();
+    if(pendingStatusChange){
+      pendingStatusChange.select.value = pendingStatusChange.row[COL.estatus] || '';
+      pendingStatusChange = null;
+    }
+  });
+  $('#arrivalForm').addEventListener('submit', async ev=>{
+    ev.preventDefault();
+    if(!pendingStatusChange) return;
+    const arrival = ev.target.llegadaEntrega.value;
+    const { row, select, newStatus } = pendingStatusChange;
+    const data = {
+      originalTrip: row[COL.trip],
+      trip: row[COL.trip],
+      caja: row[COL.caja] || '',
+      referencia: row[COL.referencia] || '',
+      cliente: row[COL.cliente] || '',
+      destino: row[COL.destino] || '',
+      ejecutivo: row[COL.ejecutivo] || '',
+      estatus: newStatus,
+      segmento: row[COL.segmento] || '',
+      trmx: row[COL.trmx] || '',
+      trusa: row[COL.trusa] || '',
+      citaCarga: row[COL.citaCarga] || '',
+      llegadaCarga: row[COL.llegadaCarga] || '',
+      citaEntrega: row[COL.citaEntrega] || '',
+      llegadaEntrega: toGASDate(arrival),
+      comentarios: row[COL.comentarios] || '',
+      docs: row[COL.docs] || '',
+      tracking: row[COL.tracking] || ''
+    };
+    const ok = await updateRecord(data);
+    if(ok){
+      row[COL.estatus] = newStatus;
+      row[COL.llegadaEntrega] = data.llegadaEntrega;
+      populateStatusFilter(cache);
+      currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
+    }else{
+      select.value = row[COL.estatus] || '';
+    }
+    ev.target.reset();
+    $('#arrivalModal').classList.remove('show');
+    pendingStatusChange = null;
   });
   $('#generalMenu').addEventListener('click', ()=>renderGeneral(cache));
   $('#dailyMenu').addEventListener('click', ()=>renderDaily(cache));
