@@ -160,10 +160,9 @@ function fillStatusSelect(sel, current='', allowEmpty=false){
 function toast(msg, type=''){
   const el = $('#toast');
   el.textContent = msg;
-  if(type === 'success'){
-    el.classList.add('success');
-  }else{
-    el.classList.remove('success');
+  el.classList.remove('success','error');
+  if(type){
+    el.classList.add(type);
   }
   el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),1800);
@@ -180,16 +179,16 @@ function arrayRowToObj(row){
 
 function validateTrip(trip, original=''){
   if(!/^\d+$/.test(trip)){
-    toast('El Trip debe contener solo números');
+    toast('El Trip debe contener solo números','error');
     return false;
   }
   if(Number(trip) < 225000){
-    toast('El Trip debe ser mayor o igual a 225000');
+    toast('El Trip debe ser mayor o igual a 225000','error');
     return false;
   }
   const exists = cache.some(r => String(r[COL.trip]) === trip && String(r[COL.trip]) !== String(original));
   if(exists){
-    toast('El Trip ya existe');
+    toast('El Trip ya existe','error');
     return false;
   }
   return true;
@@ -284,7 +283,7 @@ async function addRecord(data){
       toast('Saved','success');
       return true;
     }
-    toast('Error al agregar: ' + err.message);
+    toast('Error al agregar: ' + err.message,'error');
     return false;
   }
 }
@@ -325,7 +324,7 @@ async function updateRecord(data){
       toast('Saved','success');
       return true;
     }
-    toast('Error al actualizar: ' + err.message);
+    toast('Error al actualizar: ' + err.message,'error');
     return false;
   }
 }
