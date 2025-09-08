@@ -312,6 +312,28 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
 
+/* Date range input */
+.date-range{
+  display:inline-flex;
+  align-items:center;
+  background:#0b1f3d;
+  border:1px solid #1f3e73;
+  border-radius:10px;
+}
+
+.date-range input{
+  background:transparent;
+  border:0;
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:0;
+}
+
+.date-range .date-separator{
+  color:var(--text);
+  padding:0 4px;
+}
+
 /* ====== Login ====== */
 #loginScreen{
   position:fixed;
