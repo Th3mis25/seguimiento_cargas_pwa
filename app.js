@@ -604,7 +604,9 @@ function renderRows(rows, hiddenCols=[]){
     fillStatusSelect(sel, r[COL.estatus]);
     sel.addEventListener('change', async ev=>{
       const newStatus = ev.target.value;
-      if(['at destination','delivered'].includes(newStatus.trim().toLowerCase())){
+      const statusLower = newStatus.trim().toLowerCase();
+      const llegadaVacia = !String(r[COL.llegadaEntrega] || '').trim();
+      if(['at destination','delivered'].includes(statusLower) && llegadaVacia){
         pendingStatusChange = { row: r, select: ev.target, newStatus };
         $('#arrivalForm input[name="llegadaEntrega"]').value = '';
         $('#arrivalModal').classList.add('show');
