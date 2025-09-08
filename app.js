@@ -768,6 +768,7 @@ async function main(){
     const data = {
       trip,
       ejecutivo: form.ejecutivo.value.trim(),
+      caja: form.caja.value.trim(),
       estatus: form.estatus.value.trim(),
       referencia: form.referencia.value.trim(),
       cliente: form.cliente.value.trim(),
@@ -778,6 +779,7 @@ async function main(){
       const row = {};
       row[COL.trip] = data.trip;
       row[COL.ejecutivo] = data.ejecutivo;
+      row[COL.caja] = data.caja;
       row[COL.estatus] = data.estatus;
       row[COL.referencia] = data.referencia;
       row[COL.cliente] = data.cliente;
