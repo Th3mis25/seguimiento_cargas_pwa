@@ -384,6 +384,7 @@ async function handleBulkUpload(file){
         ejecutivo: headers.includes('ejecutivo') ? obj[COL.ejecutivo] : '',
         estatus: headers.includes('estatus') ? obj[COL.estatus] : '',
         cliente: headers.includes('cliente') ? obj[COL.cliente] : '',
+        destino: headers.includes('destino') ? obj[COL.destino] : '',
         citaCarga: headers.includes('cita carga') ? toGASDate(obj[COL.citaCarga]) : '',
         llegadaCarga: headers.includes('llegada carga') ? toGASDate(obj[COL.llegadaCarga]) : '',
         citaEntrega: headers.includes('cita entrega') ? toGASDate(obj[COL.citaEntrega]) : '',
