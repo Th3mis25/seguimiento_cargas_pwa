@@ -692,6 +692,8 @@ function renderDaily(rows){
     const status = String(r[COL.estatus]||'').trim().toLowerCase();
     const cita = parseDate(r[COL.citaCarga]);
     if(!cita) return false;
+    // Mostrar cancelados solo si la cita corresponde al día actual
+    if(status === 'cancelled') return cita >= today && cita < tomorrow;
     if(cita >= today && cita < tomorrow) return true;
     if(cita < today && !hideStatuses.includes(status)) return true;
     return false;
