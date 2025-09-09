@@ -711,6 +711,12 @@ function clearFilters(){
   $('#endDate').value = '';
 }
 
+function setDefaultDate(){
+  const today = new Date().toISOString().split('T')[0];
+  $('#startDate').value = today;
+  $('#endDate').value = today;
+}
+
 function renderGeneral(rows){
   currentView = 'general';
   if(hasActiveFilters()) clearFilters();
@@ -756,6 +762,12 @@ async function main(){
   $('#searchBox').addEventListener('input', ()=>renderRows(cache));
   $('#startDate').addEventListener('change', ()=>renderRows(cache));
   $('#endDate').addEventListener('change', ()=>renderRows(cache));
+  ['#startDate','#endDate'].forEach(sel=>{
+    const el = $(sel);
+    el.addEventListener('click',()=>{
+      if(el.showPicker) el.showPicker();
+    });
+  });
   $('#homeBtn')?.addEventListener('click', ()=>{
     clearFilters();
     renderDaily(cache);

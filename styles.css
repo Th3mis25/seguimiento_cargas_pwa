@@ -305,11 +305,19 @@ body{
   font-size:0.7rem;
 }
 
-/* White calendar icon */
+/* Hide calendar icon and rely on clicking the field */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"]{
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  appearance:none;
+}
+
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
+input[type="datetime-local"]::-webkit-calendar-picker-indicator{
+  display:none;
 }
 
 /* Date range input */
