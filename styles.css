@@ -329,6 +329,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator{
   -webkit-appearance:auto;
   -moz-appearance:auto;
   appearance:auto;
+  color-scheme:dark;
 }
 
 #addModal input[type="date"]::-webkit-calendar-picker-indicator,
