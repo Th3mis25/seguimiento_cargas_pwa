@@ -737,6 +737,8 @@ function renderDaily(rows){
   $('#statusFilter').value = '';
   $('#ejecutivoFilter').value = '';
   $('#searchBox').value = '';
+  $('#startDate').value = '';
+  $('#endDate').value = '';
   renderRows(filtered, [9,12,13,15]);
 }
 
@@ -918,7 +920,12 @@ async function main(){
     pendingStatusChange = null;
   });
   $('#generalMenu').addEventListener('click', ()=>renderGeneral(cache));
-  $('#dailyMenu').addEventListener('click', ()=>renderDaily(cache));
+  $('#dailyMenu').addEventListener('click', () => {
+    const hasFilters = $('#statusFilter').value || $('#ejecutivoFilter').value ||
+      $('#searchBox').value || $('#startDate').value || $('#endDate').value;
+    if (hasFilters) clearFilters();
+    renderDaily(cache);
+  });
 
   $('#loadsTable').addEventListener('click', async ev=>{
     const btn = ev.target.closest('button[data-act]');
