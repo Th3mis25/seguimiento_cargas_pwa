@@ -725,13 +725,22 @@ function renderGeneral(rows){
 
 function renderDaily(rows){
   currentView = 'daily';
-  $('#statusFilter').value = '';
-  $('#ejecutivoFilter').value = '';
-  $('#searchBox').value = '';
-  if(!$('#startDate').value && !$('#endDate').value){
-    setDefaultDate();
-  }
-  renderRows(rows, [9,12,13,15]);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const hideStatuses = ['nuevo laredo yard','in transit usa','at destination','delivered'];
+  const filtered = rows.filter(r=>{
+    const status = String(r[COL.estatus]||'').trim().toLowerCase();
+    const cita = parseDate(r[COL.citaCarga]);
+    if(!cita) return false;
+    // Mostrar cancelados solo si la cita corresponde al día actual
+    if(status === 'cancelled') return cita >= today && cita < tomorrow;
+    if(cita >= today && cita < tomorrow) return true;
+    if(cita < today && !hideStatuses.includes(status)) return true;
+    return false;
+  });
+  renderRows(filtered, [9,12,13,15]);
 }
 
 async function main(){
