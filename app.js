@@ -698,6 +698,11 @@ function renderRows(rows, hiddenCols=[]){
   }
 }
 
+function hasActiveFilters(){
+  return $('#statusFilter').value || $('#ejecutivoFilter').value ||
+         $('#searchBox').value.trim() || $('#startDate').value || $('#endDate').value;
+}
+
 function clearFilters(){
   $('#statusFilter').value = '';
   $('#ejecutivoFilter').value = '';
@@ -708,7 +713,7 @@ function clearFilters(){
 
 function renderGeneral(rows){
   currentView = 'general';
-  clearFilters();
+  if(hasActiveFilters()) clearFilters();
   renderRows(rows);
 }
 
