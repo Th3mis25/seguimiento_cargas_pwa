@@ -59,7 +59,7 @@ function doPost(e) {
         'Caja': '',
         'Referencia': p.referencia || '',
         'Cliente': p.cliente || '',
-        'Destino': '',
+        'Destino': p.destino || '',
         'Estatus': p.estatus || '',
         'Segmento': '',
         'TR-MX': '',

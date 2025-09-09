@@ -797,6 +797,7 @@ async function main(){
       estatus: form.estatus.value.trim(),
       referencia: form.referencia.value.trim(),
       cliente: form.cliente.value.trim(),
+      destino: form.destino.value.trim(),
       citaCarga: toGASDate(form.citaCarga.value)
     };
     const ok = await addRecord(data);
@@ -808,6 +809,7 @@ async function main(){
       row[COL.estatus] = data.estatus;
       row[COL.referencia] = data.referencia;
       row[COL.cliente] = data.cliente;
+      row[COL.destino] = data.destino;
       row[COL.citaCarga] = data.citaCarga;
       cache.push(row);
       populateStatusFilter(cache);
