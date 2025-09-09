@@ -734,11 +734,6 @@ function renderDaily(rows){
     if(cita < today && !hideStatuses.includes(status)) return true;
     return false;
   });
-  $('#statusFilter').value = '';
-  $('#ejecutivoFilter').value = '';
-  $('#searchBox').value = '';
-  $('#startDate').value = '';
-  $('#endDate').value = '';
   renderRows(filtered, [9,12,13,15]);
 }
 
