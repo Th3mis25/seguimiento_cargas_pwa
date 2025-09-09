@@ -707,6 +707,7 @@ function clearFilters(){
   $('#statusFilter').value = '';
   $('#ejecutivoFilter').value = '';
   $('#searchBox').value = '';
+  $('#clearSearch').style.display = 'none';
   $('#startDate').value = '';
   $('#endDate').value = '';
 }
@@ -762,7 +763,17 @@ async function main(){
   });
   $('#statusFilter').addEventListener('change', ()=>renderRows(cache));
   $('#ejecutivoFilter').addEventListener('change', ()=>renderRows(cache));
-  $('#searchBox').addEventListener('input', ()=>renderRows(cache));
+  const searchBox = $('#searchBox');
+  const clearSearch = $('#clearSearch');
+  searchBox.addEventListener('input', () => {
+    clearSearch.style.display = searchBox.value ? 'block' : 'none';
+    renderRows(cache);
+  });
+  clearSearch.addEventListener('click', () => {
+    searchBox.value = '';
+    clearSearch.style.display = 'none';
+    renderRows(cache);
+  });
   $('#startDate').addEventListener('change', ()=>renderRows(cache));
   $('#endDate').addEventListener('change', ()=>renderRows(cache));
   ['#startDate','#endDate'].forEach(sel=>{
