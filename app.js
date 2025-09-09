@@ -698,13 +698,17 @@ function renderRows(rows, hiddenCols=[]){
   }
 }
 
-function renderGeneral(rows){
-  currentView = 'general';
+function clearFilters(){
   $('#statusFilter').value = '';
   $('#ejecutivoFilter').value = '';
   $('#searchBox').value = '';
   $('#startDate').value = '';
   $('#endDate').value = '';
+}
+
+function renderGeneral(rows){
+  currentView = 'general';
+  clearFilters();
   renderRows(rows);
 }
 
@@ -750,6 +754,10 @@ async function main(){
   $('#searchBox').addEventListener('input', ()=>renderRows(cache));
   $('#startDate').addEventListener('change', ()=>renderRows(cache));
   $('#endDate').addEventListener('change', ()=>renderRows(cache));
+  $('#homeBtn')?.addEventListener('click', ()=>{
+    clearFilters();
+    renderDaily(cache);
+  });
 
   $('#bulkUploadBtn').addEventListener('click', ()=>{
     const file = $('#bulkUpload').files[0];
