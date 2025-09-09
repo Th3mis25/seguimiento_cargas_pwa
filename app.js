@@ -712,9 +712,12 @@ function clearFilters(){
 }
 
 function setDefaultDate(){
-  const today = new Date().toISOString().split('T')[0];
-  $('#startDate').value = today;
-  $('#endDate').value = today;
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString()
+    .split('T')[0];
+  $('#startDate').value = localDate;
+  $('#endDate').value = localDate;
 }
 
 function renderGeneral(rows){
