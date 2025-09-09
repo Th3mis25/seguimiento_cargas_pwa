@@ -79,7 +79,7 @@ body{
   margin:0;
   font-weight:normal;
 }
-.app-logo{ height:40px; margin-right:8px; }
+.app-logo{ height:40px; margin-right:8px; cursor:pointer; }
 
 /* Menu lateral eliminado */
 
