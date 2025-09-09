@@ -711,6 +711,12 @@ function clearFilters(){
   $('#endDate').value = '';
 }
 
+function setDefaultDate(){
+  const today = new Date().toISOString().split('T')[0];
+  $('#startDate').value = today;
+  $('#endDate').value = today;
+}
+
 function renderGeneral(rows){
   currentView = 'general';
   if(hasActiveFilters()) clearFilters();
@@ -719,27 +725,13 @@ function renderGeneral(rows){
 
 function renderDaily(rows){
   currentView = 'daily';
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const hideStatuses = ['nuevo laredo yard','in transit usa','at destination','delivered'];
-  const filtered = rows.filter(r=>{
-    const status = String(r[COL.estatus]||'').trim().toLowerCase();
-    const cita = parseDate(r[COL.citaCarga]);
-    if(!cita) return false;
-    // Mostrar cancelados solo si la cita corresponde al día actual
-    if(status === 'cancelled') return cita >= today && cita < tomorrow;
-    if(cita >= today && cita < tomorrow) return true;
-    if(cita < today && !hideStatuses.includes(status)) return true;
-    return false;
-  });
   $('#statusFilter').value = '';
   $('#ejecutivoFilter').value = '';
   $('#searchBox').value = '';
-  $('#startDate').value = '';
-  $('#endDate').value = '';
-  renderRows(filtered, [9,12,13,15]);
+  if(!$('#startDate').value && !$('#endDate').value){
+    setDefaultDate();
+  }
+  renderRows(rows, [9,12,13,15]);
 }
 
 async function main(){
@@ -761,6 +753,12 @@ async function main(){
   $('#searchBox').addEventListener('input', ()=>renderRows(cache));
   $('#startDate').addEventListener('change', ()=>renderRows(cache));
   $('#endDate').addEventListener('change', ()=>renderRows(cache));
+  ['#startDate','#endDate'].forEach(sel=>{
+    const el = $(sel);
+    el.addEventListener('click',()=>{
+      if(el.showPicker) el.showPicker();
+    });
+  });
   $('#homeBtn')?.addEventListener('click', ()=>{
     clearFilters();
     renderDaily(cache);
