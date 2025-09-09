@@ -747,6 +747,24 @@ function renderDaily(rows){
   renderRows(filtered, [9,12,13,15]);
 }
 
+function renderEntregasHoy(rows){
+  currentView = 'entregasHoy';
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const filtered = rows.filter(r=>{
+    const status = String(r[COL.estatus]||'').trim().toLowerCase();
+    if(status === 'delivered') return false;
+    const cita = parseDate(r[COL.citaEntrega]);
+    if(!cita) return false;
+    if(cita >= today && cita < tomorrow) return true;
+    if(cita < today) return true;
+    return false;
+  });
+  renderRows(filtered, [8,10,11,15]);
+}
+
 function renderInventarioNlar(rows){
   currentView = 'inventarioNlar';
   if(hasActiveFilters()) clearFilters();
@@ -756,6 +774,7 @@ function renderInventarioNlar(rows){
 
 function renderCurrent(){
   if(currentView === 'daily') renderDaily(cache);
+  else if(currentView === 'entregasHoy') renderEntregasHoy(cache);
   else if(currentView === 'inventarioNlar') renderInventarioNlar(cache);
   else renderRows(cache);
 }
@@ -959,6 +978,10 @@ async function main(){
   $('#dailyMenu').addEventListener('click', () => {
     if (hasActiveFilters()) clearFilters();
     renderDaily(cache);
+  });
+  $('#deliveryMenu').addEventListener('click', () => {
+    if (hasActiveFilters()) clearFilters();
+    renderEntregasHoy(cache);
   });
   $('#nlarMenu').addEventListener('click', () => {
     if (hasActiveFilters()) clearFilters();
