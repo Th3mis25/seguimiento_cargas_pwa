@@ -731,6 +731,23 @@ function renderDaily(rows){
   renderRows(filtered, [9,12,13,15]);
 }
 
+function shiftDateRange(days){
+  const startInput = $('#startDate');
+  const endInput = $('#endDate');
+  const parse = v => {
+    const [y,m,d] = v.split('-').map(Number);
+    return new Date(y, m-1, d);
+  };
+  const format = d => d.toLocaleDateString('en-CA');
+  const start = startInput.value ? parse(startInput.value) : new Date();
+  const end = endInput.value ? parse(endInput.value) : new Date();
+  start.setDate(start.getDate() + days);
+  end.setDate(end.getDate() + days);
+  startInput.value = format(start);
+  endInput.value = format(end);
+  renderRows(cache);
+}
+
 async function main(){
   cache = await fetchData();
   populateStatusFilter(cache);
@@ -750,6 +767,8 @@ async function main(){
   $('#searchBox').addEventListener('input', ()=>renderRows(cache));
   $('#startDate').addEventListener('change', ()=>renderRows(cache));
   $('#endDate').addEventListener('change', ()=>renderRows(cache));
+  $('#prevDay').addEventListener('click', ()=>shiftDateRange(-1));
+  $('#nextDay').addEventListener('click', ()=>shiftDateRange(1));
 
   $('#bulkUploadBtn').addEventListener('click', ()=>{
     const file = $('#bulkUpload').files[0];
