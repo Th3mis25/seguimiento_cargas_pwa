@@ -403,7 +403,7 @@ async function handleBulkUpload(file){
     cache = await fetchData();
     populateStatusFilter(cache);
     populateEjecutivoFilter(cache);
-    currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
+    renderCurrent();
   }catch(err){
     console.error('handleBulkUpload error', err);
     if(statusEl) statusEl.textContent = 'Error: ' + err.message;
@@ -638,7 +638,7 @@ function renderRows(rows, hiddenCols=[]){
       if(ok){
         r[COL.estatus] = newStatus;
         populateStatusFilter(cache);
-        currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
+        renderCurrent();
       }else{
         ev.target.value = r[COL.estatus] || '';
       }
@@ -747,6 +747,19 @@ function renderDaily(rows){
   renderRows(filtered, [9,12,13,15]);
 }
 
+function renderInventarioNlar(rows){
+  currentView = 'inventarioNlar';
+  if(hasActiveFilters()) clearFilters();
+  const filtered = rows.filter(r=>String(r[COL.estatus]||'').trim().toLowerCase()==='nuevo laredo yard');
+  renderRows(filtered);
+}
+
+function renderCurrent(){
+  if(currentView === 'daily') renderDaily(cache);
+  else if(currentView === 'inventarioNlar') renderInventarioNlar(cache);
+  else renderRows(cache);
+}
+
 async function main(){
   cache = await fetchData();
   populateStatusFilter(cache);
@@ -759,23 +772,23 @@ async function main(){
     cache = await fetchData();
     populateStatusFilter(cache);
     populateEjecutivoFilter(cache);
-    currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
+    renderCurrent();
   });
-  $('#statusFilter').addEventListener('change', ()=>renderRows(cache));
-  $('#ejecutivoFilter').addEventListener('change', ()=>renderRows(cache));
+  $('#statusFilter').addEventListener('change', renderCurrent);
+  $('#ejecutivoFilter').addEventListener('change', renderCurrent);
   const searchBox = $('#searchBox');
   const clearSearch = $('#clearSearch');
   searchBox.addEventListener('input', () => {
     clearSearch.style.display = searchBox.value ? 'block' : 'none';
-    renderRows(cache);
+    renderCurrent();
   });
   clearSearch.addEventListener('click', () => {
     searchBox.value = '';
     clearSearch.style.display = 'none';
-    renderRows(cache);
+    renderCurrent();
   });
-  $('#startDate').addEventListener('change', ()=>renderRows(cache));
-  $('#endDate').addEventListener('change', ()=>renderRows(cache));
+  $('#startDate').addEventListener('change', renderCurrent);
+  $('#endDate').addEventListener('change', renderCurrent);
   ['#startDate','#endDate'].forEach(sel=>{
     const el = $(sel);
     el.addEventListener('click',()=>{
@@ -835,7 +848,7 @@ async function main(){
       cache.push(row);
       populateStatusFilter(cache);
       populateEjecutivoFilter(cache);
-      currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
+      renderCurrent();
       form.reset();
       $('#addModal').classList.remove('show');
     }
@@ -892,7 +905,7 @@ async function main(){
     if(ok){
       populateStatusFilter(cache);
       populateEjecutivoFilter(cache);
-      currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
+      renderCurrent();
       $('#editModal').classList.remove('show');
     }
   });
@@ -934,7 +947,7 @@ async function main(){
       row[COL.estatus] = newStatus;
       row[COL.llegadaEntrega] = data.llegadaEntrega;
       populateStatusFilter(cache);
-      currentView === 'daily' ? renderDaily(cache) : renderRows(cache);
+      renderCurrent();
     }else{
       select.value = row[COL.estatus] || '';
     }
@@ -944,10 +957,12 @@ async function main(){
   });
   $('#generalMenu').addEventListener('click', ()=>renderGeneral(cache));
   $('#dailyMenu').addEventListener('click', () => {
-    const hasFilters = $('#statusFilter').value || $('#ejecutivoFilter').value ||
-      $('#searchBox').value || $('#startDate').value || $('#endDate').value;
-    if (hasFilters) clearFilters();
+    if (hasActiveFilters()) clearFilters();
     renderDaily(cache);
+  });
+  $('#nlarMenu').addEventListener('click', () => {
+    if (hasActiveFilters()) clearFilters();
+    renderInventarioNlar(cache);
   });
 
   $('#loadsTable').addEventListener('click', async ev=>{
