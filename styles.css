@@ -334,7 +334,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator{
 #addModal input[type="datetime-local"],
 #editModal input[type="date"],
 #editModal input[type="time"],
-#editModal input[type="datetime-local"]{
+#editModal input[type="datetime-local"],
+#arrivalModal input[type="date"],
+#arrivalModal input[type="time"],
+#arrivalModal input[type="datetime-local"]{
   -webkit-appearance:auto;
   -moz-appearance:auto;
   appearance:auto;
@@ -346,7 +349,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator{
 #addModal input[type="datetime-local"]::-webkit-calendar-picker-indicator,
 #editModal input[type="date"]::-webkit-calendar-picker-indicator,
 #editModal input[type="time"]::-webkit-calendar-picker-indicator,
-#editModal input[type="datetime-local"]::-webkit-calendar-picker-indicator{
+#editModal input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+#arrivalModal input[type="date"]::-webkit-calendar-picker-indicator,
+#arrivalModal input[type="time"]::-webkit-calendar-picker-indicator,
+#arrivalModal input[type="datetime-local"]::-webkit-calendar-picker-indicator{
   display:initial;
 }
 
