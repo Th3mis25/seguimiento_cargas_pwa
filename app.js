@@ -755,7 +755,7 @@ function renderEntregasHoy(rows){
   tomorrow.setDate(today.getDate() + 1);
   const filtered = rows.filter(r=>{
     const status = String(r[COL.estatus]||'').trim().toLowerCase();
-    if(status === 'delivered') return false;
+    if(status === 'delivered' || status === 'cancelled') return false;
     const cita = parseDate(r[COL.citaEntrega]);
     if(!cita) return false;
     if(cita >= today && cita < tomorrow) return true;
