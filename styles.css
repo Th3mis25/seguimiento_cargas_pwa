@@ -166,6 +166,10 @@ body{
   line-height: 1.2;
 }
 
+#loadsTable td.late{
+  color: var(--badge-red);
+}
+
 /* No cortar fechas/textos importantes */
 .nowrap, #loadsTable td, #loadsTable th{
   white-space: nowrap !important;

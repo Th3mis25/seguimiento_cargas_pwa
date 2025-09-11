@@ -554,6 +554,7 @@ function renderRows(rows, hiddenCols=[]){
     if(className) td.className = className;
     td.textContent = text || '';
     tr.appendChild(td);
+    return td;
   };
 
   for(const r of filtered){
@@ -650,7 +651,13 @@ function renderRows(rows, hiddenCols=[]){
     addTextCell(tr, r[COL.segmento]);
     addTextCell(tr, r[COL.trmx]);
     addTextCell(tr, r[COL.trusa]);
-    addTextCell(tr, fmtDate(r[COL.citaCarga]), 'nowrap');
+
+    const citaTd = addTextCell(tr, fmtDate(r[COL.citaCarga]), 'nowrap');
+    const llegadaDate = parseDate(r[COL.llegadaCarga]);
+    if(citaDate && llegadaDate && llegadaDate > citaDate){
+      citaTd.classList.add('late');
+    }
+
     addTextCell(tr, fmtDate(r[COL.llegadaCarga]), 'nowrap');
     addTextCell(tr, fmtDate(r[COL.citaEntrega]), 'nowrap');
     addTextCell(tr, fmtDate(r[COL.llegadaEntrega]), 'nowrap');
