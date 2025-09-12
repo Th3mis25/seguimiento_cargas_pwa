@@ -1,0 +1,6 @@
+{
+  "AUTH_USERS": [
+    { "user": "USERNAME", "password": "PASSWORD" }
+  ],
+  "API_TOKEN": "YOUR_TOKEN_HERE"
+}

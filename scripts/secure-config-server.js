@@ -1,16 +1,18 @@
 const http = require('http');
-const fs = require('fs');
-const path = require('path');
 
 const port = process.env.PORT || 3000;
 const API_TOKEN = process.env.API_TOKEN || '';
 
-const authUsersPath = path.join(__dirname, '../secure-config.json');
+// Read authorized users from environment variables instead of a local file
 let authUsers = [];
-try {
-  authUsers = JSON.parse(fs.readFileSync(authUsersPath, 'utf8')).AUTH_USERS || [];
-} catch (err) {
-  console.error('Unable to read secure-config.json', err);
+const authUsersEnv = process.env.AUTH_USERS_JSON || process.env.AUTH_USERS || '';
+if (authUsersEnv) {
+  try {
+    const parsed = JSON.parse(authUsersEnv);
+    authUsers = Array.isArray(parsed) ? parsed : parsed.AUTH_USERS || [];
+  } catch (err) {
+    console.error('Invalid AUTH_USERS env', err);
+  }
 }
 
 http.createServer((req, res) => {
