@@ -37,6 +37,21 @@ global.ContentService = {
   MimeType: { JSON: 'application/json', TEXT: 'text/plain' }
 };
 
+// Ensure missing postData returns 400 and authorization is checked
+let authCalled = false;
+const originalIsAuthorized = isAuthorized;
+global.isAuthorized = function(e) {
+  authCalled = true;
+  return originalIsAuthorized(e);
+};
+
+const noPostDataResult = doPost({ parameter: { token: 'demo-token' } });
+const noPostDataPayload = JSON.parse(noPostDataResult.content);
+assert.strictEqual(noPostDataPayload.error, 'Missing postData');
+assert.strictEqual(noPostDataPayload.status, 400);
+assert.ok(authCalled, 'isAuthorized should be called');
+console.log('Missing postData test passed.');
+
 // Execute doPost with missing Trip column
 const e = {
   postData: {},
