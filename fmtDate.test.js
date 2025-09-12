@@ -1,5 +1,7 @@
 const assert = require('assert');
-const { fmtDate, DEFAULT_LOCALE } = require('./app.js');
+
+async function run(){
+  const { fmtDate, DEFAULT_LOCALE } = await import('./src/utils/date.js');
 
 const isoSample = '2024-06-09T15:30:00';
 
@@ -39,3 +41,6 @@ assert.strictEqual(fmtDate(ampmSample, DEFAULT_LOCALE), '09/06/2024 15:30');
 assert.strictEqual(fmtDate(ampmSample, 'de-DE'), '09.06.2024 15:30');
 
 console.log('All fmtDate tests passed.');
+}
+
+run();
