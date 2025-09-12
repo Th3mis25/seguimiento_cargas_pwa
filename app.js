@@ -226,8 +226,8 @@ async function fetchData(){
 
     try{
       const token = SECURE_CONFIG.apiToken || '';
-      const url = token ? `${API_BASE}?token=${encodeURIComponent(token)}` : API_BASE;
-      const res  = await fetch(url,{ cache:'no-store' });
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res  = await fetch(API_BASE,{ cache:'no-store', headers });
     if(!res.ok){
       throw new Error(`HTTP ${res.status}`);
     }
@@ -251,10 +251,12 @@ async function fetchData(){
 async function addRecord(data){
     try{
       const token = SECURE_CONFIG.apiToken || '';
-      const body = new URLSearchParams({ action:'add', token, ...data });
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const body = new URLSearchParams({ action:'add', ...data });
       const res = await fetch(API_BASE,{
         method:'POST',
-        body
+        body,
+        headers
       });
     let json;
     try{
@@ -295,8 +297,9 @@ async function addRecord(data){
 async function updateRecord(data){
     try{
       const token = SECURE_CONFIG.apiToken || '';
-      const body = new URLSearchParams({ action:'update', token, ...data });
-      const res = await fetch(API_BASE,{ method:'POST', body });
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const body = new URLSearchParams({ action:'update', ...data });
+      const res = await fetch(API_BASE,{ method:'POST', body, headers });
     let json;
     try{
       const ct = res.headers.get('content-type') || '';
