@@ -34,8 +34,9 @@ echo "window.APP_CONFIG = { API_BASE: '${API_BASE}' };" > config.js
 ```
 
 Los valores sensibles (`AUTH_USERS`, `API_TOKEN`) deben servirse desde un
-endpoint protegido o un archivo JSON (por ejemplo `/secure-config.json`) o inyectarse mediante
-variables de entorno en el backend.
+endpoint protegido (por ejemplo `/secure-config.json`) o inyectarse mediante
+variables de entorno en el backend. El archivo `secure-config.sample.json`
+proporciona la estructura esperada pero no contiene datos reales.
 
 ### Distribución del token `API_TOKEN`
 
@@ -53,6 +54,7 @@ variables de entorno en el backend.
 Para desarrollo puedes ejecutar el endpoint localmente:
 
 ```bash
+AUTH_USERS_JSON='[{"user":"demo","password":"secret"}]' \
 API_TOKEN="mi-token" node scripts/secure-config-server.js
 ```
 

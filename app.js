@@ -7,11 +7,14 @@
 const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) || '';
 
 // Configuración sensible cargada desde un endpoint seguro.
+// La URL debe definirse en `window.APP_CONFIG.SECURE_CONFIG_URL`.
+const SECURE_CONFIG_URL = (typeof window !== 'undefined' && window.APP_CONFIG?.SECURE_CONFIG_URL) || '';
 const SECURE_CONFIG = { authUsers: [], apiToken: '' };
 
 async function loadSecureConfig(){
+  if(!SECURE_CONFIG_URL) return;
   try{
-    const res = await fetch('./secure-config.json', { cache:'no-store' });
+    const res = await fetch(SECURE_CONFIG_URL, { cache:'no-store' });
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     SECURE_CONFIG.authUsers = json.AUTH_USERS || json.authUsers || [];
