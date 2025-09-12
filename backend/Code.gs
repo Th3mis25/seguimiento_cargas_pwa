@@ -20,12 +20,12 @@ function createJsonOutput(payload, status) {
 }
 
 function doPost(e) {
-  if (!e.postData) {
-    return createJsonOutput({}, 200);
-  }
-
   if (!isAuthorized(e)) {
     return createJsonOutput({ error: 'Unauthorized' }, 401);
+  }
+
+  if (!e.postData) {
+    return createJsonOutput({ error: 'Missing postData' }, 400);
   }
 
   try {
