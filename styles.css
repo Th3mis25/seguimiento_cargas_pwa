@@ -308,6 +308,7 @@ body{
   cursor:pointer;
 }
 .top-btn:hover{ background:var(--panel-2); }
+.top-btn.active{ background: var(--accent); color:#fff; }
 
 /* Consistent font size for menu and filters */
 .top-btn,

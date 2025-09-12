@@ -722,6 +722,11 @@ function clearFilters(){
   $('#endDate').value = '';
 }
 
+function setActiveTopBtn(btn){
+  document.querySelectorAll('.top-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+
 function setDefaultDate(){
   const now = new Date();
   const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -984,16 +989,22 @@ async function main(){
     $('#arrivalModal').classList.remove('show');
     pendingStatusChange = null;
   });
-  $('#generalMenu').addEventListener('click', ()=>renderGeneral(cache));
-  $('#dailyMenu').addEventListener('click', () => {
+  $('#generalMenu').addEventListener('click', ev => {
+    setActiveTopBtn(ev.currentTarget);
+    renderGeneral(cache);
+  });
+  $('#dailyMenu').addEventListener('click', ev => {
+    setActiveTopBtn(ev.currentTarget);
     if (hasActiveFilters()) clearFilters();
     renderDaily(cache);
   });
-  $('#deliveryMenu').addEventListener('click', () => {
+  $('#deliveryMenu').addEventListener('click', ev => {
+    setActiveTopBtn(ev.currentTarget);
     if (hasActiveFilters()) clearFilters();
     renderEntregasHoy(cache);
   });
-  $('#nlarMenu').addEventListener('click', () => {
+  $('#nlarMenu').addEventListener('click', ev => {
+    setActiveTopBtn(ev.currentTarget);
     if (hasActiveFilters()) clearFilters();
     renderInventarioNlar(cache);
   });
