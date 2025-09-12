@@ -1036,6 +1036,19 @@ if (typeof document !== 'undefined') {
     const logoutBtn = document.getElementById('logoutBtn');
     const loginForm = document.getElementById('loginForm');
     const loginError = document.getElementById('loginError');
+    const themeToggle = document.getElementById('themeToggle');
+
+    if(typeof localStorage !== 'undefined' && localStorage.getItem('theme') === 'light'){
+      document.body.classList.add('theme-light');
+    }
+
+    themeToggle?.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('theme-light');
+      if(typeof localStorage !== 'undefined'){
+        if(isLight) localStorage.setItem('theme','light');
+        else localStorage.removeItem('theme');
+      }
+    });
 
     menuToggle?.addEventListener('click', () => {
       sideMenu?.classList.toggle('open');
