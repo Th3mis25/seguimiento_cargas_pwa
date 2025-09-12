@@ -38,14 +38,14 @@ function callAdd(trip){
   const e = {
     postData: {},
     parameter: {
-      token: 'demo-token',
       action: 'add',
       trip,
       ejecutivo: 'E1',
       estatus: 'Live',
       cliente: 'C1',
       citaCarga: '2024-01-01T00:00:00'
-    }
+    },
+    headers: { Authorization: 'Bearer demo-token' }
   };
   const res = doPost(e);
   return JSON.parse(res.content);

@@ -3,7 +3,15 @@ const AUTH_TOKEN = PropertiesService.getScriptProperties().getProperty('API_TOKE
 const SPREADSHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
 
 function isAuthorized(e) {
-  return e.parameter && e.parameter.token === AUTH_TOKEN;
+  var headerToken = '';
+  if (e && e.headers) {
+    var authHeader = e.headers.Authorization || e.headers.authorization;
+    if (authHeader && authHeader.indexOf('Bearer ') === 0) {
+      headerToken = authHeader.substring(7).trim();
+    }
+  }
+  var paramToken = e.parameter && e.parameter.token;
+  return headerToken === AUTH_TOKEN || paramToken === AUTH_TOKEN;
 }
 
 function createJsonOutput(payload, status) {

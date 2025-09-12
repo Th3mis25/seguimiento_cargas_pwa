@@ -45,7 +45,7 @@ global.isAuthorized = function(e) {
   return originalIsAuthorized(e);
 };
 
-const noPostDataResult = doPost({ parameter: { token: 'demo-token' } });
+const noPostDataResult = doPost({ headers: { Authorization: 'Bearer demo-token' }, parameter: {} });
 const noPostDataPayload = JSON.parse(noPostDataResult.content);
 assert.strictEqual(noPostDataPayload.error, 'Missing postData');
 assert.strictEqual(noPostDataPayload.status, 400);
@@ -56,10 +56,10 @@ console.log('Missing postData test passed.');
 const e = {
   postData: {},
   parameter: {
-    token: 'demo-token',
     action: 'update',
     originalTrip: '123'
-  }
+  },
+  headers: { Authorization: 'Bearer demo-token' }
 };
 
 const result = doPost(e);

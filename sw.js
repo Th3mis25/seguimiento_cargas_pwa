@@ -32,6 +32,11 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const { request } = e;
 
+  if (request.headers.has('Authorization')) {
+    e.respondWith(fetch(request));
+    return;
+  }
+
   if (request.method !== 'GET') {
     e.respondWith(fetch(request));
     return;
