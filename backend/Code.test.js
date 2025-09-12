@@ -17,6 +17,11 @@ const ss = {
 };
 
 const sandbox = {
+  PropertiesService: {
+    getScriptProperties: () => ({
+      getProperty: () => 'demo-token'
+    })
+  },
   SpreadsheetApp: { openById: () => ss },
   ContentService: {
     MimeType: { JSON: 'application/json' },
@@ -38,7 +43,7 @@ const e = {
     token: 'demo-token',
     action: 'add',
     ejecutivo: 'Maria',
-    trip: 'T1',
+    trip: '225001',
     referencia: 'R1',
     cliente: 'C1',
     estatus: 'E1'
