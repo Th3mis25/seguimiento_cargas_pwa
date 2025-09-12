@@ -1,9 +1,34 @@
 const SHEET_NAME = 'Tabla_1';
-const AUTH_TOKEN = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
 const SPREADSHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
 
+// Usuarios con contraseñas hasheadas (SHA-256)
+const USERS = {
+  'VPADRONR': '637acb3c6c207e324182ceae11ceac46c0a9f8f793fa3ea2b08d8fc369cf6017',
+  'DDAVILA': '2a8f5d9c84213a3448398a349c9540f919065517331661ce2cf799e7c6b6fa1d'
+};
+
+function hashPassword(password) {
+  const raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password);
+  return raw.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+}
+
+function verifyUser(user, pass) {
+  const stored = USERS[user];
+  if (!stored) return false;
+  return hashPassword(pass) === stored;
+}
+
+function issueToken(user) {
+  const token = Utilities.getUuid();
+  CacheService.getScriptCache().put(token, user, 3600); // Expira en 1h
+  return token;
+}
+
 function isAuthorized(e) {
-  return e.parameter && e.parameter.token === AUTH_TOKEN;
+  const token = e.parameter && e.parameter.token;
+  if (!token) return false;
+  const cache = CacheService.getScriptCache();
+  return cache.get(token) !== null;
 }
 
 function createJsonOutput(payload, status) {
@@ -24,12 +49,20 @@ function doPost(e) {
     return createJsonOutput({}, 200);
   }
 
+  var p = e.parameter || {};
+
+  if (p.action === 'login') {
+    if (verifyUser(p.user, p.password)) {
+      return createJsonOutput({ token: issueToken(p.user) }, 200);
+    }
+    return createJsonOutput({ error: 'Invalid credentials' }, 401);
+  }
+
   if (!isAuthorized(e)) {
     return createJsonOutput({ error: 'Unauthorized' }, 401);
   }
 
   try {
-    var p = e.parameter;
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = ss.getSheetByName(SHEET_NAME);
     if (!sheet) throw new Error('Sheet ' + SHEET_NAME + ' not found');

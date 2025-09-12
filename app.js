@@ -5,22 +5,6 @@
 // URL base del Web App de Apps Script.
 // Se obtiene de `config.js` para poder configurarse al desplegar.
 const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) || '';
-
-// Configuración sensible cargada desde un endpoint seguro.
-const SECURE_CONFIG = { authUsers: [], apiToken: '' };
-
-async function loadSecureConfig(){
-  try{
-    const res = await fetch('./secure-config.json', { cache:'no-store' });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    SECURE_CONFIG.authUsers = json.AUTH_USERS || json.authUsers || [];
-    SECURE_CONFIG.apiToken = json.API_TOKEN || json.apiToken || '';
-  }catch(err){
-    console.error('loadSecureConfig error', err);
-  }
-}
-
 const DEFAULT_LOCALE = 'es-MX';
 
 // Cabeceras EXACTAS en el orden de tu hoja (las que quieres ver en la app)
@@ -60,7 +44,8 @@ const STATUS_OPTIONS = [
 const $ = s => document.querySelector(s);
 let cache = [];
 let currentView = 'daily';
-let isLoggedIn = (typeof localStorage !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true');
+let authToken = (typeof localStorage !== 'undefined' && localStorage.getItem('authToken')) || '';
+let isLoggedIn = !!authToken;
 let mainInitialized = false;
 let pendingStatusChange = null;
 
@@ -222,7 +207,7 @@ async function fetchData(){
   tb.innerHTML = `<tr><td colspan="18" style="padding:16px">Cargando…</td></tr>`;
 
     try{
-      const token = SECURE_CONFIG.apiToken || '';
+      const token = authToken || '';
       const url = token ? `${API_BASE}?token=${encodeURIComponent(token)}` : API_BASE;
       const res  = await fetch(url,{ cache:'no-store' });
     if(!res.ok){
@@ -247,7 +232,7 @@ async function fetchData(){
 
 async function addRecord(data){
     try{
-      const token = SECURE_CONFIG.apiToken || '';
+      const token = authToken || '';
       const body = new URLSearchParams({ action:'add', token, ...data });
       const res = await fetch(API_BASE,{
         method:'POST',
@@ -291,7 +276,7 @@ async function addRecord(data){
 
 async function updateRecord(data){
     try{
-      const token = SECURE_CONFIG.apiToken || '';
+      const token = authToken || '';
       const body = new URLSearchParams({ action:'update', token, ...data });
       const res = await fetch(API_BASE,{ method:'POST', body });
     let json;
@@ -1024,8 +1009,6 @@ if (typeof document !== 'undefined') {
       navigator.serviceWorker.register('./sw.js').catch(()=>{});
     }
 
-    await loadSecureConfig();
-
     const loginScreen = document.getElementById('loginScreen');
     const mainEl = document.querySelector('main.container');
     const sideMenu = document.querySelector('.side-menu');
@@ -1067,26 +1050,32 @@ if (typeof document !== 'undefined') {
       showLogin();
     }
 
-    loginForm?.addEventListener('submit', ev=>{
+    loginForm?.addEventListener('submit', async ev=>{
       ev.preventDefault();
       const user = loginForm.user.value.trim();
       const pass = loginForm.password.value.trim();
-      const users = SECURE_CONFIG.authUsers || [];
-      const ok = users.some(u => u.user === user && u.password === pass);
-      if(ok){
-        isLoggedIn = true;
-        if(typeof localStorage !== 'undefined') localStorage.setItem('isLoggedIn','true');
-        showApp();
-        loginForm.reset();
-        if(loginError) loginError.textContent = '';
-      }else{
-        if(loginError) loginError.textContent = 'Credenciales incorrectas';
+      try{
+        const res = await fetch(API_BASE,{ method:'POST', body: new URLSearchParams({ action:'login', user, password:pass }) });
+        const json = await res.json();
+        if(res.ok && json.token){
+          authToken = json.token;
+          isLoggedIn = true;
+          if(typeof localStorage !== 'undefined') localStorage.setItem('authToken', authToken);
+          showApp();
+          loginForm.reset();
+          if(loginError) loginError.textContent = '';
+        }else{
+          if(loginError) loginError.textContent = json.error || 'Credenciales incorrectas';
+        }
+      }catch(err){
+        if(loginError) loginError.textContent = 'Error de autenticación';
       }
     });
 
     logoutBtn?.addEventListener('click', ()=>{
       isLoggedIn = false;
-      if(typeof localStorage !== 'undefined') localStorage.removeItem('isLoggedIn');
+      authToken = '';
+      if(typeof localStorage !== 'undefined') localStorage.removeItem('authToken');
       showLogin();
     });
   })();

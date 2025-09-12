@@ -1,12 +1,22 @@
 const assert = require('assert');
 const fs = require('fs');
 const vm = require('vm');
+const crypto = require('crypto');
 
 // Stub services required at load time
-global.PropertiesService = {
-  getScriptProperties: () => ({
-    getProperty: () => 'demo-token'
+const cacheStore = {};
+global.CacheService = {
+  getScriptCache: () => ({
+    get: key => cacheStore[key] || null,
+    put: (key, value) => { cacheStore[key] = value; }
   })
+};
+
+global.Utilities = {
+  DigestAlgorithm: { SHA_256: 'sha256' },
+  computeDigest: (algo, val) => Array.from(crypto.createHash('sha256').update(val).digest()),
+  getUuid: () => 'token-123',
+  parseDate: (str) => new Date(str)
 };
 
 // Load backend script into the current context
@@ -37,11 +47,16 @@ global.ContentService = {
   MimeType: { JSON: 'application/json', TEXT: 'text/plain' }
 };
 
+// Login to obtain token
+const loginRes = doPost({ postData: {}, parameter: { action: 'login', user: 'VPADRONR', password: 'VP@trc.008' } });
+const loginPayload = JSON.parse(loginRes.content);
+const token = loginPayload.token;
+
 // Execute doPost with missing Trip column
 const e = {
   postData: {},
   parameter: {
-    token: 'demo-token',
+    token,
     action: 'update',
     originalTrip: '123'
   }
