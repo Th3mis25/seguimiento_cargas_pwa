@@ -37,6 +37,29 @@ body{
   --scroll-thumb-hover:#e5e7eb;
 }
 
+.theme-light{
+  --bg:#f1f5f9;
+  --card:#ffffff;
+  --panel:#ffffff;
+  --panel-2:#e2e8f0;
+  --text:#1f2937;
+  --muted:#4b5563;
+  --accent:#2563eb;
+  --accent-2:#1b4fc6;
+  --badge-green:#16a34a;
+  --badge-blue:#2563eb;
+  --badge-red:#ef4444;
+  --badge-purple:#9333ea;
+  --badge-yellow:#f59e0b;
+  --row:#f9fafb;
+  --row-alt:#f1f5f9;
+  --row-overdue:rgba(239,68,68,0.3);
+  --row-border:#d1d5db;
+  --scroll-track:#e5e7eb;
+  --scroll-thumb:#9ca3af;
+  --scroll-thumb-hover:#6b7280;
+}
+
 /* ====== Scrollbar ====== */
 *{
   scrollbar-width: thin;
