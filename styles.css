@@ -28,6 +28,7 @@ body{
   --badge-red:#ef4444;
   --badge-purple:#9333ea;
   --badge-yellow:#f59e0b;
+  --badge-bg:#10284f;
   --row:#142f54;
   --row-alt:#11284a;
   --row-overdue:rgba(239,68,68,0.3);
@@ -54,6 +55,7 @@ body{
   --badge-red:#ef4444;
   --badge-purple:#9333ea;
   --badge-yellow:#f59e0b;
+  --badge-bg:#ffffff;
   --row:#f9fafb;
   --row-alt:#f1f5f9;
   --row-overdue:rgba(239,68,68,0.3);
@@ -243,13 +245,20 @@ body{
 .badge{
   display:inline-flex; align-items:center; gap:6px;
   font-weight:600; font-size:.85rem;
-  padding:2px 8px; border-radius:999px; background:#10284f;
+  padding:2px 8px; border-radius:999px; background:var(--badge-bg); color:#fff;
 }
-.badge.green{  background: linear-gradient(180deg,rgba(22,163,74,.4),rgba(15,122,54,.4)), #10284f; }
-.badge.blue{   background: linear-gradient(180deg,rgba(37,99,235,.4),rgba(29,78,216,.4)), #10284f; }
-.badge.red{    background: linear-gradient(180deg,rgba(239,68,68,.4),rgba(185,28,28,.4)), #10284f; }
-.badge.purple{ background: linear-gradient(180deg,rgba(147,51,234,.4),rgba(126,34,206,.4)), #10284f; }
-.badge.yellow{ background: linear-gradient(180deg,rgba(245,158,11,.4),rgba(217,119,6,.4)), #10284f; }
+.badge.green{  background: linear-gradient(180deg,rgba(22,163,74,.4),rgba(15,122,54,.4)), var(--badge-bg); }
+.badge.blue{   background: linear-gradient(180deg,rgba(37,99,235,.4),rgba(29,78,216,.4)), var(--badge-bg); }
+.badge.red{    background: linear-gradient(180deg,rgba(239,68,68,.4),rgba(185,28,28,.4)), var(--badge-bg); }
+.badge.purple{ background: linear-gradient(180deg,rgba(147,51,234,.4),rgba(126,34,206,.4)), var(--badge-bg); }
+.badge.yellow{ background: linear-gradient(180deg,rgba(245,158,11,.4),rgba(217,119,6,.4)), var(--badge-bg); }
+
+.theme-light .badge{ color: var(--text); }
+.theme-light .badge.green{ color: var(--badge-green); }
+.theme-light .badge.blue{ color: var(--badge-blue); }
+.theme-light .badge.red{ color: var(--badge-red); }
+.theme-light .badge.purple{ color: var(--badge-purple); }
+.theme-light .badge.yellow{ color: var(--badge-yellow); }
 
 /* ====== Acciones ====== */
 .action-bar{
