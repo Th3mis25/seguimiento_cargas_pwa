@@ -701,7 +701,7 @@ function renderRows(rows, hiddenCols=[]){
     waLink.href = buildWaShareUrl(r);
     waLink.title = 'WhatsApp';
     const waImg = document.createElement('img');
-    waImg.src = 'assets/WP-logo.svg';
+    waImg.src = 'assets/WP-logo.png';
     waImg.alt = 'WhatsApp';
     waLink.appendChild(waImg);
     actionTd.appendChild(waLink);
