@@ -1054,10 +1054,12 @@ if (typeof document !== 'undefined') {
 
     if(typeof localStorage !== 'undefined' && localStorage.getItem('theme') === 'light'){
       document.body.classList.add('theme-light');
+      if(themeToggle) themeToggle.checked = true;
     }
 
-    themeToggle?.addEventListener('click', () => {
-      const isLight = document.body.classList.toggle('theme-light');
+    themeToggle?.addEventListener('change', (e) => {
+      const isLight = e.target.checked;
+      document.body.classList.toggle('theme-light', isLight);
       if(typeof localStorage !== 'undefined'){
         if(isLight) localStorage.setItem('theme','light');
         else localStorage.removeItem('theme');
