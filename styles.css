@@ -270,6 +270,9 @@ body{
   transition:background-color .2s ease;
 }
 .btn-mini:hover{ background:#eef2ff; }
+.btn-mini img{
+  width:20px; height:20px;
+}
 
 /* ====== Theme Switch ====== */
 .theme-switch{

@@ -690,7 +690,8 @@ function renderRows(rows, hiddenCols=[]){
     copyBtn.className = 'btn-mini';
     copyBtn.dataset.act = 'copy';
     copyBtn.dataset.trip = r[COL.trip];
-    copyBtn.textContent = '📋 Copiar';
+    copyBtn.textContent = '📋';
+    copyBtn.title = 'Copiar';
     actionTd.appendChild(copyBtn);
 
     const waLink = document.createElement('a');
@@ -698,7 +699,11 @@ function renderRows(rows, hiddenCols=[]){
     waLink.target = '_blank';
     waLink.rel = 'noopener';
     waLink.href = buildWaShareUrl(r);
-    waLink.textContent = '🟢 WhatsApp';
+    waLink.title = 'WhatsApp';
+    const waImg = document.createElement('img');
+    waImg.src = 'assets/WP-logo.svg';
+    waImg.alt = 'WhatsApp';
+    waLink.appendChild(waImg);
     actionTd.appendChild(waLink);
 
 
