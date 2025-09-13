@@ -105,6 +105,11 @@ body{
   font-weight:normal;
 }
 .app-logo{ height:40px; margin-right:8px; cursor:pointer; }
+.theme-light .app-logo{
+  background:#0F2C5C;
+  border-radius:4px;
+  padding:2px;
+}
 
 /* Menu lateral eliminado */
 
@@ -466,6 +471,11 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator{
   display:block;
   margin:0 auto 10px;
   max-width:150px;
+}
+.theme-light #loginForm .login-logo{
+  background:#0F2C5C;
+  border-radius:4px;
+  padding:4px;
 }
 
 #loginError{
