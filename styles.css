@@ -143,6 +143,20 @@ body{
   color:var(--text); border-radius:10px; padding:10px 12px;
   outline:none;
 }
+
+/* Light theme tweaks for filter controls */
+.theme-light .controls label{
+  color:#000;
+}
+
+.theme-light .controls input,
+.theme-light .controls select{
+  background:#fff;
+}
+
+.theme-light .date-range{
+  background:#fff;
+}
 #statusFilter{
   width:120px;
 }
@@ -157,6 +171,10 @@ body{
   right:8px; top:50%; transform:translateY(-50%);
   background:none; border:0; color:#fff; cursor:pointer;
   font-size:16px; line-height:1; display:none;
+}
+
+.theme-light .clear-search{
+  color:#000;
 }
 .btn{
   background:var(--accent); color:#fff; border:0; border-radius:12px;
