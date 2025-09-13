@@ -430,6 +430,9 @@ body{
   background: var(--panel-2);
   color:var(--text);
   margin-bottom:-1px;
+  border-left:2px solid var(--accent);
+  border-right:2px solid var(--accent);
+  border-top:2px solid var(--accent);
 }
 
 /* Consistent font size for menu and filters */
