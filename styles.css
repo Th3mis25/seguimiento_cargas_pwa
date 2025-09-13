@@ -36,6 +36,8 @@ body{
   --scroll-track:#4b5563;    /* gris pista */
   --scroll-thumb:#f3f4f6;    /* blanco pulgar */
   --scroll-thumb-hover:#e5e7eb;
+  --input-bg:#0b1f3d;
+  --input-border:#1f3e73;
 }
 
 .theme-light{
@@ -60,6 +62,8 @@ body{
   --scroll-track:#e5e7eb;
   --scroll-thumb:#9ca3af;
   --scroll-thumb-hover:#6b7280;
+  --input-bg:#f9fafb;
+  --input-border:#d1d5db;
 }
 
 /* ====== Scrollbar ====== */
@@ -130,7 +134,7 @@ body{
 }
 .controls label{ font-weight:600; color:var(--muted); }
 .controls input, .controls select{
-  background:#0b1f3d; border:1px solid #1f3e73;
+  background:var(--input-bg); border:1px solid var(--input-border);
   color:var(--text); border-radius:10px; padding:10px 12px;
   outline:none;
 }
@@ -315,7 +319,7 @@ body{
 }
 .modal-content input,
 .modal-content select{
-  background:#0b1f3d; border:1px solid #1f3e73; color:var(--text); border-radius:10px; padding:8px;
+  background:var(--input-bg); border:1px solid var(--input-border); color:var(--text); border-radius:10px; padding:8px;
   font-size:14px;
 }
 .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
@@ -393,8 +397,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator{
 .date-range{
   display:inline-flex;
   align-items:center;
-  background:#0b1f3d;
-  border:1px solid #1f3e73;
+  background:var(--input-bg);
+  border:1px solid var(--input-border);
   border-radius:10px;
 }
 
@@ -450,8 +454,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator{
 
 #loginForm input{
   flex:1;
-  background:#0b1f3d;
-  border:1px solid #1f3e73;
+  background:var(--input-bg);
+  border:1px solid var(--input-border);
   color:var(--text);
   border-radius:10px;
   padding:10px 12px;
