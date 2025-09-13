@@ -687,7 +687,7 @@ function renderRows(rows, hiddenCols=[]){
     actionTd.className = 'action-bar';
 
     const copyBtn = document.createElement('button');
-    copyBtn.className = 'btn-mini';
+    copyBtn.className = 'btn-icon';
     copyBtn.dataset.act = 'copy';
     copyBtn.dataset.trip = r[COL.trip];
     const copyImg = document.createElement('img');
