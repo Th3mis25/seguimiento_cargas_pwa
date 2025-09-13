@@ -690,7 +690,10 @@ function renderRows(rows, hiddenCols=[]){
     copyBtn.className = 'btn-mini';
     copyBtn.dataset.act = 'copy';
     copyBtn.dataset.trip = r[COL.trip];
-    copyBtn.textContent = '📋';
+    const copyImg = document.createElement('img');
+    copyImg.src = 'assets/icon-notes.png';
+    copyImg.alt = 'Copiar';
+    copyBtn.appendChild(copyImg);
     copyBtn.title = 'Copiar';
     actionTd.appendChild(copyBtn);
 
