@@ -274,6 +274,17 @@ body{
   width:20px; height:20px;
 }
 
+/* Icon button without borders */
+.btn-icon{
+  display:inline-block;
+  width:32px; height:32px;
+  padding:0; border:none; background:none; cursor:pointer;
+  border-radius:8px; overflow:hidden;
+}
+.btn-icon img{
+  width:100%; height:100%; display:block;
+}
+
 /* ====== Theme Switch ====== */
 .theme-switch{
   display:flex;

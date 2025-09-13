@@ -695,7 +695,7 @@ function renderRows(rows, hiddenCols=[]){
     actionTd.appendChild(copyBtn);
 
     const waLink = document.createElement('a');
-    waLink.className = 'btn-mini';
+    waLink.className = 'btn-icon';
     waLink.target = '_blank';
     waLink.rel = 'noopener';
     waLink.href = buildWaShareUrl(r);
