@@ -126,7 +126,7 @@ body{
   left:0;
   right:0;
   bottom:0;
-  padding:22px 0;
+  padding:4px 0 22px;
   display:flex;
   flex-direction:column;
   overflow:hidden;
@@ -136,7 +136,7 @@ body{
 .controls{
   display:flex; flex-wrap:wrap; gap:10px; align-items:center;
   background: var(--panel); color:var(--text);
-  padding: 14px; border-radius: 14px; margin:14px 0;
+  padding: 14px; border-radius: 14px; margin:0 0 14px;
   box-shadow: 0 8px 26px rgba(0,0,0,.25), inset 0 0 1px rgba(255,255,255,.06);
 }
 .controls label{
