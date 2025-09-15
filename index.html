@@ -22,6 +22,20 @@
   </header>
 
   <main class="container">
+    <section class="login-panel" aria-labelledby="loginTitle">
+      <h2 id="loginTitle">Inicio de sesión</h2>
+      <form id="loginForm" class="login-form">
+        <div class="form-field">
+          <label for="loginUser">Usuario</label>
+          <input id="loginUser" name="username" type="text" autocomplete="username" required />
+        </div>
+        <div class="form-field">
+          <label for="loginPassword">Contraseña</label>
+          <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="btn">Iniciar sesión</button>
+      </form>
+    </section>
     <div id="secureConfigMessage" role="alert" aria-live="assertive" hidden>
       <p id="secureConfigMessageText"></p>
       <form id="secureConfigForm" class="secure-config-form">
