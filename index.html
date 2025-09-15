@@ -22,7 +22,18 @@
   </header>
 
   <main class="container">
-    <div id="secureConfigMessage" role="alert" aria-live="assertive"></div>
+    <div id="secureConfigMessage" role="alert" aria-live="assertive" hidden>
+      <p id="secureConfigMessageText"></p>
+      <form id="secureConfigForm" class="secure-config-form">
+        <label for="secureConfigToken">Token de API</label>
+        <input id="secureConfigToken" type="password" autocomplete="off" spellcheck="false" />
+        <div class="secure-config-actions">
+          <button type="submit" class="btn-mini">Guardar token</button>
+          <button type="button" id="secureConfigClear" class="btn-mini">Borrar token</button>
+        </div>
+        <p class="secure-config-hint">El token se almacenará solo en este dispositivo.</p>
+      </form>
+    </div>
     <section class="controls">
       <label for="statusFilter">Estatus:</label>
       <select id="statusFilter">

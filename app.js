@@ -12,13 +12,51 @@ const SECURE_CONFIG_URL = (typeof window !== 'undefined' && window.APP_CONFIG?.S
 const SECURE_CONFIG = { apiToken: '' };
 const SECURE_CONFIG_TOKEN_ERROR_MSG = 'No se obtuvo el token de API. Define API_TOKEN en tu entorno o crea secure-config.json a partir de secure-config.example.json.';
 const SECURE_CONFIG_LOAD_ERROR_MSG = 'No se pudo cargar la configuración segura. Define API_TOKEN, revisa SECURE_CONFIG_URL o verifica que secure-config.json exista y tenga permisos de lectura.';
+const SECURE_TOKEN_STORAGE_KEY = 'seguimientoSecureToken';
 let secureConfigErrorShown = false;
+
+function readStoredSecureToken(){
+  if(typeof localStorage === 'undefined') return '';
+  try{
+    const stored = localStorage.getItem(SECURE_TOKEN_STORAGE_KEY);
+    return typeof stored === 'string' ? stored.trim() : '';
+  }catch(err){
+    console.warn('readStoredSecureToken error', err);
+    return '';
+  }
+}
+
+function persistStoredSecureToken(token){
+  if(typeof localStorage === 'undefined') return;
+  try{
+    if(token){
+      localStorage.setItem(SECURE_TOKEN_STORAGE_KEY, token);
+    }else{
+      localStorage.removeItem(SECURE_TOKEN_STORAGE_KEY);
+    }
+  }catch(err){
+    console.warn('persistStoredSecureToken error', err);
+  }
+}
+
+function setSecureConfigInputValue(token){
+  if(typeof document === 'undefined') return;
+  const input = document.getElementById('secureConfigToken');
+  if(input && document.activeElement !== input){
+    input.value = token || '';
+  }
+}
 
 function showSecureConfigWarning(message){
   if(typeof document === 'undefined') return;
   const el = document.getElementById('secureConfigMessage');
   if(!el) return;
-  el.textContent = message;
+  const textEl = document.getElementById('secureConfigMessageText');
+  if(textEl) textEl.textContent = message;
+  else el.textContent = message;
+  const stored = readStoredSecureToken();
+  setSecureConfigInputValue(stored || SECURE_CONFIG.apiToken || '');
+  el.hidden = false;
   el.style.display = 'block';
 }
 
@@ -26,7 +64,10 @@ function hideSecureConfigWarning(){
   if(typeof document === 'undefined') return;
   const el = document.getElementById('secureConfigMessage');
   if(!el) return;
-  el.textContent = '';
+  const textEl = document.getElementById('secureConfigMessageText');
+  if(textEl) textEl.textContent = '';
+  else el.textContent = '';
+  el.hidden = true;
   el.style.display = 'none';
   secureConfigErrorShown = false;
 }
@@ -46,25 +87,46 @@ function notifySecureConfigIssue(message = SECURE_CONFIG_TOKEN_ERROR_MSG){
 }
 
 async function loadSecureConfig(){
-  if(!SECURE_CONFIG_URL) return;
+  const storedToken = readStoredSecureToken();
+
+  if(!SECURE_CONFIG_URL){
+    if(storedToken){
+      SECURE_CONFIG.apiToken = storedToken;
+      setSecureConfigInputValue(storedToken);
+    }
+    return;
+  }
 
   SECURE_CONFIG.apiToken = '';
 
-  const res = await fetch(SECURE_CONFIG_URL, { cache:'no-store' });
-  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  try{
+    const res = await fetch(SECURE_CONFIG_URL, { cache:'no-store' });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
 
-  const json = await res.json();
-  const rawToken = json.API_TOKEN ?? json.apiToken;
-  const token = typeof rawToken === 'string' ? rawToken.trim() : '';
+    const json = await res.json();
+    const rawToken = json.API_TOKEN ?? json.apiToken;
+    const token = typeof rawToken === 'string' ? rawToken.trim() : '';
 
-  if(!token){
-    const err = new Error(SECURE_CONFIG_TOKEN_ERROR_MSG);
-    err.code = 'NO_API_TOKEN';
+    if(!token){
+      const err = new Error(SECURE_CONFIG_TOKEN_ERROR_MSG);
+      err.code = 'NO_API_TOKEN';
+      throw err;
+    }
+
+    SECURE_CONFIG.apiToken = token;
+    persistStoredSecureToken(token);
+    setSecureConfigInputValue(token);
+    hideSecureConfigWarning();
+  }catch(err){
+    if(storedToken){
+      console.warn('Falling back to stored API token', err);
+      SECURE_CONFIG.apiToken = storedToken;
+      setSecureConfigInputValue(storedToken);
+      hideSecureConfigWarning();
+      return;
+    }
     throw err;
   }
-
-  SECURE_CONFIG.apiToken = token;
-  hideSecureConfigWarning();
 }
 
 const DEFAULT_LOCALE = 'es-MX';
@@ -110,6 +172,7 @@ let mainInitialized = false;
 let pendingStatusChange = null;
 const UNAUTHORIZED_MSG = 'No autorizado – revisa el token de acceso';
 let lastFetchUnauthorized = false;
+let lastFetchErrorMessage = '';
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({
@@ -269,11 +332,14 @@ async function fetchData(){
   tb.innerHTML = `<tr><td colspan="18" style="padding:16px">Cargando…</td></tr>`;
 
   try{
+    lastFetchErrorMessage = '';
     const token = SECURE_CONFIG.apiToken || '';
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     const res  = await fetch(API_BASE,{ cache:'no-store', headers });
     if(res.status === 401 || res.status === 403){
       lastFetchUnauthorized = true;
+      lastFetchErrorMessage = UNAUTHORIZED_MSG;
+      notifySecureConfigIssue(UNAUTHORIZED_MSG);
       tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${UNAUTHORIZED_MSG}</td></tr>`;
       return [];
     }
@@ -288,15 +354,68 @@ async function fetchData(){
     let data = json.data ?? json.rows ?? [];
     data = normalizeData(data);
 
+    hideSecureConfigWarning();
+    lastFetchErrorMessage = '';
     return data;
   }catch(err){
     console.error('fetch error', err);
     lastFetchUnauthorized = false;
+    lastFetchErrorMessage = err && err.message ? err.message : 'Error';
     tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">
       No se pudieron cargar los datos. ${escapeHtml(err.message)}. Intenta recargar.
     </td></tr>`;
     return [];
   }
+}
+
+function setupSecureConfigForm(){
+  if(typeof document === 'undefined') return;
+  const form = document.getElementById('secureConfigForm');
+  const input = document.getElementById('secureConfigToken');
+  const clearBtn = document.getElementById('secureConfigClear');
+  if(!form || !input) return;
+
+  const saved = readStoredSecureToken();
+  if(saved && !input.value){
+    input.value = saved;
+  }
+
+  form.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const token = input.value.trim();
+    if(!token){
+      toast('Proporciona un token válido', 'error');
+      input.focus();
+      return;
+    }
+    SECURE_CONFIG.apiToken = token;
+    persistStoredSecureToken(token);
+    const refreshed = await fetchData();
+    if(lastFetchUnauthorized){
+      return;
+    }
+    if(lastFetchErrorMessage){
+      showSecureConfigWarning(`No se pudo validar el token. ${lastFetchErrorMessage}`);
+      secureConfigErrorShown = true;
+      toast(`No se pudo validar el token: ${lastFetchErrorMessage}`, 'error');
+      return;
+    }
+    cache = refreshed;
+    populateStatusFilter(cache);
+    populateEjecutivoFilter(cache);
+    renderCurrent();
+    hideSecureConfigWarning();
+    toast('Token actualizado', 'success');
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    input.value = '';
+    persistStoredSecureToken('');
+    SECURE_CONFIG.apiToken = '';
+    secureConfigErrorShown = false;
+    notifySecureConfigIssue(SECURE_CONFIG_TOKEN_ERROR_MSG);
+    input.focus();
+  });
 }
 
 async function addRecord(data){
@@ -1138,6 +1257,8 @@ if (typeof document !== 'undefined') {
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(()=>{});
     }
+
+    setupSecureConfigForm();
 
     try{
       await loadSecureConfig();

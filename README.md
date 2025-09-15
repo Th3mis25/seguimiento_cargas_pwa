@@ -65,4 +65,8 @@ Incluye el archivo `runtime-env.js` antes de `<script src="./config.js"></script
   2. Asegúrate de servir `runtime-env.js` antes de `config.js` (puedes copiarlo junto al `index.html` generado por CI/CD y referenciarlo con `<script src="./runtime-env.js"></script>`).
 - **Endpoint seguro**: hospeda un servicio autenticado que devuelva `{"API_TOKEN":"..."}` y expón su URL mediante `window.__ENV.SECURE_CONFIG_URL`. El token nunca se guardará en archivos estáticos.
 
+### Ingresar el token desde la interfaz
+
+Cuando `secure-config.json` no está disponible o el endpoint seguro devuelve un error, la aplicación mostrará una alerta roja con un formulario para capturar el token. El valor queda almacenado únicamente en el `localStorage` del navegador, por lo que deberás repetir el proceso en cada dispositivo/navegador que utilices.
+
 Recuerda alinear el valor de `API_TOKEN` en tu Google Apps Script (`Project Settings` → `Script properties`) con el que uses en el cliente para evitar errores de autenticación.
