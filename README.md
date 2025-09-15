@@ -9,7 +9,7 @@ Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sh
 
 ## Configuración
 - URL de Google Apps Script: defínela en `config.js`.
-- Usuarios autorizados y token de API están versionados en `secure-config.json`.
+- El token de API está versionado en `secure-config.json`.
 - Nombre de la hoja: `Tabla_1`
 - Columnas esperadas:
   - Trip, Caja, Referencia, Cliente, Destino, Estatus, Segmento, TR-MX, TR-USA, Cita carga, Llegada carga, Cita entrega, Llegada entrega, Comentarios, Docs, Tracking
@@ -33,10 +33,10 @@ export API_BASE="https://tu-web-app.example.com"
 echo "window.APP_CONFIG = { API_BASE: '${API_BASE}' };" > config.js
 ```
 
-El archivo `secure-config.json` incluido en el repositorio expone credenciales
-de ejemplo para desarrollo o demostraciones. Si necesitas cambiarlas, edita
-los valores de `AUTH_USERS` y `API_TOKEN` directamente en ese archivo y
-asegúrate de replicarlos en el Web App de Google Apps Script.
+El archivo `secure-config.json` incluido en el repositorio expone un token de
+ejemplo para desarrollo o demostraciones. Si necesitas cambiarlo, edita
+el valor de `API_TOKEN` directamente en ese archivo y asegúrate de replicarlo
+en el Web App de Google Apps Script.
 
 ### Distribución del token `API_TOKEN`
 
@@ -44,7 +44,7 @@ asegúrate de replicarlos en el Web App de Google Apps Script.
    y agrega una *Script property* llamada `API_TOKEN` con el mismo valor que
    aparece en `secure-config.json`.
 2. **Aplicación**: el archivo `config.js` ya apunta a `secure-config.json`,
-   por lo que la PWA leerá los usuarios y el token directamente del repositorio.
+   por lo que la PWA leerá el token directamente del repositorio.
 3. **Actualizaciones**: si modificas las credenciales, recuerda actualizar las
    propiedades del script para que coincidan.
 
