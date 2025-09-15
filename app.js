@@ -773,6 +773,28 @@ function renderDaily(rows){
   renderRows(filtered, [9,12,13,15]);
 }
 
+function getCurrentWeekRange(){
+  const start = new Date();
+  const day = start.getDay();
+  const diff = day === 0 ? -6 : 1 - day; // Ajusta para que lunes sea el inicio
+  start.setDate(start.getDate() + diff);
+  start.setHours(0,0,0,0);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+  return { start, end };
+}
+
+function renderProgramaSemanal(rows){
+  currentView = 'programaSemanal';
+  const { start, end } = getCurrentWeekRange();
+  const filtered = rows.filter(r=>{
+    const cita = parseDate(r[COL.citaCarga]);
+    if(!cita) return false;
+    return cita >= start && cita < end;
+  });
+  renderRows(filtered);
+}
+
 function renderEntregasHoy(rows){
   currentView = 'entregasHoy';
   const today = new Date();
@@ -800,6 +822,7 @@ function renderInventarioNlar(rows){
 
 function renderCurrent(){
   if(currentView === 'daily') renderDaily(cache);
+  else if(currentView === 'programaSemanal') renderProgramaSemanal(cache);
   else if(currentView === 'entregasHoy') renderEntregasHoy(cache);
   else if(currentView === 'inventarioNlar') renderInventarioNlar(cache);
   else renderRows(cache);
@@ -1008,6 +1031,11 @@ async function main(){
     setActiveTopBtn(ev.currentTarget);
     if (hasActiveFilters()) clearFilters();
     renderDaily(cache);
+  });
+  $('#weeklyMenu').addEventListener('click', ev => {
+    setActiveTopBtn(ev.currentTarget);
+    if (hasActiveFilters()) clearFilters();
+    renderProgramaSemanal(cache);
   });
   $('#deliveryMenu').addEventListener('click', ev => {
     setActiveTopBtn(ev.currentTarget);
