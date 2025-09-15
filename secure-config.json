@@ -1,0 +1,7 @@
+{
+  "AUTH_USERS": [
+    { "user": "demo", "password": "demo123" },
+    { "user": "operaciones", "password": "transporte2024" }
+  ],
+  "API_TOKEN": "demo-api-token-123456"
+}
