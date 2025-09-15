@@ -21,6 +21,7 @@ body{
   --panel-2:#102a58;
   --text:#e7eefc;
   --muted:#9fb3d9;
+  --header-divider:rgba(255,255,255,.12);
   --accent:#2563eb;        /* azul botón */
   --accent-2:#1b4fc6;
   --badge-green:#16a34a;
@@ -48,6 +49,7 @@ body{
   --panel-2:#e2e8f0;
   --text:#1f2937;
   --muted:#4b5563;
+  --header-divider:rgba(17,24,39,.12);
   --accent:#2563eb;
   --accent-2:#1b4fc6;
   --badge-green:#16a34a;
@@ -216,8 +218,12 @@ body{
   background: var(--panel-2);
   color: var(--text);
   text-align:left; font-size:.95rem; letter-spacing:.2px;
+  font-weight:400;
   padding: 8px 10px; border-bottom:1px solid #214070;
   z-index: 2;
+}
+#loadsTable thead th:not(:last-child){
+  border-right:1px solid var(--header-divider);
 }
 #loadsTable tbody tr{ background: var(--row); transition:background-color .15s ease; }
 #loadsTable tbody tr:nth-child(even){ background: var(--row-alt); }
