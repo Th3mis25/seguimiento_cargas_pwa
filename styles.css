@@ -8,6 +8,10 @@ html,body{
   color:var(--text);
 }
 
+[hidden]{
+  display:none !important;
+}
+
 body{
   height:100vh;
   overflow:hidden;
@@ -146,10 +150,55 @@ body{
   line-height:1.4;
 }
 
+#secureConfigMessage p{
+  margin:0 0 8px;
+}
+
+.secure-config-form{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.secure-config-form label{
+  font-size:.9rem;
+}
+
+.secure-config-form input{
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.45);
+  padding:8px 10px;
+  background:rgba(15,44,92,0.25);
+  color:inherit;
+}
+
+.secure-config-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.secure-config-hint{
+  margin:0;
+  font-size:.75rem;
+  font-weight:400;
+  color:rgba(255,255,255,0.8);
+}
+
 .theme-light #secureConfigMessage{
   background:#fee2e2;
   border-color:#fecaca;
   color:#b91c1c;
+}
+
+.theme-light .secure-config-form input{
+  background:#fff;
+  border-color:var(--input-border);
+  color:var(--text);
+}
+
+.theme-light .secure-config-hint{
+  color:#6b7280;
 }
 
 /* ====== Controles ====== */
