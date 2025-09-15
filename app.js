@@ -1258,6 +1258,21 @@ if (typeof document !== 'undefined') {
       navigator.serviceWorker.register('./sw.js').catch(()=>{});
     }
 
+    const loginForm = document.getElementById('loginForm');
+    if(loginForm){
+      loginForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const formData = new FormData(loginForm);
+        const username = String(formData.get('username') ?? '').trim();
+        if(typeof toast === 'function'){
+          toast(username ? `Bienvenido, ${username}!` : 'Credenciales enviadas', 'success');
+        }
+        loginForm.reset();
+        const firstInput = loginForm.querySelector('input');
+        firstInput?.focus();
+      });
+    }
+
     setupSecureConfigForm();
 
     try{
