@@ -10,17 +10,61 @@ const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) 
 // La URL debe definirse en `window.APP_CONFIG.SECURE_CONFIG_URL`.
 const SECURE_CONFIG_URL = (typeof window !== 'undefined' && window.APP_CONFIG?.SECURE_CONFIG_URL) || '';
 const SECURE_CONFIG = { apiToken: '' };
+const SECURE_CONFIG_TOKEN_ERROR_MSG = 'No se obtuvo el token de API. Verifica que secure-config.json exista y que tenga permisos de lectura.';
+const SECURE_CONFIG_LOAD_ERROR_MSG = 'No se pudo cargar la configuración segura. Verifica que secure-config.json exista y que tenga permisos de lectura.';
+let secureConfigErrorShown = false;
+
+function showSecureConfigWarning(message){
+  if(typeof document === 'undefined') return;
+  const el = document.getElementById('secureConfigMessage');
+  if(!el) return;
+  el.textContent = message;
+  el.style.display = 'block';
+}
+
+function hideSecureConfigWarning(){
+  if(typeof document === 'undefined') return;
+  const el = document.getElementById('secureConfigMessage');
+  if(!el) return;
+  el.textContent = '';
+  el.style.display = 'none';
+  secureConfigErrorShown = false;
+}
+
+function notifySecureConfigIssue(message = SECURE_CONFIG_TOKEN_ERROR_MSG){
+  if(typeof document === 'undefined') return;
+  const finalMessage = message || SECURE_CONFIG_TOKEN_ERROR_MSG;
+  showSecureConfigWarning(finalMessage);
+  secureConfigErrorShown = true;
+  try{
+    if(typeof toast === 'function'){
+      toast(finalMessage, 'error');
+    }
+  }catch(_err){
+    /* ignore toast errors */
+  }
+}
 
 async function loadSecureConfig(){
   if(!SECURE_CONFIG_URL) return;
-  try{
-    const res = await fetch(SECURE_CONFIG_URL, { cache:'no-store' });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    SECURE_CONFIG.apiToken = json.API_TOKEN || json.apiToken || '';
-  }catch(err){
-    console.error('loadSecureConfig error', err);
+
+  SECURE_CONFIG.apiToken = '';
+
+  const res = await fetch(SECURE_CONFIG_URL, { cache:'no-store' });
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const json = await res.json();
+  const rawToken = json.API_TOKEN ?? json.apiToken;
+  const token = typeof rawToken === 'string' ? rawToken.trim() : '';
+
+  if(!token){
+    const err = new Error(SECURE_CONFIG_TOKEN_ERROR_MSG);
+    err.code = 'NO_API_TOKEN';
+    throw err;
   }
+
+  SECURE_CONFIG.apiToken = token;
+  hideSecureConfigWarning();
 }
 
 const DEFAULT_LOCALE = 'es-MX';
@@ -844,11 +888,6 @@ function renderCurrent(){
 }
 
 async function main(){
-  const data = await fetchData();
-  if(lastFetchUnauthorized){
-    return;
-  }
-  cache = data;
   populateStatusFilter(cache);
   populateEjecutivoFilter(cache);
   renderDaily(cache);
@@ -1100,7 +1139,16 @@ if (typeof document !== 'undefined') {
       navigator.serviceWorker.register('./sw.js').catch(()=>{});
     }
 
-    await loadSecureConfig();
+    try{
+      await loadSecureConfig();
+    }catch(err){
+      console.error('loadSecureConfig error', err);
+      const detail = err && err.message && err.message !== SECURE_CONFIG_TOKEN_ERROR_MSG ? ` Detalle: ${err.message}` : '';
+      const message = err && err.message === SECURE_CONFIG_TOKEN_ERROR_MSG
+        ? err.message
+        : `${SECURE_CONFIG_LOAD_ERROR_MSG}${detail}`;
+      notifySecureConfigIssue(message);
+    }
 
     const mainEl = document.querySelector('main.container');
     const sideMenu = document.querySelector('.side-menu');
