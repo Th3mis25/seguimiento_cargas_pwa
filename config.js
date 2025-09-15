@@ -1,8 +1,39 @@
 // Configuración global de la aplicación.
-// Este archivo puede ser reemplazado en el despliegue para ajustar la URL de la API.
-window.APP_CONFIG = {
-  // URL del Web App de Google Apps Script.
-  API_BASE: 'https://script.google.com/macros/s/AKfycbwLoaOwsPTv5bXdFxx75lGfKEaeptsBrHHVG_hKTuO_PN1G5RtsUOxvW7cLF9J1L4dz/exec',
-  // Archivo local con los usuarios autorizados y el token de API.
-  SECURE_CONFIG_URL: 'secure-config.json'
-};
+// Este archivo puede ser reemplazado en el despliegue para ajustar la URL de la API
+// y la forma en la que se obtiene el token seguro.
+(function configureApp(global){
+  const runtimeEnv = global && typeof global.__ENV === 'object' ? global.__ENV : {};
+  const processEnv = typeof process !== 'undefined' && process ? process.env || {} : {};
+
+  const readEnvValue = key => {
+    const runtimeValue = runtimeEnv[key];
+    if(typeof runtimeValue === 'string' && runtimeValue.trim()){
+      return runtimeValue.trim();
+    }
+    const processValue = processEnv[key];
+    if(typeof processValue === 'string' && processValue.trim()){
+      return processValue.trim();
+    }
+    return '';
+  };
+
+  const DEFAULT_API_BASE = 'https://script.google.com/macros/s/AKfycbwLoaOwsPTv5bXdFxx75lGfKEaeptsBrHHVG_hKTuO_PN1G5RtsUOxvW7cLF9J1L4dz/exec';
+
+  const apiBase = readEnvValue('API_BASE') || DEFAULT_API_BASE;
+  const inlineToken = readEnvValue('API_TOKEN');
+  const secureUrlOverride = readEnvValue('SECURE_CONFIG_URL');
+
+  let secureConfigUrl = secureUrlOverride || 'secure-config.json';
+
+  if(inlineToken){
+    const json = JSON.stringify({ API_TOKEN: inlineToken });
+    secureConfigUrl = `data:application/json,${encodeURIComponent(json)}`;
+  }
+
+  global.APP_CONFIG = {
+    // URL del Web App de Google Apps Script.
+    API_BASE: apiBase,
+    // Archivo o endpoint seguro con los usuarios autorizados y el token de API.
+    SECURE_CONFIG_URL: secureConfigUrl
+  };
+})(typeof window !== 'undefined' ? window : globalThis);

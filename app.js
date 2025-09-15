@@ -10,8 +10,8 @@ const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) 
 // La URL debe definirse en `window.APP_CONFIG.SECURE_CONFIG_URL`.
 const SECURE_CONFIG_URL = (typeof window !== 'undefined' && window.APP_CONFIG?.SECURE_CONFIG_URL) || '';
 const SECURE_CONFIG = { apiToken: '' };
-const SECURE_CONFIG_TOKEN_ERROR_MSG = 'No se obtuvo el token de API. Verifica que secure-config.json exista y que tenga permisos de lectura.';
-const SECURE_CONFIG_LOAD_ERROR_MSG = 'No se pudo cargar la configuración segura. Verifica que secure-config.json exista y que tenga permisos de lectura.';
+const SECURE_CONFIG_TOKEN_ERROR_MSG = 'No se obtuvo el token de API. Define API_TOKEN en tu entorno o crea secure-config.json a partir de secure-config.example.json.';
+const SECURE_CONFIG_LOAD_ERROR_MSG = 'No se pudo cargar la configuración segura. Define API_TOKEN, revisa SECURE_CONFIG_URL o verifica que secure-config.json exista y tenga permisos de lectura.';
 let secureConfigErrorShown = false;
 
 function showSecureConfigWarning(message){
