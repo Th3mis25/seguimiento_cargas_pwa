@@ -108,6 +108,8 @@ let cache = [];
 let currentView = 'daily';
 let mainInitialized = false;
 let pendingStatusChange = null;
+const UNAUTHORIZED_MSG = 'No autorizado – revisa el token de acceso';
+let lastFetchUnauthorized = false;
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({
@@ -266,10 +268,16 @@ async function fetchData(){
   const tb = $('#loadsTable tbody');
   tb.innerHTML = `<tr><td colspan="18" style="padding:16px">Cargando…</td></tr>`;
 
-    try{
-      const token = SECURE_CONFIG.apiToken || '';
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res  = await fetch(API_BASE,{ cache:'no-store', headers });
+  try{
+    const token = SECURE_CONFIG.apiToken || '';
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res  = await fetch(API_BASE,{ cache:'no-store', headers });
+    if(res.status === 401 || res.status === 403){
+      lastFetchUnauthorized = true;
+      tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${UNAUTHORIZED_MSG}</td></tr>`;
+      return [];
+    }
+    lastFetchUnauthorized = false;
     if(!res.ok){
       throw new Error(`HTTP ${res.status}`);
     }
@@ -283,6 +291,7 @@ async function fetchData(){
     return data;
   }catch(err){
     console.error('fetch error', err);
+    lastFetchUnauthorized = false;
     tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">
       No se pudieron cargar los datos. ${escapeHtml(err.message)}. Intenta recargar.
     </td></tr>`;
@@ -448,7 +457,12 @@ async function handleBulkUpload(file){
       if(statusEl) statusEl.textContent = `Importados ${count}/${data.length}`;
     }
     if(statusEl) statusEl.textContent = `Importación completa (${count})`;
-    cache = await fetchData();
+    const refreshed = await fetchData();
+    if(lastFetchUnauthorized){
+      if(statusEl) statusEl.textContent = UNAUTHORIZED_MSG;
+      return;
+    }
+    cache = refreshed;
     populateStatusFilter(cache);
     populateEjecutivoFilter(cache);
     renderCurrent();
@@ -532,6 +546,9 @@ function populateEjecutivoFilter(rows){
 }
 
 function renderRows(rows, hiddenCols=[]){
+  if(lastFetchUnauthorized){
+    return;
+  }
   setColumnVisibility([9,12,13,15], true); // mostrar por defecto
 
   const statusFilter = $('#statusFilter').value;
@@ -871,18 +888,6 @@ function renderCurrent(){
 }
 
 async function main(){
-  if(!SECURE_CONFIG.apiToken){
-    if(!secureConfigErrorShown){
-      notifySecureConfigIssue(SECURE_CONFIG_TOKEN_ERROR_MSG);
-    }
-    const tb = $('#loadsTable tbody');
-    if(tb){
-      tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${escapeHtml(SECURE_CONFIG_TOKEN_ERROR_MSG)}</td></tr>`;
-    }
-    return;
-  }
-
-  cache = await fetchData();
   populateStatusFilter(cache);
   populateEjecutivoFilter(cache);
   renderDaily(cache);
@@ -890,7 +895,11 @@ async function main(){
   fillStatusSelect($('#addForm select[name="estatus"]'), '', true);
 
   $('#refreshBtn').addEventListener('click', async ()=>{
-    cache = await fetchData();
+    const refreshed = await fetchData();
+    if(lastFetchUnauthorized){
+      return;
+    }
+    cache = refreshed;
     populateStatusFilter(cache);
     populateEjecutivoFilter(cache);
     renderCurrent();
