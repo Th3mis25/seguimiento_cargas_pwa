@@ -52,35 +52,39 @@
       </div>
 
       <section class="controls">
-        <label for="statusFilter">Estatus:</label>
-        <select id="statusFilter">
-          <option value="">Todos</option>
-        </select>
+        <div class="controls__filters">
+          <label for="statusFilter">Estatus:</label>
+          <select id="statusFilter">
+            <option value="">Todos</option>
+          </select>
 
-        <label for="ejecutivoFilter">Ejecutivo:</label>
-        <select id="ejecutivoFilter">
-          <option value="">Todos</option>
-        </select>
+          <label for="ejecutivoFilter">Ejecutivo:</label>
+          <select id="ejecutivoFilter">
+            <option value="">Todos</option>
+          </select>
 
-        <label for="searchBox">Buscar:</label>
-        <div class="search-wrapper">
-          <input id="searchBox" type="text" placeholder="Trip, Caja, Cliente, Destino"/>
-          <button id="clearSearch" type="button" class="clear-search" aria-label="Limpiar búsqueda">×</button>
+          <label for="searchBox">Buscar:</label>
+          <div class="search-wrapper">
+            <input id="searchBox" type="text" placeholder="Trip, Caja, Cliente, Destino"/>
+            <button id="clearSearch" type="button" class="clear-search" aria-label="Limpiar búsqueda">×</button>
+          </div>
+
+          <label for="startDate">Cita carga</label>
+          <div class="date-range">
+            <input type="date" id="startDate"/>
+            <span class="date-separator">→</span>
+            <input type="date" id="endDate"/>
+          </div>
         </div>
 
-        <label for="startDate">Cita carga</label>
-        <div class="date-range">
-          <input type="date" id="startDate"/>
-          <span class="date-separator">→</span>
-          <input type="date" id="endDate"/>
+        <div class="controls__actions">
+          <button id="refreshBtn" class="btn">Actualizar</button>
+          <button id="addBtn" class="btn" type="button">Agregar</button>
+          <input type="file" id="bulkUpload" accept=".xlsx,.csv"/>
+          <button id="bulkUploadBtn" class="btn" type="button">Carga masiva</button>
+          <div id="bulkUploadStatus" class="upload-status"></div>
+          <div id="syncStatus" class="sync-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
         </div>
-
-        <button id="refreshBtn" class="btn">Actualizar</button>
-        <button id="addBtn" class="btn" type="button">Agregar</button>
-        <input type="file" id="bulkUpload" accept=".xlsx,.csv"/>
-        <button id="bulkUploadBtn" class="btn" type="button">Carga masiva</button>
-        <div id="bulkUploadStatus" class="upload-status"></div>
-        <div id="syncStatus" class="sync-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
       </section>
 
       <nav class="top-menu">
