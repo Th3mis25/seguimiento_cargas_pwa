@@ -15,7 +15,10 @@ const ASSET_URLS = ASSETS.map(a => new URL(a, self.location).pathname);
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(c => c.addAll(ASSETS))
+    caches
+      .open(CACHE_NAME)
+      .then(c => c.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -25,7 +28,7 @@ self.addEventListener('activate', e => {
       Promise.all(
         keys.filter(k => ![CACHE_NAME, DYNAMIC_CACHE].includes(k)).map(k => caches.delete(k))
       )
-    )
+    ).then(() => self.clients.claim())
   );
 });
 
