@@ -1678,8 +1678,14 @@ function clearFilters(){
 }
 
 function setActiveTopBtn(btn){
-  document.querySelectorAll('.top-btn').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
+  document.querySelectorAll('.top-btn').forEach(b=>{
+    b.classList.remove('active');
+    b.removeAttribute('aria-current');
+  });
+  if(btn){
+    btn.classList.add('active');
+    btn.setAttribute('aria-current', 'page');
+  }
 }
 
 function setDefaultDate(){
@@ -1785,6 +1791,7 @@ async function main(){
 
   if(canRenderData){
     renderDaily(cache);
+    setActiveTopBtn($('#dailyMenu'));
   }
 
   fillStatusSelect($('#addForm select[name="estatus"]'), '', true);
@@ -1823,6 +1830,7 @@ async function main(){
   $('#homeBtn')?.addEventListener('click', ()=>{
     clearFilters();
     renderDaily(cache);
+    setActiveTopBtn($('#dailyMenu'));
   });
 
   $('#bulkUploadBtn').addEventListener('click', ()=>{
