@@ -609,7 +609,11 @@ async function fetchData(){
     }
     lastFetchUnauthorized = false;
     if(!res.ok){
-      throw new Error(`HTTP ${res.status}`);
+      const error = new Error(`HTTP ${res.status}`);
+      error.name = 'HttpError';
+      error.httpStatus = res.status;
+      error.url = API_BASE;
+      throw error;
     }
     const json = await res.json();
     if(json.error){
@@ -622,18 +626,31 @@ async function fetchData(){
     lastFetchErrorMessage = '';
     return data;
   }catch(err){
-    console.error('fetch error', err);
+    console.error('[fetchData] Error al consultar', API_BASE, err);
+    if(err && err.stack){
+      console.error('[fetchData] stack', err.stack);
+    }
     lastFetchUnauthorized = false;
     const baseInstruction = 'Revisa tu conexión a internet y que el token sea válido antes de recargar.';
-    if(err instanceof TypeError){
-      const message = err && err.message ? err.message : 'Fallo de red';
-      lastFetchErrorMessage = message;
-      tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">No se pudieron cargar los datos. Posible problema de conexión (${escapeHtml(message)}). ${baseInstruction}</td></tr>`;
-    }else{
-      const message = err && err.message ? err.message : 'Error';
-      lastFetchErrorMessage = message;
-      tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">No se pudieron cargar los datos. ${escapeHtml(message)}. Verifica la configuración del servicio, tu conexión a internet y que el token sea válido antes de recargar.</td></tr>`;
+    const escapedApiUrl = escapeHtml(API_BASE);
+    const rawMessage = err && typeof err.message === 'string' ? err.message : '';
+    let userMessage = `No se pudieron cargar los datos desde ${escapedApiUrl}.`;
+    const httpStatusMatch = rawMessage.match(/^HTTP\s+(\d+)/i);
+    const isHttpError = (err && err.name === 'HttpError') || Boolean(httpStatusMatch);
+    if(isHttpError){
+      const statusValue = typeof err?.httpStatus === 'number' ? err.httpStatus : (httpStatusMatch ? httpStatusMatch[1] : '');
+      const statusLabel = statusValue !== '' ? ` ${escapeHtml(String(statusValue))}` : '';
+      userMessage = `No se pudieron cargar los datos desde ${escapedApiUrl}. El servicio respondió con un error HTTP${statusLabel}.`;
+    }else if(/cors|blocked by cors policy/i.test(rawMessage)){
+      userMessage = `No se pudieron cargar los datos desde ${escapedApiUrl}. Es posible que el navegador haya bloqueado la solicitud por políticas de CORS.`;
+    }else if(/dns|enotfound|getaddrinfo|name not resolved|err_name_not_resolved/i.test(rawMessage)){
+      userMessage = `No se pudieron cargar los datos desde ${escapedApiUrl}. No se pudo resolver el dominio (error DNS).`;
+    }else if(err instanceof TypeError){
+      userMessage = `No se pudieron cargar los datos desde ${escapedApiUrl}. No se pudo establecer la conexión con el servicio.`;
     }
+    const detail = rawMessage ? ` Detalle: ${escapeHtml(rawMessage)}.` : '';
+    lastFetchErrorMessage = rawMessage || userMessage;
+    tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${userMessage}${detail} ${baseInstruction} URL consultada: ${escapedApiUrl}.</td></tr>`;
     return [];
   }
 }
