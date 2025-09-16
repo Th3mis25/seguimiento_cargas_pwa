@@ -122,6 +122,355 @@ function notifySecureConfigIssue(message = SECURE_CONFIG_TOKEN_ERROR_MSG){
   }
 }
 
+/* =========================
+   OFFLINE QUEUE
+========================= */
+
+const OFFLINE_DB_NAME = 'seguimientoOfflineQueue';
+const OFFLINE_DB_VERSION = 1;
+const OFFLINE_STORE_NAME = 'pendingRequests';
+let offlineDbPromise = null;
+let offlineQueueInitialized = false;
+let pendingQueueCount = 0;
+let syncState = 'idle';
+let syncStatusMessage = '';
+let syncInProgress = false;
+let syncRetryTimer = null;
+
+function isOffline(){
+  if(typeof navigator === 'undefined' || typeof navigator.onLine !== 'boolean'){
+    return false;
+  }
+  return navigator.onLine === false;
+}
+
+function isLikelyNetworkError(err){
+  if(!err) return false;
+  const message = typeof err.message === 'string' ? err.message : String(err);
+  return err instanceof TypeError && /failed to fetch/i.test(message);
+}
+
+function getSyncStatusElement(){
+  if(typeof document === 'undefined') return null;
+  return document.getElementById('syncStatus');
+}
+
+function renderSyncStatus(){
+  const el = getSyncStatusElement();
+  if(!el) return;
+
+  let message = syncStatusMessage;
+  if(!message){
+    switch(syncState){
+      case 'idle':
+        message = 'Sincronizado';
+        break;
+      case 'offline':
+        message = pendingQueueCount > 0
+          ? `Sin conexión. ${pendingQueueCount} cambio${pendingQueueCount === 1 ? '' : 's'} pendiente${pendingQueueCount === 1 ? '' : 's'}.`
+          : 'Sin conexión. Los cambios se sincronizarán al reconectar.';
+        break;
+      case 'queued':
+        message = `Sin conexión. ${pendingQueueCount} cambio${pendingQueueCount === 1 ? '' : 's'} pendiente${pendingQueueCount === 1 ? '' : 's'}.`;
+        break;
+      case 'syncing':
+        message = pendingQueueCount > 0
+          ? `Sincronizando… ${pendingQueueCount} pendiente${pendingQueueCount === 1 ? '' : 's'}.`
+          : 'Sincronizando…';
+        break;
+      case 'error':
+        message = 'Error de sincronización. Reintentando…';
+        break;
+      default:
+        message = '';
+    }
+  }
+
+  if(!message){
+    el.hidden = true;
+    el.removeAttribute('data-state');
+    el.textContent = '';
+    return;
+  }
+
+  el.hidden = false;
+  el.dataset.state = syncState;
+  el.textContent = message;
+}
+
+function setSyncStatus(state, options = {}){
+  syncState = state;
+  if(Object.prototype.hasOwnProperty.call(options, 'message')){
+    syncStatusMessage = options.message || '';
+  }else{
+    syncStatusMessage = '';
+  }
+  if(typeof options.pendingCount === 'number' && Number.isFinite(options.pendingCount)){
+    pendingQueueCount = Math.max(0, options.pendingCount);
+  }
+  renderSyncStatus();
+}
+
+function scheduleSyncRetry(delay = 5000){
+  if(typeof setTimeout !== 'function') return;
+  if(syncRetryTimer) return;
+  syncRetryTimer = setTimeout(() => {
+    syncRetryTimer = null;
+    processOfflineQueue();
+  }, delay);
+}
+
+function resetSyncRetryTimer(){
+  if(syncRetryTimer){
+    clearTimeout(syncRetryTimer);
+    syncRetryTimer = null;
+  }
+}
+
+async function getOfflineDb(){
+  if(typeof window === 'undefined' || !('indexedDB' in window)){
+    return null;
+  }
+  if(offlineDbPromise){
+    return offlineDbPromise;
+  }
+  offlineDbPromise = new Promise(resolve => {
+    try{
+      const request = window.indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION);
+      request.onerror = () => {
+        console.error('IndexedDB open error', request.error);
+        resolve(null);
+      };
+      request.onupgradeneeded = event => {
+        const db = event.target.result;
+        if(!db.objectStoreNames.contains(OFFLINE_STORE_NAME)){
+          db.createObjectStore(OFFLINE_STORE_NAME, { keyPath:'id', autoIncrement:true });
+        }
+      };
+      request.onsuccess = () => {
+        const db = request.result;
+        db.onversionchange = () => {
+          try{ db.close(); }
+          catch(_err){ /* ignore close errors */ }
+          offlineDbPromise = null;
+        };
+        db.onclose = () => {
+          offlineDbPromise = null;
+        };
+        resolve(db);
+      };
+    }catch(err){
+      console.error('getOfflineDb exception', err);
+      resolve(null);
+    }
+  });
+  return offlineDbPromise;
+}
+
+async function countPendingRequests(dbInstance){
+  const db = dbInstance || await getOfflineDb();
+  if(!db) return 0;
+  return new Promise((resolve, reject) => {
+    try{
+      const tx = db.transaction(OFFLINE_STORE_NAME, 'readonly');
+      const store = tx.objectStore(OFFLINE_STORE_NAME);
+      const req = store.count();
+      req.onsuccess = () => resolve(req.result || 0);
+      req.onerror = () => reject(req.error);
+    }catch(err){
+      reject(err);
+    }
+  }).catch(err => {
+    console.error('countPendingRequests error', err);
+    return 0;
+  });
+}
+
+async function enqueueOfflineRequest(type, data){
+  const db = await getOfflineDb();
+  if(!db){
+    return { success:false, error:new Error('IndexedDB no disponible') };
+  }
+  const payload = JSON.parse(JSON.stringify(data));
+  try{
+    await new Promise((resolve, reject) => {
+      try{
+        const tx = db.transaction(OFFLINE_STORE_NAME, 'readwrite');
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+        const store = tx.objectStore(OFFLINE_STORE_NAME);
+        store.add({ type, payload, createdAt: Date.now() });
+      }catch(err){
+        reject(err);
+      }
+    });
+    const count = await countPendingRequests(db);
+    pendingQueueCount = count;
+    return { success:true, count };
+  }catch(err){
+    console.error('enqueueOfflineRequest error', err);
+    return { success:false, error:err };
+  }
+}
+
+async function getAllOfflineRequests(dbInstance){
+  const db = dbInstance || await getOfflineDb();
+  if(!db) return [];
+  return new Promise((resolve, reject) => {
+    try{
+      const tx = db.transaction(OFFLINE_STORE_NAME, 'readonly');
+      const store = tx.objectStore(OFFLINE_STORE_NAME);
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    }catch(err){
+      reject(err);
+    }
+  }).catch(err => {
+    console.error('getAllOfflineRequests error', err);
+    return [];
+  });
+}
+
+async function deleteOfflineRequest(id, dbInstance){
+  const db = dbInstance || await getOfflineDb();
+  if(!db) return false;
+  try{
+    await new Promise((resolve, reject) => {
+      try{
+        const tx = db.transaction(OFFLINE_STORE_NAME, 'readwrite');
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+        const store = tx.objectStore(OFFLINE_STORE_NAME);
+        store.delete(id);
+      }catch(err){
+        reject(err);
+      }
+    });
+    return true;
+  }catch(err){
+    console.error('deleteOfflineRequest error', err);
+    return false;
+  }
+}
+
+async function processOfflineQueue(){
+  if(syncInProgress) return;
+  resetSyncRetryTimer();
+  if(isOffline()){
+    setSyncStatus(pendingQueueCount > 0 ? 'queued' : 'offline', { pendingCount: pendingQueueCount });
+    return;
+  }
+
+  const db = await getOfflineDb();
+  if(!db){
+    setSyncStatus('idle', { pendingCount: pendingQueueCount });
+    return;
+  }
+
+  let pending;
+  try{
+    pending = await getAllOfflineRequests(db);
+  }catch(err){
+    console.error('getAllOfflineRequests error', err);
+    setSyncStatus('error', { message:'No se pudo leer la cola offline.' });
+    scheduleSyncRetry();
+    return;
+  }
+
+  pendingQueueCount = Array.isArray(pending) ? pending.length : 0;
+  if(!pendingQueueCount){
+    setSyncStatus(isOffline() ? 'offline' : 'idle', { pendingCount: 0 });
+    return;
+  }
+
+  syncInProgress = true;
+  setSyncStatus('syncing', { pendingCount: pendingQueueCount });
+
+  try{
+    let remaining = pendingQueueCount;
+    for(const entry of pending){
+      const action = entry?.type === 'update' ? 'update' : 'add';
+      try{
+        await sendRecordRequest(action, entry?.payload || {});
+        await deleteOfflineRequest(entry?.id, db);
+        remaining = Math.max(0, remaining - 1);
+        pendingQueueCount = remaining;
+        setSyncStatus(remaining > 0 ? 'syncing' : 'syncing', { pendingCount: remaining });
+      }catch(err){
+        console.error('processOfflineQueue item error', err);
+        if(isOffline()){
+          pendingQueueCount = await countPendingRequests(db);
+          setSyncStatus(pendingQueueCount > 0 ? 'queued' : 'offline', { pendingCount: pendingQueueCount });
+          return;
+        }
+        const message = `Error de sincronización: ${err && err.message ? err.message : 'Error desconocido'}`;
+        pendingQueueCount = await countPendingRequests(db);
+        setSyncStatus('error', { message, pendingCount: pendingQueueCount });
+        if(typeof toast === 'function'){
+          toast(message, 'error');
+        }
+        scheduleSyncRetry();
+        return;
+      }
+    }
+  }finally{
+    syncInProgress = false;
+  }
+
+  pendingQueueCount = await countPendingRequests(db);
+  if(pendingQueueCount > 0){
+    setSyncStatus('syncing', { pendingCount: pendingQueueCount });
+    scheduleSyncRetry();
+    return;
+  }
+
+  setSyncStatus('idle', { pendingCount: 0 });
+  if(typeof toast === 'function'){
+    toast('Cambios sincronizados', 'success');
+  }
+}
+
+async function initializeOfflineQueue(){
+  if(offlineQueueInitialized) return;
+  offlineQueueInitialized = true;
+
+  const db = await getOfflineDb();
+  if(db){
+    pendingQueueCount = await countPendingRequests(db);
+  }else{
+    pendingQueueCount = 0;
+  }
+
+  if(isOffline()){
+    setSyncStatus(pendingQueueCount > 0 ? 'queued' : 'offline', { pendingCount: pendingQueueCount });
+  }else if(pendingQueueCount > 0){
+    setSyncStatus('syncing', { pendingCount: pendingQueueCount });
+  }else{
+    setSyncStatus('idle', { pendingCount: 0 });
+  }
+
+  if(typeof window !== 'undefined'){
+    window.addEventListener('online', () => {
+      if(pendingQueueCount > 0){
+        setSyncStatus('syncing', { pendingCount: pendingQueueCount });
+      }else{
+        setSyncStatus('idle', { pendingCount: 0 });
+      }
+      processOfflineQueue();
+    });
+    window.addEventListener('offline', () => {
+      setSyncStatus(pendingQueueCount > 0 ? 'queued' : 'offline', { pendingCount: pendingQueueCount });
+    });
+  }
+
+  if(!isOffline()){
+    processOfflineQueue();
+  }
+}
+
 function normalizeAllowedUsers(rawUsers){
   const normalized = [];
   if(!rawUsers) return normalized;
@@ -447,6 +796,8 @@ async function bootstrapApp(){
     }
 
     if(mainEl) mainEl.style.display = '';
+
+    await initializeOfflineQueue();
 
     if(!mainInitialized){
       main();
@@ -786,87 +1137,137 @@ function setupSecureConfigForm(){
   });
 }
 
-async function addRecord(data){
-    try{
-      const token = SECURE_CONFIG.apiToken || '';
-      const body = createApiFormBody({ action:'add', ...data }, token);
-      const res = await fetch(API_BASE,{
-        method:'POST',
-        body
-      });
-    let json;
-    try{
-      const ct = res.headers.get('content-type') || '';
-      if(!ct.includes('application/json')){
-        throw new Error('Missing application/json header');
+async function sendRecordRequest(action, data){
+  const token = SECURE_CONFIG.apiToken || '';
+  const payload = { action, ...data };
+  const body = createApiFormBody(payload, token);
+  const res = await fetch(API_BASE, { method:'POST', body });
+  let json;
+  try{
+    const ct = res.headers.get('content-type') || '';
+    if(!ct.includes('application/json')){
+      throw new Error('Missing application/json header');
+    }
+    json = await res.json();
+  }catch(err){
+    if(err.message === 'Missing application/json header') throw err;
+    throw new Error('Invalid JSON');
+  }
+  if(res.status === 401){
+    throw new Error(json.error || 'Unauthorized');
+  }
+  if(res.status === 400){
+    throw new Error(json.error || 'Bad Request');
+  }
+  if(res.status >= 500){
+    throw new Error(json.error || 'Server error');
+  }
+  if(!res.ok || json.error){
+    throw new Error(json.error || `HTTP ${res.status}`);
+  }
+  return json;
+}
+
+async function addRecord(data, options = {}){
+  const opts = options || {};
+  if(!opts.skipQueue && isOffline()){
+    const queued = await enqueueOfflineRequest('add', data);
+    if(queued.success){
+      setSyncStatus(queued.count > 0 ? 'queued' : 'offline', { pendingCount: queued.count });
+      if(typeof toast === 'function'){
+        toast('Sin conexión. El registro se sincronizará al reconectar.', 'warning');
       }
-      json = await res.json();
-    }catch(err){
-      if(err.message === 'Missing application/json header') throw err;
-      throw new Error('Invalid JSON');
+      return true;
     }
-    if(res.status === 401){
-      throw new Error(json.error || 'Unauthorized');
+    setSyncStatus('error', { message:'Sin conexión y no se pudo guardar la operación offline.' });
+    if(typeof toast === 'function'){
+      toast('Sin conexión y no fue posible guardar localmente.', 'error');
     }
-    if(res.status === 400){
-      throw new Error(json.error || 'Bad Request');
+    return false;
+  }
+
+  try{
+    await sendRecordRequest('add', data);
+    if(!opts.silent && typeof toast === 'function'){
+      toast('Registro agregado');
     }
-    if(res.status >= 500){
-      throw new Error(json.error || 'Server error');
-    }
-    if(!res.ok || json.error){
-      throw new Error(json.error || `HTTP ${res.status}`);
-    }
-    toast('Registro agregado');
     return true;
   }catch(err){
     console.error('addRecord error', err);
-    if(!navigator.onLine || (err instanceof TypeError && /failed to fetch/i.test(err.message))){
-      toast('Saved','success');
-      return true;
+    if(!opts.skipQueue && (isOffline() || isLikelyNetworkError(err))){
+      const queued = await enqueueOfflineRequest('add', data);
+      if(queued.success){
+        const state = isOffline() ? (queued.count > 0 ? 'queued' : 'offline') : 'queued';
+        setSyncStatus(state, { pendingCount: queued.count });
+        if(typeof toast === 'function'){
+          toast('Sin conexión. El registro se sincronizará al reconectar.', 'warning');
+        }
+        if(!isOffline()){
+          scheduleSyncRetry();
+        }
+        return true;
+      }
+      setSyncStatus('error', { message:'No se pudo guardar el registro sin conexión.' });
+      if(typeof toast === 'function'){
+        toast('No se pudo guardar el registro sin conexión.', 'error');
+      }
+      return false;
     }
-    toast('Error al agregar: ' + err.message,'error');
+    if(typeof toast === 'function'){
+      toast('Error al agregar: ' + err.message,'error');
+    }
     return false;
   }
 }
 
-async function updateRecord(data){
-    try{
-      const token = SECURE_CONFIG.apiToken || '';
-      const body = createApiFormBody({ action:'update', ...data }, token);
-      const res = await fetch(API_BASE,{ method:'POST', body });
-    let json;
-    try{
-      const ct = res.headers.get('content-type') || '';
-      if(!ct.includes('application/json')){
-        throw new Error('Missing application/json header');
+async function updateRecord(data, options = {}){
+  const opts = options || {};
+  if(!opts.skipQueue && isOffline()){
+    const queued = await enqueueOfflineRequest('update', data);
+    if(queued.success){
+      setSyncStatus(queued.count > 0 ? 'queued' : 'offline', { pendingCount: queued.count });
+      if(typeof toast === 'function'){
+        toast('Sin conexión. Los cambios se sincronizarán al reconectar.', 'warning');
       }
-      json = await res.json();
-    }catch(err){
-      if(err.message === 'Missing application/json header') throw err;
-      throw new Error('Invalid JSON');
+      return true;
     }
-    if(res.status === 401){
-      throw new Error(json.error || 'Unauthorized');
+    setSyncStatus('error', { message:'Sin conexión y no se pudo guardar la operación offline.' });
+    if(typeof toast === 'function'){
+      toast('Sin conexión y no fue posible guardar los cambios localmente.', 'error');
     }
-    if(res.status === 400){
-      throw new Error(json.error || 'Bad Request');
+    return false;
+  }
+
+  try{
+    await sendRecordRequest('update', data);
+    if(!opts.silent && typeof toast === 'function'){
+      toast('Registro actualizado');
     }
-    if(res.status >= 500){
-      throw new Error(json.error || 'Server error');
-    }
-    if(!res.ok || json.error){
-      throw new Error(json.error || `HTTP ${res.status}`);
-    }
-    toast('Registro actualizado');
     return true;
   }catch(err){
     console.error('updateRecord error', err);
-    if(!navigator.onLine || (err instanceof TypeError && /failed to fetch/i.test(err.message))){
-      toast('Saved','success');
-      return true;
+    if(!opts.skipQueue && (isOffline() || isLikelyNetworkError(err))){
+      const queued = await enqueueOfflineRequest('update', data);
+      if(queued.success){
+        const state = isOffline() ? (queued.count > 0 ? 'queued' : 'offline') : 'queued';
+        setSyncStatus(state, { pendingCount: queued.count });
+        if(typeof toast === 'function'){
+          toast('Sin conexión. Los cambios se sincronizarán al reconectar.', 'warning');
+        }
+        if(!isOffline()){
+          scheduleSyncRetry();
+        }
+        return true;
+      }
+      setSyncStatus('error', { message:'No se pudieron guardar los cambios sin conexión.' });
+      if(typeof toast === 'function'){
+        toast('No se pudieron guardar los cambios sin conexión.', 'error');
+      }
+      return false;
     }
-    toast('Error al actualizar: ' + err.message,'error');
+    if(typeof toast === 'function'){
+      toast('Error al actualizar: ' + err.message,'error');
+    }
     return false;
   }
 }
