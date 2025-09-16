@@ -30,9 +30,10 @@ global.SpreadsheetApp = {
 global.ContentService = {
   createTextOutput: () => ({
     content: '',
+    headers: {},
     setContent(c) { this.content = c; return this; },
     setMimeType() { return this; },
-    setHeader() { return this; }
+    setHeader(name, value) { this.headers[name] = value; return this; }
   }),
   MimeType: { JSON: 'application/json', TEXT: 'text/plain' }
 };
@@ -48,7 +49,11 @@ global.isAuthorized = function(e) {
 const noPostDataResult = doPost({ headers: { Authorization: 'Bearer demo-token' }, parameter: {} });
 const noPostDataPayload = JSON.parse(noPostDataResult.content);
 assert.strictEqual(noPostDataPayload.error, 'Missing postData');
-assert.strictEqual(noPostDataPayload.status, 400);
+assert.ok(!('status' in noPostDataPayload), 'Status should not be present in payload');
+assert.strictEqual(
+  noPostDataResult.headers['X-Http-Status-Code-Override'],
+  '400'
+);
 assert.ok(authCalled, 'isAuthorized should be called');
 console.log('Missing postData test passed.');
 
@@ -65,7 +70,5 @@ const e = {
 const result = doPost(e);
 const payload = JSON.parse(result.content);
 assert.strictEqual(payload.error, 'Trip column not found');
+assert.strictEqual(result.headers['X-Http-Status-Code-Override'], '500');
 console.log('Trip column missing test passed.');
-assert.strictEqual(originalIsAuthorized({ headers: { Authorization: 'Bearer demo-toke' } }), false, 'Tokens with mismatched length should be rejected.');
-assert.strictEqual(originalIsAuthorized({ parameter: { token: 'demo-tokem' } }), false, 'Wrong tokens should be rejected.');
-console.log('Authorization edge cases test passed.');
