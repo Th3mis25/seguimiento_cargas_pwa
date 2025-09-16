@@ -305,10 +305,28 @@ body:not(.is-authenticated) .login-form{
 
 /* ====== Controles ====== */
 .controls{
-  display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:start;
+  gap:18px 24px;
   background: var(--panel); color:var(--text);
-  padding: 14px; border-radius: 14px; margin:0 0 4px;
+  padding: 18px 20px; border-radius: 14px; margin:0 0 4px;
   box-shadow: 0 8px 26px rgba(0,0,0,.25), inset 0 0 1px rgba(255,255,255,.06);
+}
+.controls__filters{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  gap:12px 16px;
+  min-width:0;
+}
+.controls__actions{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-end;
+  gap:12px;
+  min-width:0;
 }
 .controls label{
   font-weight:600;
@@ -324,6 +342,10 @@ body:not(.is-authenticated) .login-form{
   padding:10px 12px;
   outline:none;
 }
+.controls select,
+.controls .date-range input{
+  min-width:140px;
+}
 
 /* Light theme tweaks for filter controls */
 .theme-light .controls label{
@@ -338,11 +360,14 @@ body:not(.is-authenticated) .login-form{
 .theme-light .date-range{
   background:#fff;
 }
-#statusFilter{
-  width:120px;
-}
+
 #bulkUpload{
   width:140px;
+}
+.controls__actions .upload-status,
+.controls__actions .sync-status{
+  flex:1 1 100%;
+  text-align:right;
 }
 
 .search-wrapper{ position:relative; }
@@ -685,13 +710,16 @@ body:not(.is-authenticated) .login-form{
   border-top:2px solid var(--accent);
 }
 
-/* Consistent font size for menu and filters */
-.top-btn,
+/* Font sizes */
+.top-btn{
+  font-size:0.7rem;
+}
+
 .controls label,
 .controls input,
 .controls select,
 .controls button{
-  font-size:0.7rem;
+  font-size:0.85rem;
 }
 
 /* Hide calendar icon and rely on clicking the field */
@@ -761,13 +789,36 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator{
 /* ====== Móvil ====== */
 @media (max-width: 600px){
   .controls{
+    grid-template-columns:1fr;
+  }
+  .controls__filters,
+  .controls__actions{
+    width:100%;
+  }
+  .controls__filters{
     flex-direction:column;
+    align-items:stretch;
+  }
+  .controls__actions{
+    flex-direction:column;
+    align-items:stretch;
+    justify-content:flex-start;
+  }
+  .controls__actions > *,
+  .controls__filters > *{
+    width:100%;
+  }
+  .controls .date-range{
+    width:100%;
+  }
+  .controls__actions .upload-status,
+  .controls__actions .sync-status{
+    text-align:left;
   }
   .controls input,
   .controls select{
     width:100%;
   }
-  #statusFilter,
   #bulkUpload{
     width:100%;
   }
