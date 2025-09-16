@@ -11,6 +11,7 @@ Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sh
 ## Configuración
 - URL de Google Apps Script: defínela en `config.js` o establece `API_BASE` como variable de entorno.
 - Token de API: proporciónalo mediante `secure-config.json` (no versionado) o con la variable de entorno `API_TOKEN`/un endpoint seguro.
+- Para evitar bloqueos por CORS durante el desarrollo local, la PWA envía el token como parámetro `token` en las peticiones (`GET` y `POST`). El backend de Apps Script sigue aceptando el encabezado `Authorization: Bearer` para pruebas manuales o integraciones externas.
 - Credenciales de inicio de sesión: especifica `usuario`, `password` y opcionalmente `nombre` en `secure-config.json` para definir el acceso principal. También puedes declarar un arreglo `users` con objetos `{ "usuario": "...", "password": "...", "nombre": "..." }`/`{ "username": "..." }` para múltiples cuentas. Si no hay credenciales configuradas se usará el usuario por defecto `admin`/`admin123`.
 - Nombre de la hoja: `Tabla_1`
 - Columnas esperadas:
