@@ -43,6 +43,11 @@ self.addEventListener('fetch', e => {
   }
 
   const url = new URL(request.url);
+
+  if (url.origin !== self.location.origin) {
+    e.respondWith(fetch(request));
+    return;
+  }
   if (url.pathname.endsWith('/config.js')) {
     e.respondWith(fetch(request));
     return;
