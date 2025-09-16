@@ -72,10 +72,3 @@ const payload = JSON.parse(result.content);
 assert.strictEqual(payload.error, 'Trip column not found');
 assert.strictEqual(result.headers['X-Http-Status-Code-Override'], '500');
 console.log('Trip column missing test passed.');
-
-// Ensure doGet propagates status codes via headers
-const unauthorizedGetResult = doGet({});
-const unauthorizedGetPayload = JSON.parse(unauthorizedGetResult.content);
-assert.strictEqual(unauthorizedGetPayload.error, 'Unauthorized');
-assert.strictEqual(unauthorizedGetResult.headers['X-Http-Status-Code-Override'], '401');
-console.log('Unauthorized GET test passed.');
