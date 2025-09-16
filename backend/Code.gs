@@ -115,30 +115,60 @@ function doPost(e) {
         throw new Error('Invalid rows data');
       }
       if (!Array.isArray(rows)) throw new Error('Invalid rows data');
-      var headers = sheet.getDataRange().getValues()[0];
+      var data = sheet.getDataRange().getValues();
+      var headers = data[0] || [];
       var headerMap = {};
       for (var i = 0; i < headers.length; i++) {
         headerMap[String(headers[i]).trim().toLowerCase()] = i;
       }
-      var values = rows.map(function(r){
+      var tripIdx = headerMap['trip'];
+      if (tripIdx == null) throw new Error('Trip column not found');
+      var existingTrips = {};
+      for (var r = 1; r < data.length; r++) {
+        var existingTripValue = data[r][tripIdx];
+        if (existingTripValue != null && existingTripValue !== '') {
+          var existingTripKey = String(existingTripValue).trim();
+          if (existingTripKey) {
+            existingTrips[existingTripKey] = true;
+          }
+        }
+      }
+      var duplicates = [];
+      var duplicateMap = {};
+      var values = [];
+      for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+        var rowObj = rows[rowIndex];
         var arr = new Array(headers.length).fill('');
-        for (var key in r) {
-          var idx = headerMap[String(key).trim().toLowerCase()];
+        for (var key in rowObj) {
+          var normalizedKey = String(key).trim();
+          var idx = headerMap[normalizedKey.toLowerCase()];
           if (idx > -1) {
-            var val = r[key];
-            if (key === 'Cita carga' || key === 'Llegada carga' ||
-                key === 'Cita entrega' || key === 'Llegada entrega') {
+            var val = rowObj[key];
+            if (normalizedKey === 'Cita carga' || normalizedKey === 'Llegada carga' ||
+                normalizedKey === 'Cita entrega' || normalizedKey === 'Llegada entrega') {
               val = val ? Utilities.parseDate(val, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
             }
             arr[idx] = val;
           }
         }
-        return arr;
-      });
+        var tripValue = arr[tripIdx];
+        var tripKey = tripValue == null ? '' : String(tripValue).trim();
+        if (tripKey && existingTrips[tripKey]) {
+          if (!duplicateMap[tripKey]) {
+            duplicates.push(tripKey);
+            duplicateMap[tripKey] = true;
+          }
+          continue;
+        }
+        if (tripKey) {
+          existingTrips[tripKey] = true;
+        }
+        values.push(arr);
+      }
       if(values.length){
         sheet.getRange(sheet.getLastRow() + 1, 1, values.length, headers.length).setValues(values);
       }
-      return createJsonOutput({ success: true, inserted: values.length }, 200);
+      return createJsonOutput({ success: true, inserted: values.length, duplicates: duplicates }, 200);
     } else if (p.action === 'update') {
       var data = sheet.getDataRange().getValues();
       var headers = data[0];
