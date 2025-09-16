@@ -15,16 +15,18 @@ function isAuthorized(e) {
 }
 
 function createJsonOutput(payload, status) {
-  if (typeof status === 'number') {
-    payload = Object(payload);
-    payload.status = status;
-  }
-  return ContentService.createTextOutput()
+  var output = ContentService.createTextOutput()
     .setContent(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON)
     .setHeader('Access-Control-Allow-Origin', '*')
     .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+
+  if (typeof status === 'number') {
+    output.setHeader('X-Http-Status-Code-Override', String(status));
+  }
+
+  return output;
 }
 
 function doPost(e) {
