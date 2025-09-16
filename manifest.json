@@ -6,11 +6,3 @@
   "display": "standalone",
   "background_color": "#082341",
   "theme_color": "#0F2C5C",
-  "icons": [
-    {
-      "src": "/seguimiento_cargas_pwa/assets/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
-}
