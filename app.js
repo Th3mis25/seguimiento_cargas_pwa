@@ -587,6 +587,14 @@ async function fetchData(){
   const tb = $('#loadsTable tbody');
   tb.innerHTML = `<tr><td colspan="18" style="padding:16px">Cargando…</td></tr>`;
 
+  if(!API_BASE){
+    const message = 'API_BASE no configurada';
+    lastFetchUnauthorized = false;
+    lastFetchErrorMessage = message;
+    tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${message}. Revisa la configuración de la aplicación, tu conexión a internet y que el token sea válido antes de recargar.</td></tr>`;
+    return [];
+  }
+
   try{
     lastFetchErrorMessage = '';
     const token = SECURE_CONFIG.apiToken || '';
@@ -616,10 +624,16 @@ async function fetchData(){
   }catch(err){
     console.error('fetch error', err);
     lastFetchUnauthorized = false;
-    lastFetchErrorMessage = err && err.message ? err.message : 'Error';
-    tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">
-      No se pudieron cargar los datos. ${escapeHtml(err.message)}. Intenta recargar.
-    </td></tr>`;
+    const baseInstruction = 'Revisa tu conexión a internet y que el token sea válido antes de recargar.';
+    if(err instanceof TypeError){
+      const message = err && err.message ? err.message : 'Fallo de red';
+      lastFetchErrorMessage = message;
+      tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">No se pudieron cargar los datos. Posible problema de conexión (${escapeHtml(message)}). ${baseInstruction}</td></tr>`;
+    }else{
+      const message = err && err.message ? err.message : 'Error';
+      lastFetchErrorMessage = message;
+      tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">No se pudieron cargar los datos. ${escapeHtml(message)}. Verifica la configuración del servicio, tu conexión a internet y que el token sea válido antes de recargar.</td></tr>`;
+    }
     return [];
   }
 }
