@@ -9,7 +9,7 @@ const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) 
 // Configuración sensible cargada desde un endpoint seguro.
 // La URL debe definirse en `window.APP_CONFIG.SECURE_CONFIG_URL`.
 const SECURE_CONFIG_URL = (typeof window !== 'undefined' && window.APP_CONFIG?.SECURE_CONFIG_URL) || '';
-const SECURE_CONFIG = { apiToken: '' };
+const SECURE_CONFIG = { apiToken: '', users: [] };
 const SECURE_CONFIG_TOKEN_ERROR_MSG = 'No se obtuvo el token de API. Define API_TOKEN en tu entorno o crea secure-config.json a partir de secure-config.example.json.';
 const SECURE_CONFIG_LOAD_ERROR_MSG = 'No se pudo cargar la configuración segura. Define API_TOKEN, revisa SECURE_CONFIG_URL o verifica que secure-config.json exista y tenga permisos de lectura.';
 const SECURE_TOKEN_STORAGE_KEY = 'seguimientoSecureToken';
@@ -86,18 +86,145 @@ function notifySecureConfigIssue(message = SECURE_CONFIG_TOKEN_ERROR_MSG){
   }
 }
 
+function normalizeAllowedUsers(rawUsers){
+  const normalized = [];
+  if(!rawUsers) return normalized;
+
+  const pushUser = (username, password, displayName) => {
+    const cleanUsername = typeof username === 'string' ? username.trim() : '';
+    const rawPassword = typeof password === 'string' ? password : String(password ?? '');
+    const cleanPassword = rawPassword.trim();
+    if(!cleanUsername || !cleanPassword) return;
+    const cleanDisplay = typeof displayName === 'string' && displayName.trim() ? displayName.trim() : cleanUsername;
+    normalized.push({
+      username: cleanUsername,
+      password: cleanPassword,
+      displayName: cleanDisplay,
+      normalizedUsername: cleanUsername.toLowerCase()
+    });
+  };
+
+  if(Array.isArray(rawUsers)){
+    rawUsers.forEach(entry => {
+      if(!entry) return;
+      if(typeof entry === 'string'){
+        const trimmed = entry.trim();
+        if(!trimmed) return;
+        const sep = trimmed.indexOf(':');
+        if(sep > 0){
+          const user = trimmed.slice(0, sep);
+          const pass = trimmed.slice(sep + 1);
+          pushUser(user, pass, user);
+        }
+        return;
+      }
+      if(typeof entry === 'object'){
+        const user = entry.username ?? entry.user ?? '';
+        const pass = entry.password ?? entry.pass ?? '';
+        const display = entry.displayName ?? entry.name ?? user;
+        pushUser(user, pass, display);
+      }
+    });
+    return normalized;
+  }
+
+  if(typeof rawUsers === 'object'){
+    Object.entries(rawUsers).forEach(([key, value]) => {
+      if(value == null) return;
+      if(typeof value === 'string'){
+        pushUser(key, value, key);
+      }else if(typeof value === 'object'){
+        const user = value.username ?? value.user ?? key;
+        const pass = value.password ?? value.pass ?? '';
+        const display = value.displayName ?? value.name ?? key;
+        pushUser(user, pass, display);
+      }
+    });
+  }
+
+  return normalized;
+}
+
+function getConfiguredUsers(){
+  const secureUsers = Array.isArray(SECURE_CONFIG.users) ? SECURE_CONFIG.users : [];
+  let configUsers = [];
+  if(typeof window !== 'undefined' && window.APP_CONFIG){
+    const raw = window.APP_CONFIG.ALLOWED_USERS ?? window.APP_CONFIG.allowedUsers ?? null;
+    if(raw){
+      configUsers = normalizeAllowedUsers(raw);
+    }
+  }
+  const map = new Map();
+  [...secureUsers, ...configUsers].forEach(user => {
+    if(!user) return;
+    const username = typeof user.username === 'string' ? user.username.trim() : '';
+    const password = typeof user.password === 'string' ? user.password.trim() : String(user.password ?? '').trim();
+    if(!username || !password) return;
+    const normalizedUsername = typeof user.normalizedUsername === 'string'
+      ? user.normalizedUsername
+      : username.toLowerCase();
+    if(!normalizedUsername) return;
+    if(!map.has(normalizedUsername)){
+      map.set(normalizedUsername, {
+        username,
+        password,
+        displayName: typeof user.displayName === 'string' && user.displayName.trim()
+          ? user.displayName.trim()
+          : username,
+        normalizedUsername
+      });
+    }
+  });
+  return Array.from(map.values());
+}
+
+function matchAllowedUser(username, password, allowedUsers = null){
+  const userList = Array.isArray(allowedUsers) ? allowedUsers : getConfiguredUsers();
+  const normalizedUsername = String(username || '').trim().toLowerCase();
+  const candidatePassword = String(password || '').trim();
+  if(!userList.length){
+    return {
+      username: username,
+      displayName: String(username || '').trim()
+    };
+  }
+  if(!normalizedUsername || !candidatePassword) return null;
+  for(const user of userList){
+    if(!user) continue;
+    const storedUsername = typeof user.normalizedUsername === 'string'
+      ? user.normalizedUsername
+      : (typeof user.username === 'string' ? user.username.trim().toLowerCase() : '');
+    if(!storedUsername || storedUsername !== normalizedUsername) continue;
+    const storedPassword = typeof user.password === 'string'
+      ? user.password.trim()
+      : String(user.password ?? '').trim();
+    if(storedPassword === candidatePassword){
+      return {
+        username: typeof user.username === 'string' ? user.username : username,
+        displayName: typeof user.displayName === 'string' && user.displayName.trim()
+          ? user.displayName.trim()
+          : (typeof user.username === 'string' ? user.username : username)
+      };
+    }
+  }
+  return null;
+}
+
 async function loadSecureConfig(){
   const storedToken = readStoredSecureToken();
+  const previousUsers = Array.isArray(SECURE_CONFIG.users) ? [...SECURE_CONFIG.users] : [];
 
   if(!SECURE_CONFIG_URL){
     if(storedToken){
       SECURE_CONFIG.apiToken = storedToken;
       setSecureConfigInputValue(storedToken);
     }
+    SECURE_CONFIG.users = previousUsers;
     return;
   }
 
   SECURE_CONFIG.apiToken = '';
+  SECURE_CONFIG.users = [];
 
   try{
     const res = await fetch(SECURE_CONFIG_URL, { cache:'no-store' });
@@ -113,6 +240,8 @@ async function loadSecureConfig(){
       throw err;
     }
 
+    const rawUsers = json.users ?? json.allowedUsers ?? json.ALLOWED_USERS ?? null;
+    SECURE_CONFIG.users = normalizeAllowedUsers(rawUsers);
     SECURE_CONFIG.apiToken = token;
     persistStoredSecureToken(token);
     setSecureConfigInputValue(token);
@@ -123,10 +252,130 @@ async function loadSecureConfig(){
       SECURE_CONFIG.apiToken = storedToken;
       setSecureConfigInputValue(storedToken);
       hideSecureConfigWarning();
+      if(!SECURE_CONFIG.users.length){
+        SECURE_CONFIG.users = previousUsers;
+      }
       return;
     }
     throw err;
   }
+}
+
+async function ensureSecureConfigLoaded(){
+  if(!secureConfigLoadPromise){
+    secureConfigLoadPromise = loadSecureConfig().catch(err => {
+      secureConfigLoadPromise = null;
+      throw err;
+    });
+  }
+  return secureConfigLoadPromise;
+}
+
+function toggleAuthSections(isAuthenticated){
+  if(typeof document === 'undefined') return;
+  const loginPanel = document.querySelector('.login-panel');
+  const appContent = document.getElementById('appContent');
+  if(loginPanel){
+    loginPanel.hidden = !!isAuthenticated;
+  }
+  if(appContent){
+    appContent.hidden = !isAuthenticated;
+  }
+  if(document.body){
+    document.body.classList.toggle(AUTH_BODY_CLASS, !!isAuthenticated);
+  }
+}
+
+function focusLoginInput(){
+  if(typeof document === 'undefined') return;
+  const loginForm = document.getElementById('loginForm');
+  const firstInput = loginForm?.querySelector('input');
+  firstInput?.focus();
+}
+
+function focusSearchBox(){
+  if(typeof document === 'undefined') return;
+  const search = document.getElementById('searchBox');
+  search?.focus();
+}
+
+function registerServiceWorker(){
+  if(typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+  try{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }catch(_err){
+    /* ignore service worker errors */
+  }
+}
+
+function setupThemeControls(themeToggle){
+  if(typeof document === 'undefined') return;
+  if(typeof localStorage !== 'undefined' && localStorage.getItem('theme') === 'light'){
+    document.body.classList.add('theme-light');
+    if(themeToggle) themeToggle.checked = true;
+  }
+
+  themeToggle?.addEventListener('change', (e) => {
+    const isLight = e.target.checked;
+    document.body.classList.toggle('theme-light', isLight);
+    if(typeof localStorage !== 'undefined'){
+      if(isLight) localStorage.setItem('theme','light');
+      else localStorage.removeItem('theme');
+    }
+  });
+}
+
+async function bootstrapApp(){
+  if(bootstrapPromise){
+    return bootstrapPromise;
+  }
+  bootstrapPromise = (async () => {
+    registerServiceWorker();
+
+    setupSecureConfigForm();
+
+    try{
+      await ensureSecureConfigLoaded();
+    }catch(err){
+      console.error('loadSecureConfig error', err);
+      const detail = err && err.message && err.message !== SECURE_CONFIG_TOKEN_ERROR_MSG ? ` Detalle: ${err.message}` : '';
+      const message = err && err.message === SECURE_CONFIG_TOKEN_ERROR_MSG
+        ? err.message
+        : `${SECURE_CONFIG_LOAD_ERROR_MSG}${detail}`;
+      notifySecureConfigIssue(message);
+    }
+
+    const mainEl = document.querySelector('main.container');
+    const sideMenu = document.querySelector('.side-menu');
+    const menuToggle = document.getElementById('menuToggle');
+    const themeToggle = document.getElementById('themeToggle');
+
+    setupThemeControls(themeToggle);
+
+    menuToggle?.addEventListener('click', () => {
+      sideMenu?.classList.toggle('open');
+    });
+
+    if(sideMenu){
+      sideMenu.style.display = '';
+      if(window.innerWidth > 768){
+        sideMenu.classList.add('open');
+      }
+    }
+
+    if(mainEl) mainEl.style.display = '';
+
+    if(!mainInitialized){
+      main();
+      mainInitialized = true;
+    }
+  })();
+
+  bootstrapPromise.catch(err => {
+    console.error('bootstrapApp error', err);
+  });
+
+  return bootstrapPromise;
 }
 
 const DEFAULT_LOCALE = 'es-MX';
@@ -173,6 +422,11 @@ let pendingStatusChange = null;
 const UNAUTHORIZED_MSG = 'No autorizado – revisa el token de acceso';
 let lastFetchUnauthorized = false;
 let lastFetchErrorMessage = '';
+let secureConfigLoadPromise = null;
+let bootstrapPromise = null;
+let hasAuthenticated = false;
+const AUTH_BODY_CLASS = 'is-authenticated';
+const LOGIN_INVALID_MESSAGE = 'Usuario o contraseña inválidos';
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({
@@ -1253,74 +1507,89 @@ async function main(){
   });
 }
 if (typeof document !== 'undefined') {
-  (async () => {
-    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(()=>{});
-    }
-
+  const initAuthAndApp = () => {
     const loginForm = document.getElementById('loginForm');
-    if(loginForm){
-      loginForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const formData = new FormData(loginForm);
-        const username = String(formData.get('username') ?? '').trim();
+
+    if(!loginForm){
+      toggleAuthSections(true);
+      bootstrapApp();
+      return;
+    }
+
+    toggleAuthSections(false);
+    focusLoginInput();
+
+    loginForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if(hasAuthenticated) return;
+
+      const formData = new FormData(loginForm);
+      const username = String(formData.get('username') ?? '').trim();
+      const rawPassword = formData.get('password');
+      const passwordValue = typeof rawPassword === 'string' ? rawPassword : String(rawPassword ?? '');
+      const sanitizedPassword = passwordValue.trim();
+
+      if(!username || !sanitizedPassword){
         if(typeof toast === 'function'){
-          toast(username ? `Bienvenido, ${username}!` : 'Credenciales enviadas', 'success');
+          toast('Ingresa usuario y contraseña válidos', 'error');
         }
+        loginForm.reportValidity();
+        return;
+      }
+
+      const submitBtn = loginForm.querySelector('button[type="submit"]');
+      if(submitBtn) submitBtn.disabled = true;
+
+      try{
+        try{
+          await ensureSecureConfigLoaded();
+        }catch(err){
+          console.error('ensureSecureConfigLoaded error', err);
+        }
+
+        const allowedUsers = getConfiguredUsers();
+        const matchedUser = matchAllowedUser(username, sanitizedPassword, allowedUsers);
+
+        if(allowedUsers.length && !matchedUser){
+          if(typeof toast === 'function'){
+            toast(LOGIN_INVALID_MESSAGE, 'error');
+          }
+          const passwordInput = loginForm.querySelector('input[name="password"]');
+          if(passwordInput){
+            passwordInput.value = '';
+            passwordInput.focus();
+          }
+          return;
+        }
+
+        hasAuthenticated = true;
+        toggleAuthSections(true);
         loginForm.reset();
-        const firstInput = loginForm.querySelector('input');
-        firstInput?.focus();
-      });
-    }
 
-    setupSecureConfigForm();
+        if(typeof toast === 'function'){
+          const displayName = matchedUser?.displayName || matchedUser?.username || username;
+          toast(displayName ? `Bienvenido, ${displayName}!` : 'Inicio de sesión correcto', 'success');
+        }
 
-    try{
-      await loadSecureConfig();
-    }catch(err){
-      console.error('loadSecureConfig error', err);
-      const detail = err && err.message && err.message !== SECURE_CONFIG_TOKEN_ERROR_MSG ? ` Detalle: ${err.message}` : '';
-      const message = err && err.message === SECURE_CONFIG_TOKEN_ERROR_MSG
-        ? err.message
-        : `${SECURE_CONFIG_LOAD_ERROR_MSG}${detail}`;
-      notifySecureConfigIssue(message);
-    }
-
-    const mainEl = document.querySelector('main.container');
-    const sideMenu = document.querySelector('.side-menu');
-    const menuToggle = document.getElementById('menuToggle');
-    const themeToggle = document.getElementById('themeToggle');
-
-    if(typeof localStorage !== 'undefined' && localStorage.getItem('theme') === 'light'){
-      document.body.classList.add('theme-light');
-      if(themeToggle) themeToggle.checked = true;
-    }
-
-    themeToggle?.addEventListener('change', (e) => {
-      const isLight = e.target.checked;
-      document.body.classList.toggle('theme-light', isLight);
-      if(typeof localStorage !== 'undefined'){
-        if(isLight) localStorage.setItem('theme','light');
-        else localStorage.removeItem('theme');
+        await bootstrapApp();
+        focusSearchBox();
+      }catch(err){
+        console.error('Error inicializando la aplicación tras iniciar sesión', err);
+        hasAuthenticated = false;
+        toggleAuthSections(false);
+        focusLoginInput();
+        if(typeof toast === 'function'){
+          toast('No se pudo iniciar la aplicación', 'error');
+        }
+      }finally{
+        if(submitBtn) submitBtn.disabled = false;
       }
     });
+  };
 
-    menuToggle?.addEventListener('click', () => {
-      sideMenu?.classList.toggle('open');
-    });
-
-    if(sideMenu){
-      sideMenu.style.display = '';
-      if(window.innerWidth > 768){
-        sideMenu.classList.add('open');
-      }
-    }
-
-    if(mainEl) mainEl.style.display = '';
-
-    if(!mainInitialized){
-      main();
-      mainInitialized = true;
-    }
-  })();
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', initAuthAndApp, { once: true });
+  }else{
+    initAuthAndApp();
+  }
 }

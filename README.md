@@ -11,6 +11,7 @@ Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sh
 ## Configuración
 - URL de Google Apps Script: defínela en `config.js` o establece `API_BASE` como variable de entorno.
 - Token de API: proporciónalo mediante `secure-config.json` (no versionado) o con la variable de entorno `API_TOKEN`/un endpoint seguro.
+- Usuarios permitidos: define un arreglo `users` dentro de `secure-config.json` (o en la respuesta del endpoint seguro) con objetos `{ "username": "...", "password": "...", "displayName": "..." }` para limitar quién puede acceder. Si omites la lista se permitirá cualquier combinación de usuario/contraseña tras enviar el formulario.
 - Nombre de la hoja: `Tabla_1`
 - Columnas esperadas:
   - Trip, Caja, Referencia, Cliente, Destino, Estatus, Segmento, TR-MX, TR-USA, Cita carga, Llegada carga, Cita entrega, Llegada entrega, Comentarios, Docs, Tracking

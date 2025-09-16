@@ -36,83 +36,88 @@
         <button type="submit" class="btn">Iniciar sesión</button>
       </form>
     </section>
-    <div id="secureConfigMessage" role="alert" aria-live="assertive" hidden>
-      <p id="secureConfigMessageText"></p>
-      <form id="secureConfigForm" class="secure-config-form">
-        <label for="secureConfigToken">Token de API</label>
-        <input id="secureConfigToken" type="password" autocomplete="off" spellcheck="false" />
-        <div class="secure-config-actions">
-          <button type="submit" class="btn-mini">Guardar token</button>
-          <button type="button" id="secureConfigClear" class="btn-mini">Borrar token</button>
+
+    <div id="appContent" class="app-content" hidden>
+      <div id="secureConfigMessage" role="alert" aria-live="assertive" hidden>
+        <p id="secureConfigMessageText"></p>
+        <form id="secureConfigForm" class="secure-config-form">
+          <label for="secureConfigToken">Token de API</label>
+          <input id="secureConfigToken" type="password" autocomplete="off" spellcheck="false" />
+          <div class="secure-config-actions">
+            <button type="submit" class="btn-mini">Guardar token</button>
+            <button type="button" id="secureConfigClear" class="btn-mini">Borrar token</button>
+          </div>
+          <p class="secure-config-hint">El token se almacenará solo en este dispositivo.</p>
+        </form>
+      </div>
+
+      <section class="controls">
+        <label for="statusFilter">Estatus:</label>
+        <select id="statusFilter">
+          <option value="">Todos</option>
+        </select>
+
+        <label for="ejecutivoFilter">Ejecutivo:</label>
+        <select id="ejecutivoFilter">
+          <option value="">Todos</option>
+        </select>
+
+        <label for="searchBox">Buscar:</label>
+        <div class="search-wrapper">
+          <input id="searchBox" type="text" placeholder="Trip, Caja, Cliente, Destino"/>
+          <button id="clearSearch" type="button" class="clear-search" aria-label="Limpiar búsqueda">×</button>
         </div>
-        <p class="secure-config-hint">El token se almacenará solo en este dispositivo.</p>
-      </form>
+
+        <label for="startDate">Cita carga</label>
+        <div class="date-range">
+          <input type="date" id="startDate"/>
+          <span class="date-separator">→</span>
+          <input type="date" id="endDate"/>
+        </div>
+
+        <button id="refreshBtn" class="btn">Actualizar</button>
+        <button id="addBtn" class="btn" type="button">Agregar</button>
+        <input type="file" id="bulkUpload" accept=".xlsx,.csv"/>
+        <button id="bulkUploadBtn" class="btn" type="button">Carga masiva</button>
+        <div id="bulkUploadStatus" class="upload-status"></div>
+      </section>
+
+      <nav class="top-menu">
+        <button id="generalMenu" class="top-btn">📋 General</button>
+        <button id="dailyMenu" class="top-btn">📅 Cargas Diarias</button>
+        <button id="weeklyMenu" class="top-btn">🗓️ Programa semanal</button>
+        <button id="deliveryMenu" class="top-btn">🚚 Entregas hoy</button>
+        <button id="nlarMenu" class="top-btn">🏭 Inventario Nlar</button>
+      </nav>
+
+      <section class="table-wrap">
+        <table id="loadsTable">
+          <thead>
+            <tr>
+              <th>Ejecutivo</th>
+              <th>Trip</th>
+              <th>Caja</th>
+              <th>Referencia</th>
+              <th>Cliente</th>
+              <th>Destino</th>
+              <th>Estatus</th>
+              <th>Segmento</th>
+              <th>TR-MX</th>
+              <th>TR-USA</th>
+              <th>Cita carga</th>
+              <th>Llegada carga</th>
+              <th>Cita entrega</th>
+              <th>Llegada entrega</th>
+              <th>Comentarios</th>
+              <th>Docs</th>
+              <th>Tracking</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
     </div>
-    <section class="controls">
-      <label for="statusFilter">Estatus:</label>
-      <select id="statusFilter">
-        <option value="">Todos</option>
-      </select>
-
-      <label for="ejecutivoFilter">Ejecutivo:</label>
-      <select id="ejecutivoFilter">
-        <option value="">Todos</option>
-      </select>
-
-      <label for="searchBox">Buscar:</label>
-      <div class="search-wrapper">
-        <input id="searchBox" type="text" placeholder="Trip, Caja, Cliente, Destino"/>
-        <button id="clearSearch" type="button" class="clear-search" aria-label="Limpiar búsqueda">×</button>
-      </div>
-
-      <label for="startDate">Cita carga</label>
-      <div class="date-range">
-        <input type="date" id="startDate"/>
-        <span class="date-separator">→</span>
-        <input type="date" id="endDate"/>
-      </div>
-
-      <button id="refreshBtn" class="btn">Actualizar</button>
-      <button id="addBtn" class="btn" type="button">Agregar</button>
-      <input type="file" id="bulkUpload" accept=".xlsx,.csv"/>
-      <button id="bulkUploadBtn" class="btn" type="button">Carga masiva</button>
-      <div id="bulkUploadStatus" class="upload-status"></div>
-    </section>
-    <nav class="top-menu">
-      <button id="generalMenu" class="top-btn">📋 General</button>
-      <button id="dailyMenu" class="top-btn">📅 Cargas Diarias</button>
-      <button id="weeklyMenu" class="top-btn">🗓️ Programa semanal</button>
-      <button id="deliveryMenu" class="top-btn">🚚 Entregas hoy</button>
-      <button id="nlarMenu" class="top-btn">🏭 Inventario Nlar</button>
-    </nav>
-
-    <section class="table-wrap">
-      <table id="loadsTable">
-        <thead>
-          <tr>
-            <th>Ejecutivo</th>
-            <th>Trip</th>
-            <th>Caja</th>
-            <th>Referencia</th>
-            <th>Cliente</th>
-            <th>Destino</th>
-            <th>Estatus</th>
-            <th>Segmento</th>
-            <th>TR-MX</th>
-            <th>TR-USA</th>
-            <th>Cita carga</th>
-            <th>Llegada carga</th>
-            <th>Cita entrega</th>
-            <th>Llegada entrega</th>
-            <th>Comentarios</th>
-            <th>Docs</th>
-            <th>Tracking</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
   </main>
 
   <div id="addModal" class="modal">
