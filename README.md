@@ -17,6 +17,40 @@ Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sh
   - Trip, Caja, Referencia, Cliente, Destino, Estatus, Segmento, TR-MX, TR-USA, Cita carga, Llegada carga, Cita entrega, Llegada entrega, Comentarios, Docs, Tracking
 - Las fechas deben enviarse en formato `DD/MM/YYYY HH:mm:ss` (ejemplo: `26/08/2025 22:00:00`).
 
+## Verificación del Apps Script antes de usar la PWA
+
+1. **Confirma el token configurado en Apps Script.**
+   - En el editor de Apps Script ve a `Project Settings` → `Script properties` y asegúrate de que exista una propiedad `API_TOKEN`.
+   - Copia ese valor y úsalo en `secure-config.json`, en la variable de entorno `API_TOKEN` o en tu endpoint seguro. Si difieren, la PWA recibirá respuestas `401 Unauthorized`.
+2. **Verifica la URL del despliegue (`API_BASE`).**
+   - Ingresa a `Deploy` → `Manage deployments`, abre el despliegue vigente y copia el campo **Web app URL**.
+   - Usa exactamente esa URL en `config.js` o expórtala como `API_BASE` al generar `runtime-env.js`.
+3. **Prueba manualmente el endpoint de Apps Script.**
+   - Ejecuta una petición GET para validar el token y la URL (sustituye los valores entre `<...>`):
+
+     ```bash
+     curl -X GET \
+       -H "Authorization: Bearer <API_TOKEN>" \
+       "https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec"
+     ```
+
+     Deberías obtener un JSON con la llave `data`. Si recibes `{"error":"Unauthorized"}`, revisa el token y repite la solicitud.
+   - Opcionalmente realiza un POST simple para comprobar que se aceptan escrituras:
+
+     ```bash
+     curl -X POST \
+       -H "Authorization: Bearer <API_TOKEN>" \
+       -H "Content-Type: application/x-www-form-urlencoded" \
+       -d "action=add&trip=225001&ejecutivo=QA" \
+       "https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec"
+     ```
+
+     Usa un número de trip temporal y elimina la fila desde la hoja si no la necesitas.
+4. **Actualiza la PWA con los valores verificados.**
+   - Guarda el token en `secure-config.json` (o en tu fuente segura) y coloca la URL en `config.js`/`API_BASE` antes de abrir la aplicación.
+
+Siguiendo estos pasos podrás detectar problemas de autenticación o de URL antes de levantar la PWA.
+
 ## Ejemplo de JSON de muestra
 ```json
 [
