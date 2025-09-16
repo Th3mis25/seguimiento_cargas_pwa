@@ -18,6 +18,39 @@ const SECURE_CONFIG_LOAD_ERROR_MSG = 'No se pudo cargar la configuración segura
 const SECURE_TOKEN_STORAGE_KEY = 'seguimientoSecureToken';
 let secureConfigErrorShown = false;
 
+function buildApiUrlWithToken(baseUrl, token){
+  if(!baseUrl || !token) return baseUrl;
+  try{
+    const context = typeof window !== 'undefined' && window.location
+      ? window.location.origin
+      : 'http://localhost';
+    const url = new URL(baseUrl, context);
+    if(!url.searchParams.has('token')){
+      url.searchParams.set('token', token);
+    }
+    return url.toString();
+  }catch(err){
+    const tokenParam = `token=${encodeURIComponent(token)}`;
+    const hashIndex = baseUrl.indexOf('#');
+    const hasHash = hashIndex >= 0;
+    const beforeHash = hasHash ? baseUrl.slice(0, hashIndex) : baseUrl;
+    const hash = hasHash ? baseUrl.slice(hashIndex) : '';
+    if(/(^|[?&])token=/.test(beforeHash)){
+      return baseUrl;
+    }
+    const joiner = beforeHash.includes('?') ? '&' : '?';
+    return `${beforeHash}${joiner}${tokenParam}${hash}`;
+  }
+}
+
+function createApiFormBody(payload, token){
+  const body = new URLSearchParams(payload);
+  if(token && !body.has('token')){
+    body.set('token', token);
+  }
+  return body;
+}
+
 function readStoredSecureToken(){
   if(typeof localStorage === 'undefined') return '';
   try{
@@ -646,8 +679,8 @@ async function fetchData(){
   try{
     lastFetchErrorMessage = '';
     const token = SECURE_CONFIG.apiToken || '';
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const res  = await fetch(API_BASE,{ cache:'no-store', headers });
+    const url = buildApiUrlWithToken(API_BASE, token);
+    const res  = await fetch(url,{ cache:'no-store' });
     if(res.status === 401 || res.status === 403){
       lastFetchUnauthorized = true;
       lastFetchErrorMessage = UNAUTHORIZED_MSG;
@@ -756,12 +789,10 @@ function setupSecureConfigForm(){
 async function addRecord(data){
     try{
       const token = SECURE_CONFIG.apiToken || '';
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const body = new URLSearchParams({ action:'add', ...data });
+      const body = createApiFormBody({ action:'add', ...data }, token);
       const res = await fetch(API_BASE,{
         method:'POST',
-        body,
-        headers
+        body
       });
     let json;
     try{
@@ -802,9 +833,8 @@ async function addRecord(data){
 async function updateRecord(data){
     try{
       const token = SECURE_CONFIG.apiToken || '';
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const body = new URLSearchParams({ action:'update', ...data });
-      const res = await fetch(API_BASE,{ method:'POST', body, headers });
+      const body = createApiFormBody({ action:'update', ...data }, token);
+      const res = await fetch(API_BASE,{ method:'POST', body });
     let json;
     try{
       const ct = res.headers.get('content-type') || '';
