@@ -10,6 +10,9 @@ const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) 
 // La URL debe definirse en `window.APP_CONFIG.SECURE_CONFIG_URL`.
 const SECURE_CONFIG_URL = (typeof window !== 'undefined' && window.APP_CONFIG?.SECURE_CONFIG_URL) || '';
 const SECURE_CONFIG = { apiToken: '', users: [] };
+const DEFAULT_ALLOWED_USERS = Object.freeze([
+  { username: 'admin', password: 'admin123', displayName: 'Administrador' }
+]);
 const SECURE_CONFIG_TOKEN_ERROR_MSG = 'No se obtuvo el token de API. Define API_TOKEN en tu entorno o crea secure-config.json a partir de secure-config.example.json.';
 const SECURE_CONFIG_LOAD_ERROR_MSG = 'No se pudo cargar la configuración segura. Define API_TOKEN, revisa SECURE_CONFIG_URL o verifica que secure-config.json exista y tenga permisos de lectura.';
 const SECURE_TOKEN_STORAGE_KEY = 'seguimientoSecureToken';
@@ -155,7 +158,7 @@ function getConfiguredUsers(){
     }
   }
   const map = new Map();
-  [...secureUsers, ...configUsers].forEach(user => {
+  const addUser = user => {
     if(!user) return;
     const username = typeof user.username === 'string' ? user.username.trim() : '';
     const password = typeof user.password === 'string' ? user.password.trim() : String(user.password ?? '').trim();
@@ -174,7 +177,11 @@ function getConfiguredUsers(){
         normalizedUsername
       });
     }
-  });
+  };
+  [...secureUsers, ...configUsers].forEach(addUser);
+  if(!map.size){
+    normalizeAllowedUsers(DEFAULT_ALLOWED_USERS).forEach(addUser);
+  }
   return Array.from(map.values());
 }
 
@@ -182,12 +189,7 @@ function matchAllowedUser(username, password, allowedUsers = null){
   const userList = Array.isArray(allowedUsers) ? allowedUsers : getConfiguredUsers();
   const normalizedUsername = String(username || '').trim().toLowerCase();
   const candidatePassword = String(password || '').trim();
-  if(!userList.length){
-    return {
-      username: username,
-      displayName: String(username || '').trim()
-    };
-  }
+  if(!userList.length) return null;
   if(!normalizedUsername || !candidatePassword) return null;
   for(const user of userList){
     if(!user) continue;
