@@ -2,6 +2,23 @@ const SHEET_NAME = 'Tabla_1';
 const AUTH_TOKEN = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
 const SPREADSHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
 
+function secureCompare(a, b) {
+  if (typeof a !== 'string') {
+    a = a == null ? '' : String(a);
+  }
+  if (typeof b !== 'string') {
+    b = b == null ? '' : String(b);
+  }
+  var len = Math.max(a.length, b.length);
+  var mismatch = a.length ^ b.length;
+  for (var i = 0; i < len; i++) {
+    var aCode = i < a.length ? a.charCodeAt(i) : 0;
+    var bCode = i < b.length ? b.charCodeAt(i) : 0;
+    mismatch |= aCode ^ bCode;
+  }
+  return mismatch === 0;
+}
+
 function isAuthorized(e) {
   var headerToken = '';
   if (e && e.headers) {
@@ -11,7 +28,7 @@ function isAuthorized(e) {
     }
   }
   var paramToken = e.parameter && e.parameter.token;
-  return headerToken === AUTH_TOKEN || paramToken === AUTH_TOKEN;
+  return secureCompare(headerToken, AUTH_TOKEN) || secureCompare(paramToken, AUTH_TOKEN);
 }
 
 function createJsonOutput(payload, status) {

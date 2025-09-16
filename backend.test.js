@@ -66,3 +66,6 @@ const result = doPost(e);
 const payload = JSON.parse(result.content);
 assert.strictEqual(payload.error, 'Trip column not found');
 console.log('Trip column missing test passed.');
+assert.strictEqual(originalIsAuthorized({ headers: { Authorization: 'Bearer demo-toke' } }), false, 'Tokens with mismatched length should be rejected.');
+assert.strictEqual(originalIsAuthorized({ parameter: { token: 'demo-tokem' } }), false, 'Wrong tokens should be rejected.');
+console.log('Authorization edge cases test passed.');
