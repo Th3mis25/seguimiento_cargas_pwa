@@ -1263,9 +1263,19 @@ function renderCurrent(){
 }
 
 async function main(){
+  const initialData = await fetchData();
+  const canRenderData = !lastFetchUnauthorized && !lastFetchErrorMessage;
+
+  if(canRenderData){
+    cache = initialData;
+  }
+
   populateStatusFilter(cache);
   populateEjecutivoFilter(cache);
-  renderDaily(cache);
+
+  if(canRenderData){
+    renderDaily(cache);
+  }
 
   fillStatusSelect($('#addForm select[name="estatus"]'), '', true);
 
