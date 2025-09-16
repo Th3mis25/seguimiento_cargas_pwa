@@ -4,18 +4,30 @@ Aplicación PWA para seguimiento de cargas en tiempo real, conectada a Google Sh
 
 ## Cómo correr localmente
 - Clonar el repo: `git clone https://github.com/TuUsuario/seguimiento_cargas_pwa.git`
-- Copiar el archivo de ejemplo: `cp secure-config.example.json secure-config.json` y colocar el token que vayas a usar. El archivo real queda fuera del control de versiones.
+- Copiar el archivo de ejemplo: `cp secure-config.sample.json secure-config.json` y colocar el token/API_TOKEN junto con el `usuario` y `password` que quieras utilizar para la pantalla de inicio de sesión. El archivo real queda fuera del control de versiones.
 - Abrir `index.html` con Live Server (VS Code extension).
 - Configura la URL de tu Google Apps Script en `config.js` o mediante la variable de entorno `API_BASE` al desplegar.
 
 ## Configuración
 - URL de Google Apps Script: defínela en `config.js` o establece `API_BASE` como variable de entorno.
 - Token de API: proporciónalo mediante `secure-config.json` (no versionado) o con la variable de entorno `API_TOKEN`/un endpoint seguro.
-- Usuarios permitidos: define un arreglo `users` dentro de `secure-config.json` (o en la respuesta del endpoint seguro) con objetos `{ "username": "...", "password": "...", "displayName": "..." }` para limitar quién puede acceder. Si omites la lista se permitirá cualquier combinación de usuario/contraseña tras enviar el formulario.
+- Credenciales de inicio de sesión: especifica `usuario`, `password` y opcionalmente `nombre` en `secure-config.json` para definir el acceso principal. También puedes declarar un arreglo `users` con objetos `{ "usuario": "...", "password": "...", "nombre": "..." }`/`{ "username": "..." }` para múltiples cuentas. Si no hay credenciales configuradas se usará el usuario por defecto `admin`/`admin123`.
 - Nombre de la hoja: `Tabla_1`
 - Columnas esperadas:
   - Trip, Caja, Referencia, Cliente, Destino, Estatus, Segmento, TR-MX, TR-USA, Cita carga, Llegada carga, Cita entrega, Llegada entrega, Comentarios, Docs, Tracking
 - Las fechas deben enviarse en formato `DD/MM/YYYY HH:mm:ss` (ejemplo: `26/08/2025 22:00:00`).
+
+## Inicio de sesión y control de acceso
+
+Al abrir la PWA se muestra un overlay de inicio de sesión que bloquea el tablero hasta proporcionar credenciales válidas. La validación usa las credenciales definidas en alguna de las siguientes fuentes (en orden):
+
+1. `secure-config.json` (generado desde `secure-config.sample.json` y excluido del repositorio).
+2. El endpoint auxiliar configurado en `config.js`/`SECURE_CONFIG_URL` (por ejemplo el script `scripts/secure-config-server.js`).
+3. Valores embebidos mediante `window.__ENV`.
+
+Cada fuente puede definir un usuario principal con las llaves `usuario`, `password` y `nombre` o declarar un arreglo `users` con múltiples objetos que aceptan tanto `usuario`/`nombre` como `username`/`displayName`. Si ninguna fuente suministra credenciales se habilita el acceso con el usuario por defecto `admin`/`admin123`.
+
+El servidor auxiliar (`scripts/secure-config-server.js`) expone por omisión las variables de entorno `API_TOKEN`, `SECURE_USER`/`USUARIO`, `SECURE_PASSWORD`/`CLAVE` y `SECURE_DISPLAY_NAME`/`NOMBRE`, devolviéndolas como `{ "API_TOKEN": "...", "usuario": "...", "password": "...", "nombre": "..." }`. Puedes ajustarlas según tu despliegue para replicar el comportamiento de `secure-config.json` sin guardar secretos en el repositorio.
 
 ## Verificación del Apps Script antes de usar la PWA
 
@@ -80,11 +92,11 @@ Incluye el archivo `runtime-env.js` antes de `<script src="./config.js"></script
 `config.js` obtiene el token en el siguiente orden:
 1. Variable de entorno `API_TOKEN` expuesta en `window.__ENV` (o en `process.env` si usas un bundler).
 2. Un endpoint seguro definido en `window.__ENV.SECURE_CONFIG_URL` o `process.env.SECURE_CONFIG_URL` que devuelva `{ "API_TOKEN": "..." }`.
-3. El archivo local `secure-config.json` (generado a partir de `secure-config.example.json` y excluido del repositorio).
+3. El archivo local `secure-config.json` (generado a partir de `secure-config.sample.json` y excluido del repositorio).
 
 #### Opciones recomendadas para mantener el token fuera del repositorio
 
-- **Archivo local no versionado**: duplica `secure-config.example.json`, renómbralo a `secure-config.json` y coloca ahí tu token. El archivo ya está listado en `.gitignore`.
+- **Archivo local no versionado**: duplica `secure-config.sample.json`, renómbralo a `secure-config.json` y coloca ahí tu token. El archivo ya está listado en `.gitignore`.
 - **Variables de entorno durante el despliegue**:
   1. Exporta los secretos en tu pipeline:
      ```bash

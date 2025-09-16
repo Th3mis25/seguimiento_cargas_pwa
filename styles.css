@@ -17,6 +17,23 @@ body{
   overflow:hidden;
 }
 
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:linear-gradient(135deg, rgba(15,44,92,0.92), rgba(11,35,65,0.94)), url('assets/Fondo-inicio.png');
+  background-size:cover;
+  background-position:center;
+  opacity:1;
+  transition:opacity .35s ease;
+  pointer-events:none;
+  z-index:0;
+}
+
+body.is-authenticated::before{
+  opacity:0;
+}
+
 /* ====== Paleta TM ====== */
 :root{
   --bg: #0B2341;           /* fondo general */
@@ -136,6 +153,13 @@ body{
   display:flex;
   flex-direction:column;
   overflow:hidden;
+  z-index:1;
+}
+
+body:not(.is-authenticated) .container{
+  justify-content:center;
+  align-items:center;
+  padding:80px 20px 32px;
 }
 
 .login-panel{
@@ -144,6 +168,17 @@ body{
   background:var(--panel);
   border-radius:14px;
   box-shadow:0 8px 26px rgba(0,0,0,.25), inset 0 0 1px rgba(255,255,255,.05);
+  position:relative;
+  z-index:2;
+  width:min(420px, 100%);
+}
+
+body:not(.is-authenticated) .login-panel{
+  margin:0;
+}
+
+body:not(.is-authenticated) .login-form{
+  width:100%;
 }
 
 .login-panel h2{

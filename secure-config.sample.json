@@ -1,0 +1,13 @@
+{
+  "API_TOKEN": "YOUR_TOKEN_HERE",
+  "usuario": "admin",
+  "password": "admin123",
+  "nombre": "Administrador",
+  "users": [
+    {
+      "usuario": "admin",
+      "password": "admin123",
+      "nombre": "Administrador"
+    }
+  ]
+}

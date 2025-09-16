@@ -9,11 +9,11 @@ const API_BASE = (typeof window !== 'undefined' && window.APP_CONFIG?.API_BASE) 
 // Configuración sensible cargada desde un endpoint seguro.
 // La URL debe definirse en `window.APP_CONFIG.SECURE_CONFIG_URL`.
 const SECURE_CONFIG_URL = (typeof window !== 'undefined' && window.APP_CONFIG?.SECURE_CONFIG_URL) || '';
-const SECURE_CONFIG = { apiToken: '', users: [] };
+const SECURE_CONFIG = { apiToken: '', users: [], usuario: '', password: '', displayName: '' };
 const DEFAULT_ALLOWED_USERS = Object.freeze([
   { username: 'admin', password: 'admin123', displayName: 'Administrador' }
 ]);
-const SECURE_CONFIG_TOKEN_ERROR_MSG = 'No se obtuvo el token de API. Define API_TOKEN en tu entorno o crea secure-config.json a partir de secure-config.example.json.';
+const SECURE_CONFIG_TOKEN_ERROR_MSG = 'No se obtuvo el token de API. Define API_TOKEN en tu entorno o crea secure-config.json a partir de secure-config.sample.json.';
 const SECURE_CONFIG_LOAD_ERROR_MSG = 'No se pudo cargar la configuración segura. Define API_TOKEN, revisa SECURE_CONFIG_URL o verifica que secure-config.json exista y tenga permisos de lectura.';
 const SECURE_TOKEN_STORAGE_KEY = 'seguimientoSecureToken';
 let secureConfigErrorShown = false;
@@ -94,7 +94,7 @@ function normalizeAllowedUsers(rawUsers){
   if(!rawUsers) return normalized;
 
   const pushUser = (username, password, displayName) => {
-    const cleanUsername = typeof username === 'string' ? username.trim() : '';
+    const cleanUsername = typeof username === 'string' ? username.trim() : String(username ?? '').trim();
     const rawPassword = typeof password === 'string' ? password : String(password ?? '');
     const cleanPassword = rawPassword.trim();
     if(!cleanUsername || !cleanPassword) return;
@@ -122,9 +122,9 @@ function normalizeAllowedUsers(rawUsers){
         return;
       }
       if(typeof entry === 'object'){
-        const user = entry.username ?? entry.user ?? '';
-        const pass = entry.password ?? entry.pass ?? '';
-        const display = entry.displayName ?? entry.name ?? user;
+        const user = entry.username ?? entry.user ?? entry.usuario ?? entry.nombreUsuario ?? '';
+        const pass = entry.password ?? entry.pass ?? entry.clave ?? entry.contrasena ?? entry['contraseña'] ?? '';
+        const display = entry.displayName ?? entry.name ?? entry.nombre ?? entry.alias ?? user;
         pushUser(user, pass, display);
       }
     });
@@ -137,9 +137,9 @@ function normalizeAllowedUsers(rawUsers){
       if(typeof value === 'string'){
         pushUser(key, value, key);
       }else if(typeof value === 'object'){
-        const user = value.username ?? value.user ?? key;
-        const pass = value.password ?? value.pass ?? '';
-        const display = value.displayName ?? value.name ?? key;
+        const user = value.username ?? value.user ?? value.usuario ?? value.nombreUsuario ?? key;
+        const pass = value.password ?? value.pass ?? value.clave ?? value.contrasena ?? value['contraseña'] ?? '';
+        const display = value.displayName ?? value.name ?? value.nombre ?? value.alias ?? key;
         pushUser(user, pass, display);
       }
     });
@@ -150,11 +150,31 @@ function normalizeAllowedUsers(rawUsers){
 
 function getConfiguredUsers(){
   const secureUsers = Array.isArray(SECURE_CONFIG.users) ? SECURE_CONFIG.users : [];
+  const secureSingleUsers = normalizeAllowedUsers([
+    {
+      username: SECURE_CONFIG.usuario ?? '',
+      password: SECURE_CONFIG.password ?? '',
+      displayName: SECURE_CONFIG.displayName ?? ''
+    }
+  ]);
+
   let configUsers = [];
   if(typeof window !== 'undefined' && window.APP_CONFIG){
     const raw = window.APP_CONFIG.ALLOWED_USERS ?? window.APP_CONFIG.allowedUsers ?? null;
     if(raw){
       configUsers = normalizeAllowedUsers(raw);
+    }
+
+    const configSingleUsers = normalizeAllowedUsers([
+      {
+        username: window.APP_CONFIG.usuario ?? window.APP_CONFIG.username ?? window.APP_CONFIG.user ?? '',
+        password: window.APP_CONFIG.password ?? window.APP_CONFIG.pass ?? '',
+        displayName: window.APP_CONFIG.nombre ?? window.APP_CONFIG.displayName ?? window.APP_CONFIG.name ?? ''
+      }
+    ]);
+
+    if(configSingleUsers.length){
+      configUsers = [...configUsers, ...configSingleUsers];
     }
   }
   const map = new Map();
@@ -178,7 +198,7 @@ function getConfiguredUsers(){
       });
     }
   };
-  [...secureUsers, ...configUsers].forEach(addUser);
+  [...secureSingleUsers, ...secureUsers, ...configUsers].forEach(addUser);
   if(!map.size){
     normalizeAllowedUsers(DEFAULT_ALLOWED_USERS).forEach(addUser);
   }
@@ -215,6 +235,11 @@ function matchAllowedUser(username, password, allowedUsers = null){
 async function loadSecureConfig(){
   const storedToken = readStoredSecureToken();
   const previousUsers = Array.isArray(SECURE_CONFIG.users) ? [...SECURE_CONFIG.users] : [];
+  const previousSingleUser = {
+    usuario: SECURE_CONFIG.usuario,
+    password: SECURE_CONFIG.password,
+    displayName: SECURE_CONFIG.displayName
+  };
 
   if(!SECURE_CONFIG_URL){
     if(storedToken){
@@ -222,11 +247,17 @@ async function loadSecureConfig(){
       setSecureConfigInputValue(storedToken);
     }
     SECURE_CONFIG.users = previousUsers;
+    SECURE_CONFIG.usuario = previousSingleUser.usuario;
+    SECURE_CONFIG.password = previousSingleUser.password;
+    SECURE_CONFIG.displayName = previousSingleUser.displayName;
     return;
   }
 
   SECURE_CONFIG.apiToken = '';
   SECURE_CONFIG.users = [];
+  SECURE_CONFIG.usuario = '';
+  SECURE_CONFIG.password = '';
+  SECURE_CONFIG.displayName = '';
 
   try{
     const res = await fetch(SECURE_CONFIG_URL, { cache:'no-store' });
@@ -242,8 +273,20 @@ async function loadSecureConfig(){
       throw err;
     }
 
-    const rawUsers = json.users ?? json.allowedUsers ?? json.ALLOWED_USERS ?? null;
+    const rawUsers = json.users ?? json.allowedUsers ?? json.ALLOWED_USERS ?? json.usuarios ?? null;
+    const singleUser = {
+      username: json.usuario ?? json.username ?? json.user ?? '',
+      password: json.password ?? json.pass ?? json.clave ?? json.contrasena ?? json['contraseña'] ?? '',
+      displayName: json.nombre ?? json.displayName ?? json.name ?? ''
+    };
     SECURE_CONFIG.users = normalizeAllowedUsers(rawUsers);
+    const normalizedSingleUser = normalizeAllowedUsers([singleUser]);
+    if(normalizedSingleUser.length){
+      const [{ username, password, displayName }] = normalizedSingleUser;
+      SECURE_CONFIG.usuario = username;
+      SECURE_CONFIG.password = password;
+      SECURE_CONFIG.displayName = displayName;
+    }
     SECURE_CONFIG.apiToken = token;
     persistStoredSecureToken(token);
     setSecureConfigInputValue(token);
@@ -256,6 +299,11 @@ async function loadSecureConfig(){
       hideSecureConfigWarning();
       if(!SECURE_CONFIG.users.length){
         SECURE_CONFIG.users = previousUsers;
+      }
+      if(!SECURE_CONFIG.usuario && previousSingleUser.usuario){
+        SECURE_CONFIG.usuario = previousSingleUser.usuario;
+        SECURE_CONFIG.password = previousSingleUser.password;
+        SECURE_CONFIG.displayName = previousSingleUser.displayName;
       }
       return;
     }
