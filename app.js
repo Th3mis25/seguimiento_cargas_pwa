@@ -775,7 +775,9 @@ const STATUS_OPTIONS = [
   'In transit MX','Nuevo Laredo yard','In transit USA','At destination','Delivered'
 ];
 
-const $ = s => document.querySelector(s);
+const $ = typeof document !== 'undefined'
+  ? selector => document.querySelector(selector)
+  : () => null;
 let cache = [];
 let currentView = 'daily';
 let mainInitialized = false;
@@ -885,6 +887,7 @@ function fillStatusSelect(sel, current='', allowEmpty=false){
 }
 function toast(msg, type=''){
   const el = $('#toast');
+  if(!el) return;
   el.textContent = msg;
   el.classList.remove('success','error');
   if(type){
