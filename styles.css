@@ -862,11 +862,20 @@ body:not(.is-authenticated) .login-form{
   z-index:1000;
 }
 .modal.show{ visibility:visible; opacity:1; }
-.modal-content{
+.modal-content{ 
   background:var(--panel); color:var(--text); padding:20px; border-radius:14px; width:300px;
   box-shadow:0 8px 26px rgba(0,0,0,.35);
   font-size:14px;
   overflow:hidden;
+}
+.modal-content--form{
+  width:min(420px, calc(100% - 40px));
+  max-height:90vh;
+  overflow-y:auto;
+}
+.modal-content--form form{
+  display:flex;
+  flex-direction:column;
 }
 #syncBlockingModal .modal-content{
   width:min(360px, calc(100% - 40px));
