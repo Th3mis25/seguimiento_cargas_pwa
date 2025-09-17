@@ -20,6 +20,10 @@ function secureCompare(a, b) {
 }
 
 function isAuthorized(e) {
+  if (!AUTH_TOKEN) {
+    Logger.log('API token is not configured. Please set the API_TOKEN script property.');
+    return false;
+  }
   var headerToken = '';
   if (e && e.headers) {
     var authHeader = e.headers.Authorization || e.headers.authorization;
