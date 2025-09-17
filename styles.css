@@ -467,6 +467,7 @@ body:not(.is-authenticated) .login-form{
   border-collapse:separate;
   border-spacing:0;
   background: transparent; color: var(--text);
+  table-layout:auto;
 }
 #loadsTable thead th{
   position: sticky; top:0;
@@ -492,8 +493,7 @@ body:not(.is-authenticated) .login-form{
   vertical-align: middle;
   font-size:.85rem;
   line-height: 1.4;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 #loadsTable tbody tr td:first-child{
@@ -519,8 +519,6 @@ body:not(.is-authenticated) .login-form{
 
 #loadsTable th{
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ====== Badges ====== */
