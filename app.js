@@ -1289,11 +1289,26 @@ async function sendRecordRequest(action, data){
 
   const token = SECURE_CONFIG.apiToken || '';
   const payload = { action, ...data };
-  const body = createApiFormBody(payload, token);
+  const bodyParams = createApiFormBody(payload, token);
+  const bodyString = typeof bodyParams.toString === 'function'
+    ? bodyParams.toString()
+    : String(bodyParams || '');
+  const url = buildApiUrlWithToken(API_BASE, token);
 
   let res;
   try{
-    res = await fetch(API_BASE, { method:'POST', body });
+    res = await fetch(url, {
+      method:'POST',
+      body: bodyString,
+      mode:'cors',
+      redirect:'follow',
+      credentials:'omit',
+      cache:'no-store',
+      headers:{
+        'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',
+        'Accept':'application/json'
+      }
+    });
   }catch(err){
     if(isLikelyNetworkError(err)){
       const networkError = new Error('No se pudo conectar con el servicio.');
