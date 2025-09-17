@@ -810,7 +810,6 @@ body:not(.is-authenticated) .login-form{
 
 .link{ color:#8ab4ff; text-decoration:none; }
 .link:hover{ text-decoration:underline; }
-.trip-edit{ cursor:pointer; text-decoration:underline; }
 
 .status-wrapper{
   position:relative;
@@ -869,17 +868,6 @@ body:not(.is-authenticated) .login-form{
   font-size:14px;
   overflow:hidden;
 }
-#editModal .modal-content{
-  width:27vw;
-  min-width:300px;
-  height:80vh;
-  display:flex;
-  flex-direction:column;
-}
-#editModal .modal-form{
-  overflow-y:auto;
-  flex:1;
-}
 #syncBlockingModal .modal-content{
   width:min(360px, calc(100% - 40px));
   text-align:center;
@@ -898,17 +886,6 @@ body:not(.is-authenticated) .login-form{
 }
 .modal-content label{
   display:flex; flex-direction:column; gap:4px; margin-bottom:10px;
-}
-#editModal .modal-content label{
-  display:grid;
-  grid-template-columns:120px 1fr;
-  align-items:center;
-  gap:10px;
-  text-align:left;
-}
-#editModal .modal-content label input,
-#editModal .modal-content label select{
-  width:100%;
 }
 .modal-content input,
 .modal-content select{
@@ -1004,9 +981,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator{
 #addModal input[type="date"],
 #addModal input[type="time"],
 #addModal input[type="datetime-local"],
-#editModal input[type="date"],
-#editModal input[type="time"],
-#editModal input[type="datetime-local"],
 #arrivalModal input[type="date"],
 #arrivalModal input[type="time"],
 #arrivalModal input[type="datetime-local"]{
@@ -1019,9 +993,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator{
 #addModal input[type="date"]::-webkit-calendar-picker-indicator,
 #addModal input[type="time"]::-webkit-calendar-picker-indicator,
 #addModal input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-#editModal input[type="date"]::-webkit-calendar-picker-indicator,
-#editModal input[type="time"]::-webkit-calendar-picker-indicator,
-#editModal input[type="datetime-local"]::-webkit-calendar-picker-indicator,
 #arrivalModal input[type="date"]::-webkit-calendar-picker-indicator,
 #arrivalModal input[type="time"]::-webkit-calendar-picker-indicator,
 #arrivalModal input[type="datetime-local"]::-webkit-calendar-picker-indicator{
