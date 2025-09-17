@@ -53,27 +53,35 @@
 
       <section class="controls">
         <div class="controls__filters">
-          <label for="statusFilter">Estatus:</label>
-          <select id="statusFilter">
-            <option value="">Todos</option>
-          </select>
-
-          <label for="ejecutivoFilter">Ejecutivo:</label>
-          <select id="ejecutivoFilter">
-            <option value="">Todos</option>
-          </select>
-
-          <label for="searchBox">Buscar:</label>
-          <div class="search-wrapper">
-            <input id="searchBox" type="text" placeholder="Trip, Caja, Cliente, Destino"/>
-            <button id="clearSearch" type="button" class="clear-search" aria-label="Limpiar búsqueda">×</button>
+          <div class="filter">
+            <label for="statusFilter">Estatus</label>
+            <select id="statusFilter">
+              <option value="">Todos</option>
+            </select>
           </div>
 
-          <label for="startDate">Cita carga</label>
-          <div class="date-range">
-            <input type="date" id="startDate"/>
-            <span class="date-separator">→</span>
-            <input type="date" id="endDate"/>
+          <div class="filter">
+            <label for="ejecutivoFilter">Ejecutivo</label>
+            <select id="ejecutivoFilter">
+              <option value="">Todos</option>
+            </select>
+          </div>
+
+          <div class="filter filter--search">
+            <label for="searchBox">Buscar</label>
+            <div class="search-wrapper">
+              <input id="searchBox" type="text" placeholder="Trip, Caja, Cliente, Destino"/>
+              <button id="clearSearch" type="button" class="clear-search" aria-label="Limpiar búsqueda">×</button>
+            </div>
+          </div>
+
+          <div class="filter filter--date-range">
+            <label for="startDate">Cita carga</label>
+            <div class="date-range">
+              <input type="date" id="startDate"/>
+              <span class="date-separator">→</span>
+              <input type="date" id="endDate"/>
+            </div>
           </div>
         </div>
 
