@@ -1146,11 +1146,12 @@ async function sendRecordRequest(action, data){
 async function addRecord(data, options = {}){
   const opts = options || {};
   const notifyOffline = !opts.skipQueue;
+  const requirementMessage = 'Se requiere conexión a internet para agregar registros.';
+  const connectionErrorMessage = 'No se pudo conectar con el servicio. Verifica tu conexión a internet e inténtalo de nuevo.';
   if(isOffline()){
-    const message = 'Se requiere conexión a internet para agregar registros.';
-    setSyncStatus('offline', { message, blocking:true });
+    setSyncStatus('offline', { message: connectionErrorMessage, blocking:true });
     if(notifyOffline && typeof toast === 'function'){
-      toast(message, 'error');
+      toast(requirementMessage, 'error');
     }
     return false;
   }
@@ -1162,12 +1163,21 @@ async function addRecord(data, options = {}){
     }
     return true;
   }catch(err){
-    if(isOffline() || isLikelyNetworkError(err)){
-      const message = 'No se pudo conectar con el servicio. Verifica tu conexión a internet e inténtalo de nuevo.';
-      setSyncStatus('offline', { message, blocking:true });
+    if(isOffline()){
+      setSyncStatus('offline', { message: connectionErrorMessage, blocking:true });
       if(notifyOffline && typeof toast === 'function'){
-        toast('Se requiere conexión a internet para agregar registros.', 'error');
+        toast(requirementMessage, 'error');
       }
+      return false;
+    }
+    if(isLikelyNetworkError(err)){
+      setSyncStatus('idle');
+      if(notifyOffline && typeof toast === 'function'){
+        toast(connectionErrorMessage, 'error');
+      }
+      reportError('No se pudo confirmar la respuesta del servicio al agregar el registro.', err, {
+        toastMessage: false
+      });
       return false;
     }
     const detailMessage = err && err.message ? err.message : 'Error desconocido';
@@ -1181,11 +1191,12 @@ async function addRecord(data, options = {}){
 async function updateRecord(data, options = {}){
   const opts = options || {};
   const notifyOffline = !opts.skipQueue;
+  const requirementMessage = 'Se requiere conexión a internet para actualizar registros.';
+  const connectionErrorMessage = 'No se pudo conectar con el servicio. Verifica tu conexión a internet e inténtalo de nuevo.';
   if(isOffline()){
-    const message = 'Se requiere conexión a internet para actualizar registros.';
-    setSyncStatus('offline', { message, blocking:true });
+    setSyncStatus('offline', { message: connectionErrorMessage, blocking:true });
     if(notifyOffline && typeof toast === 'function'){
-      toast(message, 'error');
+      toast(requirementMessage, 'error');
     }
     return false;
   }
@@ -1197,12 +1208,21 @@ async function updateRecord(data, options = {}){
     }
     return true;
   }catch(err){
-    if(isOffline() || isLikelyNetworkError(err)){
-      const message = 'No se pudo conectar con el servicio. Verifica tu conexión a internet e inténtalo de nuevo.';
-      setSyncStatus('offline', { message, blocking:true });
+    if(isOffline()){
+      setSyncStatus('offline', { message: connectionErrorMessage, blocking:true });
       if(notifyOffline && typeof toast === 'function'){
-        toast('Se requiere conexión a internet para actualizar registros.', 'error');
+        toast(requirementMessage, 'error');
       }
+      return false;
+    }
+    if(isLikelyNetworkError(err)){
+      setSyncStatus('idle');
+      if(notifyOffline && typeof toast === 'function'){
+        toast(connectionErrorMessage, 'error');
+      }
+      reportError('No se pudo confirmar la respuesta del servicio al actualizar el registro.', err, {
+        toastMessage: false
+      });
       return false;
     }
     const detailMessage = err && err.message ? err.message : 'Error desconocido';
