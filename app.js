@@ -1253,7 +1253,34 @@ async function sendRecordRequest(action, data){
   return json;
 }
 
+async function confirmRecordAdditionViaSync(data){
+  const tripValue = data && data.trip ? String(data.trip).trim() : '';
+  if(!tripValue){
+    return { confirmed:false, refreshed:null };
+  }
+
+  const refreshed = await fetchData({ silent:true });
+  if(lastFetchUnauthorized){
+    return { confirmed:false, refreshed:null };
+  }
+  if(!Array.isArray(refreshed) || !refreshed.length){
+    return { confirmed:false, refreshed:null };
+  }
+
+  const confirmed = refreshed.some(row => {
+    if(!row || typeof row !== 'object') return false;
+    const value = row[COL.trip];
+    return String(value ?? '').trim() === tripValue;
+  });
+
+  return {
+    confirmed,
+    refreshed: confirmed ? refreshed : null
+  };
+}
+
 async function addRecord(data, options = {}){
+  addRecord.lastConfirmedData = null;
   const opts = options || {};
   const notifyOffline = !opts.skipQueue;
   const requirementMessage = 'Se requiere conexión a internet para agregar registros.';
@@ -1282,11 +1309,34 @@ async function addRecord(data, options = {}){
     }
     if(isLikelyNetworkError(err)){
       setSyncStatus('idle');
+      if(opts.confirmOnNetworkError !== false){
+        try{
+          const confirmation = await confirmRecordAdditionViaSync(data);
+          if(confirmation.confirmed){
+            addRecord.lastConfirmedData = confirmation.refreshed;
+            if(!opts.silent && typeof toast === 'function'){
+              toast('Registro agregado. Se validó sincronizando los datos.');
+            }
+            reportError(
+              'El servicio no confirmó la respuesta al agregar el registro, pero se validó al volver a sincronizar.',
+              err,
+              {
+                toastMessage:false,
+                detail:'Se detectó un error de red al leer la respuesta. El registro se confirmó al actualizar los datos desde el servicio.'
+              }
+            );
+            return true;
+          }
+        }catch(confirmationError){
+          reportError('Error al intentar validar el registro tras un error de red.', confirmationError, { toastMessage:false });
+        }
+      }
       if(notifyOffline && typeof toast === 'function'){
         toast(connectionErrorMessage, 'error');
       }
       reportError('No se pudo confirmar la respuesta del servicio al agregar el registro.', err, {
-        toastMessage: false
+        toastMessage:false,
+        detail:'No se pudo obtener confirmación del servicio. Verifica tu conexión a internet y que el servicio permita solicitudes desde el navegador (CORS).'
       });
       return false;
     }
@@ -2031,6 +2081,146 @@ async function main(){
   $('#bulkUploadBtn').addEventListener('click', ()=>{
     const file = $('#bulkUpload').files[0];
     if(file) handleBulkUpload(file);
+  });
+
+  const addRecordModal = $('#addRecordModal');
+  const addRecordForm = $('#addRecordForm');
+  const addRecordBtn = $('#addRecordBtn');
+  const cancelAddRecordBtn = $('#cancelAddRecord');
+  const addRecordStatusSelect = addRecordForm?.querySelector('select[name="estatus"]');
+
+  fillStatusSelect(addRecordStatusSelect, '', true);
+
+  addRecordBtn?.addEventListener('click', () => {
+    if(!addRecordModal || !addRecordForm) return;
+    addRecordForm.reset();
+    fillStatusSelect(addRecordStatusSelect, '', true);
+    addRecordModal.classList.add('show');
+    const tripInput = addRecordForm.querySelector('input[name="trip"]');
+    tripInput?.focus();
+  });
+
+  cancelAddRecordBtn?.addEventListener('click', () => {
+    addRecordForm?.reset();
+    addRecordModal?.classList.remove('show');
+  });
+
+  addRecordForm?.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    if(!addRecordForm) return;
+
+    const submitBtn = addRecordForm.querySelector('button[type="submit"]');
+    if(submitBtn) submitBtn.disabled = true;
+
+    try{
+      const formData = new FormData(addRecordForm);
+      const getTrimmed = name => String(formData.get(name) ?? '').trim();
+
+      const trip = getTrimmed('trip');
+      const ejecutivo = getTrimmed('ejecutivo');
+      const caja = getTrimmed('caja');
+      const referencia = getTrimmed('referencia');
+      const cliente = getTrimmed('cliente');
+      const destino = getTrimmed('destino');
+      const estatus = getTrimmed('estatus');
+      const citaCargaRaw = getTrimmed('citaCarga');
+
+      const tripInput = addRecordForm.querySelector('input[name="trip"]');
+      const ejecutivoInput = addRecordForm.querySelector('input[name="ejecutivo"]');
+      const cajaInput = addRecordForm.querySelector('input[name="caja"]');
+      const referenciaInput = addRecordForm.querySelector('input[name="referencia"]');
+      const clienteInput = addRecordForm.querySelector('input[name="cliente"]');
+      const destinoInput = addRecordForm.querySelector('input[name="destino"]');
+      const estatusSelect = addRecordStatusSelect || addRecordForm.querySelector('select[name="estatus"]');
+      const citaCargaInput = addRecordForm.querySelector('input[name="citaCarga"]');
+
+      if(tripInput) tripInput.value = trip;
+      if(ejecutivoInput) ejecutivoInput.value = ejecutivo;
+      if(cajaInput) cajaInput.value = caja;
+      if(referenciaInput) referenciaInput.value = referencia;
+      if(clienteInput) clienteInput.value = cliente;
+      if(destinoInput) destinoInput.value = destino;
+
+      if(!trip){
+        toast('Proporciona un Trip válido', 'error');
+        tripInput?.focus();
+        return;
+      }
+      if(!validateTrip(trip)){
+        tripInput?.focus();
+        return;
+      }
+      if(!ejecutivo){
+        toast('Proporciona un Ejecutivo', 'error');
+        ejecutivoInput?.focus();
+        return;
+      }
+      if(!caja){
+        toast('Proporciona una Caja', 'error');
+        cajaInput?.focus();
+        return;
+      }
+      if(!referencia){
+        toast('Proporciona una Referencia', 'error');
+        referenciaInput?.focus();
+        return;
+      }
+      if(!cliente){
+        toast('Proporciona un Cliente', 'error');
+        clienteInput?.focus();
+        return;
+      }
+      if(!destino){
+        toast('Proporciona un Destino', 'error');
+        destinoInput?.focus();
+        return;
+      }
+      if(!estatus){
+        toast('Selecciona un Estatus', 'error');
+        estatusSelect?.focus();
+        return;
+      }
+
+      const citaCarga = toGASDate(citaCargaRaw);
+      if(!citaCarga){
+        toast('Proporciona una Cita carga válida', 'error');
+        citaCargaInput?.focus();
+        return;
+      }
+
+      const success = await addRecord({
+        trip,
+        ejecutivo,
+        caja,
+        referencia,
+        cliente,
+        destino,
+        estatus,
+        citaCarga
+      });
+
+      if(!success){
+        return;
+      }
+
+      const refreshed = Array.isArray(addRecord.lastConfirmedData)
+        ? addRecord.lastConfirmedData
+        : await fetchData();
+      if(lastFetchUnauthorized){
+        return;
+      }
+
+      cache = refreshed;
+      populateStatusFilter(cache);
+      populateEjecutivoFilter(cache);
+      renderCurrent();
+
+      addRecordForm.reset();
+      fillStatusSelect(addRecordStatusSelect, '', true);
+      addRecordModal?.classList.remove('show');
+    }finally{
+      if(submitBtn) submitBtn.disabled = false;
+    }
   });
 
   $('#cancelArrival').addEventListener('click', ()=>{
