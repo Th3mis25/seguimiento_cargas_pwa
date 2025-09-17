@@ -622,6 +622,8 @@ body:not(.is-authenticated) .login-form{
 
 .status-text{
   padding-right:24px;
+  white-space:nowrap;
+  word-break:normal;
 }
 
 .status-select{
