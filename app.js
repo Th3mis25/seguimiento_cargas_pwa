@@ -1586,37 +1586,6 @@ function buildWaShareUrl(r){
   return `https://wa.me/?text=${encodeURIComponent(buildCopyMsg(r))}`;
 }
 
-function toLocalInputValue(v){
-  const d = parseDate(v);
-  if(!d) return '';
-  const pad = n => String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function openEditModal(trip){
-  const row = cache.find(r => String(r[COL.trip])===String(trip));
-  if(!row) return;
-  const form = $('#editForm');
-  form.originalTrip.value = row[COL.trip] || '';
-  form.trip.value = row[COL.trip] || '';
-  form.ejecutivo.value = row[COL.ejecutivo] || '';
-  form.caja.value = row[COL.caja] || '';
-  form.referencia.value = row[COL.referencia] || '';
-  form.cliente.value = row[COL.cliente] || '';
-  form.destino.value = row[COL.destino] || '';
-  form.segmento.value = row[COL.segmento] || '';
-  form.trmx.value = row[COL.trmx] || '';
-  form.trusa.value = row[COL.trusa] || '';
-  form.citaCarga.value = toLocalInputValue(row[COL.citaCarga]);
-  form.llegadaCarga.value = toLocalInputValue(row[COL.llegadaCarga]);
-  form.citaEntrega.value = toLocalInputValue(row[COL.citaEntrega]);
-  form.llegadaEntrega.value = toLocalInputValue(row[COL.llegadaEntrega]);
-  form.comentarios.value = row[COL.comentarios] || '';
-  form.docs.value = row[COL.docs] || '';
-  form.tracking.value = row[COL.tracking] || '';
-  $('#editModal').classList.add('show');
-}
-
 function setColumnVisibility(indices, show){
   const display = show ? '' : 'none';
   const table = $('#loadsTable');
@@ -1739,7 +1708,6 @@ function renderRows(rows, hiddenCols=[]){
     const tripTd = document.createElement('td');
     tripTd.classList.add('nowrap');
     const tripSpan = document.createElement('span');
-    tripSpan.className = 'trip-edit';
     tripSpan.textContent = r[COL.trip];
     tripTd.appendChild(tripSpan);
     tr.appendChild(tripTd);
@@ -2073,7 +2041,7 @@ async function main(){
   $('#cancelAdd').addEventListener('click', ()=>{
     $('#addModal').classList.remove('show');
   });
-  ['#addForm input[name="trip"]', '#editForm input[name="trip"]'].forEach(sel=>{
+  ['#addForm input[name="trip"]'].forEach(sel=>{
     const el = $(sel);
     if(el){
       el.addEventListener('input',()=>{
@@ -2115,63 +2083,6 @@ async function main(){
       $('#addModal').classList.remove('show');
     }else if(typeof toast === 'function'){
       toast('Se requiere conexión a internet para agregar un registro.', 'error');
-    }
-  });
-  $('#cancelEdit').addEventListener('click', ()=>{
-    $('#editModal').classList.remove('show');
-  });
-  $('#editForm').addEventListener('submit', async ev=>{
-    ev.preventDefault();
-    const form = ev.target;
-    const row = cache.find(r => String(r[COL.trip])===String(form.originalTrip.value));
-    const trip = form.trip.value.trim();
-    if(!validateTrip(trip, form.originalTrip.value)) return;
-    const data = {
-      originalTrip: form.originalTrip.value,
-      trip,
-      caja: form.caja.value.trim(),
-      referencia: form.referencia.value.trim(),
-      cliente: form.cliente.value.trim(),
-      destino: form.destino.value.trim(),
-      ejecutivo: form.ejecutivo.value.trim(),
-      estatus: row ? row[COL.estatus] : '',
-      segmento: form.segmento.value.trim(),
-      trmx: form.trmx.value.trim(),
-      trusa: form.trusa.value.trim(),
-      citaCarga: toGASDate(form.citaCarga.value),
-      llegadaCarga: toGASDate(form.llegadaCarga.value),
-      citaEntrega: toGASDate(form.citaEntrega.value),
-      llegadaEntrega: toGASDate(form.llegadaEntrega.value),
-      comentarios: form.comentarios.value.trim(),
-      docs: form.docs.value.trim(),
-      tracking: form.tracking.value.trim()
-    };
-    const { ok, verified } = await updateRecordWithVerification(data, {
-      skipQueue:true,
-      silent:true,
-      verifyAttempts:4,
-      verifyDelayMs:1000
-    });
-    if(ok){
-      if(verified?.applied && Array.isArray(verified.refreshed)){
-        cache = verified.refreshed;
-      }else if(row){
-        applyDataToRow(row, data);
-      }else{
-        const refreshed = await fetchData({ silent:true });
-        if(!lastFetchUnauthorized && !lastFetchErrorMessage && Array.isArray(refreshed) && refreshed.length){
-          cache = refreshed;
-        }
-      }
-      populateStatusFilter(cache);
-      populateEjecutivoFilter(cache);
-      renderCurrent();
-      $('#editModal').classList.remove('show');
-      if(typeof toast === 'function'){
-        toast('Registro actualizado');
-      }
-    }else if(typeof toast === 'function'){
-      toast('Se requiere conexión a internet para guardar los cambios.', 'error');
     }
   });
   $('#cancelArrival').addEventListener('click', ()=>{
@@ -2258,7 +2169,7 @@ async function main(){
 
   $('#loadsTable').addEventListener('click', async ev=>{
     const btn = ev.target.closest('button[data-act]');
-    const link = ev.target.closest('a:not(.trip-edit)');
+    const link = ev.target.closest('a');
     if(btn){
       const act = btn.dataset.act; const trip = btn.dataset.trip;
       if(act==='copy'){
@@ -2272,11 +2183,6 @@ async function main(){
       return;
     }
     if(link) return;
-    const tripEl = ev.target.closest('.trip-edit');
-    if(tripEl){
-      const tr = tripEl.closest('tr');
-      if(tr) openEditModal(tr.dataset.trip);
-    }
   });
 }
 if (typeof document !== 'undefined') {
