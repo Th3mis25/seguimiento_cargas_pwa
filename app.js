@@ -247,6 +247,7 @@ let syncState = 'idle';
 let syncStatusMessage = '';
 let syncInProgress = false;
 let syncRetryTimer = null;
+let syncBlockingActive = false;
 
 function isOffline(){
   if(typeof navigator === 'undefined' || typeof navigator.onLine !== 'boolean'){
@@ -275,36 +276,41 @@ function getSyncStatusElement(){
   return document.getElementById('syncStatus');
 }
 
+function buildOfflineStatusMessage(count){
+  const pending = Number.isFinite(count) ? count : Number(count) || 0;
+  if(pending > 0){
+    return `Sin conexión a internet. ${pending} cambio${pending === 1 ? '' : 's'} pendiente${pending === 1 ? '' : 's'} por sincronizar.`;
+  }
+  return 'Sin conexión a internet. Conéctate para continuar.';
+}
+
+function getEffectiveSyncMessage(){
+  if(syncStatusMessage){
+    return syncStatusMessage;
+  }
+  switch(syncState){
+    case 'idle':
+      return 'Sincronizado';
+    case 'offline':
+      return buildOfflineStatusMessage(pendingQueueCount);
+    case 'queued':
+      return buildOfflineStatusMessage(pendingQueueCount);
+    case 'syncing':
+      return pendingQueueCount > 0
+        ? `Sincronizando… ${pendingQueueCount} pendiente${pendingQueueCount === 1 ? '' : 's'}.`
+        : 'Sincronizando…';
+    case 'error':
+      return 'Error de sincronización. Reintentando…';
+    default:
+      return '';
+  }
+}
+
 function renderSyncStatus(){
   const el = getSyncStatusElement();
   if(!el) return;
 
-  let message = syncStatusMessage;
-  if(!message){
-    switch(syncState){
-      case 'idle':
-        message = 'Sincronizado';
-        break;
-      case 'offline':
-        message = pendingQueueCount > 0
-          ? `Sin conexión. ${pendingQueueCount} cambio${pendingQueueCount === 1 ? '' : 's'} pendiente${pendingQueueCount === 1 ? '' : 's'}.`
-          : 'Sin conexión. Los cambios se sincronizarán al reconectar.';
-        break;
-      case 'queued':
-        message = `Sin conexión. ${pendingQueueCount} cambio${pendingQueueCount === 1 ? '' : 's'} pendiente${pendingQueueCount === 1 ? '' : 's'}.`;
-        break;
-      case 'syncing':
-        message = pendingQueueCount > 0
-          ? `Sincronizando… ${pendingQueueCount} pendiente${pendingQueueCount === 1 ? '' : 's'}.`
-          : 'Sincronizando…';
-        break;
-      case 'error':
-        message = 'Error de sincronización. Reintentando…';
-        break;
-      default:
-        message = '';
-    }
-  }
+  const message = getEffectiveSyncMessage();
 
   if(!message){
     el.hidden = true;
@@ -318,6 +324,52 @@ function renderSyncStatus(){
   el.textContent = message;
 }
 
+function ensureSyncBlockingModal(){
+  if(typeof document === 'undefined') return null;
+  let modal = document.getElementById('syncBlockingModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'syncBlockingModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+      <div class="modal-content sync-blocking-content" role="alertdialog" aria-modal="true" aria-labelledby="syncBlockingTitle" aria-describedby="syncBlockingMessage">
+        <h2 id="syncBlockingTitle">Sin conexión</h2>
+        <p id="syncBlockingMessage"></p>
+      </div>`;
+    modal.setAttribute('aria-hidden', 'true');
+    modal.addEventListener('click', ev => ev.stopPropagation());
+    document.body.appendChild(modal);
+    const content = modal.querySelector('.sync-blocking-content');
+    content?.setAttribute('tabindex', '-1');
+  }
+  return modal;
+}
+
+function showSyncBlockingModal(message){
+  const modal = ensureSyncBlockingModal();
+  if(!modal) return;
+  const msgEl = modal.querySelector('#syncBlockingMessage');
+  if(msgEl){
+    msgEl.textContent = message || 'Sin conexión a internet. Conéctate para continuar.';
+  }
+  modal.setAttribute('aria-hidden', 'false');
+  modal.classList.add('show');
+  const content = modal.querySelector('.sync-blocking-content');
+  try{
+    content?.focus({ preventScroll:true });
+  }catch(_err){
+    content?.focus();
+  }
+}
+
+function hideSyncBlockingModal(){
+  if(typeof document === 'undefined') return;
+  const modal = document.getElementById('syncBlockingModal');
+  if(!modal) return;
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
 function setSyncStatus(state, options = {}){
   syncState = state;
   if(Object.prototype.hasOwnProperty.call(options, 'message')){
@@ -329,6 +381,20 @@ function setSyncStatus(state, options = {}){
     pendingQueueCount = Math.max(0, options.pendingCount);
   }
   renderSyncStatus();
+  const message = getEffectiveSyncMessage();
+  const blockingOption = options.blocking;
+  const shouldBlock = blockingOption === true
+    || (blockingOption === undefined && (state === 'offline' || state === 'queued') && isOffline());
+  if(shouldBlock && message){
+    showSyncBlockingModal(message);
+    syncBlockingActive = true;
+  }else if(syncBlockingActive){
+    hideSyncBlockingModal();
+    syncBlockingActive = false;
+  }else{
+    hideSyncBlockingModal();
+    syncBlockingActive = false;
+  }
 }
 
 function scheduleSyncRetry(delay = 5000){
@@ -584,7 +650,11 @@ async function initializeOfflineQueue(){
   }
 
   if(isOffline()){
-    setSyncStatus(pendingQueueCount > 0 ? 'queued' : 'offline', { pendingCount: pendingQueueCount });
+    const state = pendingQueueCount > 0 ? 'queued' : 'offline';
+    setSyncStatus(state, {
+      pendingCount: pendingQueueCount,
+      message: buildOfflineStatusMessage(pendingQueueCount)
+    });
   }else if(pendingQueueCount > 0){
     setSyncStatus('syncing', { pendingCount: pendingQueueCount });
   }else{
@@ -601,7 +671,11 @@ async function initializeOfflineQueue(){
       processOfflineQueue();
     });
     window.addEventListener('offline', () => {
-      setSyncStatus(pendingQueueCount > 0 ? 'queued' : 'offline', { pendingCount: pendingQueueCount });
+      const state = pendingQueueCount > 0 ? 'queued' : 'offline';
+      setSyncStatus(state, {
+        pendingCount: pendingQueueCount,
+        message: buildOfflineStatusMessage(pendingQueueCount)
+      });
     });
   }
 
@@ -1349,16 +1423,13 @@ async function sendRecordRequest(action, data){
 
 async function addRecord(data, options = {}){
   const opts = options || {};
-  if(!opts.skipQueue && isOffline()){
-    const queued = await enqueueOfflineRequest('add', data);
-    if(queued.success){
-      setSyncStatus(queued.count > 0 ? 'queued' : 'offline', { pendingCount: queued.count });
-      if(typeof toast === 'function'){
-        toast('Sin conexión. El registro se sincronizará al reconectar.', 'warning');
-      }
-      return true;
+  const notifyOffline = !opts.skipQueue;
+  if(isOffline()){
+    const message = 'Se requiere conexión a internet para agregar registros.';
+    setSyncStatus('offline', { message, blocking:true });
+    if(notifyOffline && typeof toast === 'function'){
+      toast(message, 'error');
     }
-    setSyncStatus('error', { message:'Sin conexión y no se pudo guardar la operación offline.' });
     return false;
   }
 
@@ -1369,20 +1440,12 @@ async function addRecord(data, options = {}){
     }
     return true;
   }catch(err){
-    if(!opts.skipQueue && (isOffline() || isLikelyNetworkError(err))){
-      const queued = await enqueueOfflineRequest('add', data);
-      if(queued.success){
-        const state = isOffline() ? (queued.count > 0 ? 'queued' : 'offline') : 'queued';
-        setSyncStatus(state, { pendingCount: queued.count });
-        if(typeof toast === 'function'){
-          toast('Sin conexión. El registro se sincronizará al reconectar.', 'warning');
-        }
-        if(!isOffline()){
-          scheduleSyncRetry();
-        }
-        return true;
+    if(isOffline() || isLikelyNetworkError(err)){
+      const message = 'No se pudo conectar con el servicio. Verifica tu conexión a internet e inténtalo de nuevo.';
+      setSyncStatus('offline', { message, blocking:true });
+      if(notifyOffline && typeof toast === 'function'){
+        toast('Se requiere conexión a internet para agregar registros.', 'error');
       }
-      setSyncStatus('error', { message:'No se pudo guardar el registro sin conexión.' });
       return false;
     }
     const detailMessage = err && err.message ? err.message : 'Error desconocido';
@@ -1395,16 +1458,13 @@ async function addRecord(data, options = {}){
 
 async function updateRecord(data, options = {}){
   const opts = options || {};
-  if(!opts.skipQueue && isOffline()){
-    const queued = await enqueueOfflineRequest('update', data);
-    if(queued.success){
-      setSyncStatus(queued.count > 0 ? 'queued' : 'offline', { pendingCount: queued.count });
-      if(typeof toast === 'function'){
-        toast('Sin conexión. Los cambios se sincronizarán al reconectar.', 'warning');
-      }
-      return true;
+  const notifyOffline = !opts.skipQueue;
+  if(isOffline()){
+    const message = 'Se requiere conexión a internet para actualizar registros.';
+    setSyncStatus('offline', { message, blocking:true });
+    if(notifyOffline && typeof toast === 'function'){
+      toast(message, 'error');
     }
-    setSyncStatus('error', { message:'Sin conexión y no se pudo guardar la operación offline.' });
     return false;
   }
 
@@ -1415,20 +1475,12 @@ async function updateRecord(data, options = {}){
     }
     return true;
   }catch(err){
-    if(!opts.skipQueue && (isOffline() || isLikelyNetworkError(err))){
-      const queued = await enqueueOfflineRequest('update', data);
-      if(queued.success){
-        const state = isOffline() ? (queued.count > 0 ? 'queued' : 'offline') : 'queued';
-        setSyncStatus(state, { pendingCount: queued.count });
-        if(typeof toast === 'function'){
-          toast('Sin conexión. Los cambios se sincronizarán al reconectar.', 'warning');
-        }
-        if(!isOffline()){
-          scheduleSyncRetry();
-        }
-        return true;
+    if(isOffline() || isLikelyNetworkError(err)){
+      const message = 'No se pudo conectar con el servicio. Verifica tu conexión a internet e inténtalo de nuevo.';
+      setSyncStatus('offline', { message, blocking:true });
+      if(notifyOffline && typeof toast === 'function'){
+        toast('Se requiere conexión a internet para actualizar registros.', 'error');
       }
-      setSyncStatus('error', { message:'No se pudieron guardar los cambios sin conexión.' });
       return false;
     }
     const detailMessage = err && err.message ? err.message : 'Error desconocido';
@@ -1500,9 +1552,12 @@ async function handleBulkUpload(file){
         citaEntrega: headers.includes('cita entrega') ? toGASDate(obj[COL.citaEntrega]) : '',
         llegadaEntrega: headers.includes('llegada entrega') ? toGASDate(obj[COL.llegadaEntrega]) : ''
       };
-      const ok = await addRecord(payload);
+      const ok = await addRecord(payload, { skipQueue:true, silent:true });
       if(!ok){
-        if(statusEl) statusEl.textContent = `Error en fila ${count+1}`;
+        if(typeof toast === 'function'){
+          toast('Importación detenida. Se requiere conexión a internet.', 'error');
+        }
+        if(statusEl) statusEl.textContent = `Error en fila ${count+1}. Se requiere conexión a internet.`;
         return;
       }
       count++;
@@ -1756,12 +1811,15 @@ function renderRows(rows, hiddenCols=[]){
         docs: r[COL.docs] || '',
         tracking: r[COL.tracking] || ''
       };
-      const ok = await updateRecord(data);
+      const ok = await updateRecord(data, { skipQueue:true });
       if(ok){
         r[COL.estatus] = newStatus;
         populateStatusFilter(cache);
         renderCurrent();
       }else{
+        if(typeof toast === 'function'){
+          toast('Se requiere conexión a internet para actualizar el estatus.', 'error');
+        }
         ev.target.value = r[COL.estatus] || '';
       }
     });
@@ -2038,7 +2096,7 @@ async function main(){
       destino: form.destino.value.trim(),
       citaCarga: toGASDate(form.citaCarga.value)
     };
-    const ok = await addRecord(data);
+    const ok = await addRecord(data, { skipQueue:true });
     if(ok){
       const row = {};
       row[COL.trip] = data.trip;
@@ -2055,6 +2113,8 @@ async function main(){
       renderCurrent();
       form.reset();
       $('#addModal').classList.remove('show');
+    }else if(typeof toast === 'function'){
+      toast('Se requiere conexión a internet para agregar un registro.', 'error');
     }
   });
   $('#cancelEdit').addEventListener('click', ()=>{
@@ -2086,7 +2146,7 @@ async function main(){
       docs: form.docs.value.trim(),
       tracking: form.tracking.value.trim()
     };
-    const ok = await updateRecord(data);
+    const ok = await updateRecord(data, { skipQueue:true });
     if(ok && row){
       row[COL.trip] = data.trip;
       row[COL.caja] = data.caja;
@@ -2111,6 +2171,8 @@ async function main(){
       populateEjecutivoFilter(cache);
       renderCurrent();
       $('#editModal').classList.remove('show');
+    }else if(typeof toast === 'function'){
+      toast('Se requiere conexión a internet para guardar los cambios.', 'error');
     }
   });
   $('#cancelArrival').addEventListener('click', ()=>{
@@ -2146,13 +2208,16 @@ async function main(){
       docs: row[COL.docs] || '',
       tracking: row[COL.tracking] || ''
     };
-    const ok = await updateRecord(data);
+    const ok = await updateRecord(data, { skipQueue:true });
     if(ok){
       row[COL.estatus] = newStatus;
       row[COL.llegadaEntrega] = data.llegadaEntrega;
       populateStatusFilter(cache);
       renderCurrent();
     }else{
+      if(typeof toast === 'function'){
+        toast('Se requiere conexión a internet para registrar la llegada.', 'error');
+      }
       select.value = row[COL.estatus] || '';
     }
     ev.target.reset();
