@@ -51,8 +51,8 @@ body.is-authenticated::before{
   --badge-purple:#9333ea;
   --badge-yellow:#f59e0b;
   --badge-bg:#10284f;
-  --row:#142f54;
-  --row-alt:#11284a;
+  --row:#173865;
+  --row-alt:#0f2746;
   --row-overdue:rgba(239,68,68,0.3);
   --row-border:#274770;
   --row-hover:#1b3a63;
@@ -79,8 +79,8 @@ body.is-authenticated::before{
   --badge-purple:#9333ea;
   --badge-yellow:#f59e0b;
   --badge-bg:#ffffff;
-  --row:#f9fafb;
-  --row-alt:#f1f5f9;
+  --row:#f8fbff;
+  --row-alt:#e6eefc;
   --row-overdue:rgba(239,68,68,0.3);
   --row-border:#d1d5db;
   --row-hover:#e2e8f0;
@@ -474,9 +474,12 @@ body:not(.is-authenticated) .login-form{
   color: var(--text);
   text-align:left; font-size:.95rem; letter-spacing:.2px;
   font-weight:400;
-  padding: 8px 10px; border-bottom:1px solid #214070;
+  padding: 10px 14px; border-bottom:1px solid #214070;
   z-index: 2;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
 }
+#loadsTable thead th:first-child{ border-top-left-radius:14px; }
+#loadsTable thead th:last-child{ border-top-right-radius:14px; }
 #loadsTable thead th:not(:last-child){
   border-right:1px solid var(--header-divider);
 }
@@ -485,10 +488,22 @@ body:not(.is-authenticated) .login-form{
 #loadsTable tbody tr.expired{ background: var(--row-overdue) !important; }
 #loadsTable tbody tr:hover{ background: var(--row-hover); }
 #loadsTable tbody td{
-  padding: 4px 10px; border-bottom:1px solid var(--row-border);
+  padding: 10px 14px; border-bottom:1px solid var(--row-border);
   vertical-align: middle;
-  font-size:12px;
-  line-height: 1.2;
+  font-size:.85rem;
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+#loadsTable tbody tr td:first-child{
+  border-top-left-radius:12px;
+  border-bottom-left-radius:12px;
+}
+
+#loadsTable tbody tr td:last-child{
+  border-top-right-radius:12px;
+  border-bottom-right-radius:12px;
 }
 
 #loadsTable td.late{
@@ -496,8 +511,14 @@ body:not(.is-authenticated) .login-form{
 }
 
 /* No cortar fechas/textos importantes */
-.nowrap, #loadsTable td, #loadsTable th{
+.nowrap{
   white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#loadsTable th{
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }

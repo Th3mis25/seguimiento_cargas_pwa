@@ -1521,13 +1521,14 @@ function renderRows(rows, hiddenCols=[]){
     addTextCell(tr, r[COL.ejecutivo]);
 
     const tripTd = document.createElement('td');
+    tripTd.classList.add('nowrap');
     const tripSpan = document.createElement('span');
     tripSpan.className = 'trip-edit';
     tripSpan.textContent = r[COL.trip];
     tripTd.appendChild(tripSpan);
     tr.appendChild(tripTd);
 
-    addTextCell(tr, r[COL.caja]);
+    addTextCell(tr, r[COL.caja], 'nowrap');
     addTextCell(tr, r[COL.referencia]);
     addTextCell(tr, r[COL.cliente]);
     addTextCell(tr, r[COL.destino]);
