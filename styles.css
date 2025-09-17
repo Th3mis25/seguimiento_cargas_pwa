@@ -803,6 +803,18 @@ body:not(.is-authenticated) .login-form{
   overflow-y:auto;
   flex:1;
 }
+#syncBlockingModal .modal-content{
+  width:min(360px, calc(100% - 40px));
+  text-align:center;
+}
+#syncBlockingModal .modal-content h2{
+  margin-bottom:12px;
+}
+#syncBlockingModal .modal-content p{
+  margin:0;
+  font-size:1rem;
+  line-height:1.5;
+}
 .modal-content h2{
   margin-top:0;
   font-size:calc(1.5rem - 2px);
