@@ -159,6 +159,14 @@ function buildApiUrlWithToken(baseUrl, token){
   }
 }
 
+function delay(ms){
+  const duration = Number.isFinite(ms) ? Math.max(0, Math.floor(ms)) : 0;
+  if(duration <= 0){
+    return Promise.resolve();
+  }
+  return new Promise(resolve => setTimeout(resolve, duration));
+}
+
 function createApiFormBody(payload, token){
   const body = new URLSearchParams(payload);
   if(token && !body.has('token')){
@@ -1295,6 +1303,7 @@ async function updateRecord(data, options = {}){
   const notifyOffline = !opts.skipQueue;
   const requirementMessage = 'Se requiere conexión a internet para actualizar registros.';
   const connectionErrorMessage = 'No se pudo conectar con el servicio. Verifica tu conexión a internet e inténtalo de nuevo.';
+  const onNetworkError = typeof opts.onNetworkError === 'function' ? opts.onNetworkError : null;
   if(isOffline()){
     setSyncStatus('offline', { message: connectionErrorMessage, blocking:true });
     if(notifyOffline && typeof toast === 'function'){
@@ -1322,9 +1331,13 @@ async function updateRecord(data, options = {}){
       if(notifyOffline && typeof toast === 'function'){
         toast(connectionErrorMessage, 'error');
       }
-      reportError('No se pudo confirmar la respuesta del servicio al actualizar el registro.', err, {
-        toastMessage: false
-      });
+      if(onNetworkError){
+        try{ onNetworkError(err); }catch(_err){ /* ignore listener errors */ }
+      }else{
+        reportError('No se pudo confirmar la respuesta del servicio al actualizar el registro.', err, {
+          toastMessage: false
+        });
+      }
       return false;
     }
     const detailMessage = err && err.message ? err.message : 'Error desconocido';
@@ -1333,6 +1346,60 @@ async function updateRecord(data, options = {}){
     });
     return false;
   }
+}
+
+async function updateRecordWithVerification(data, options = {}){
+  const opts = options || {};
+  const {
+    verifyAttempts,
+    verifyDelayMs,
+    skipVerification,
+    onNetworkError: userOnNetworkError,
+    ...updateOpts
+  } = opts;
+  let capturedNetworkError = null;
+  updateOpts.onNetworkError = err => {
+    capturedNetworkError = err;
+    if(typeof userOnNetworkError === 'function'){
+      try{ userOnNetworkError(err); }catch(_err){ /* ignore listener errors */ }
+    }
+  };
+
+  const ok = await updateRecord(data, updateOpts);
+  const result = { ok, verified:null };
+  if(ok || skipVerification === true){
+    if(!ok && capturedNetworkError && skipVerification === true){
+      reportError('No se pudo confirmar la respuesta del servicio al actualizar el registro.', capturedNetworkError, {
+        toastMessage: false
+      });
+    }
+    return result;
+  }
+
+  if(!capturedNetworkError){
+    return result;
+  }
+
+  const attempts = Number.isFinite(verifyAttempts) && verifyAttempts > 0
+    ? Math.floor(verifyAttempts)
+    : 3;
+  const delayMs = Number.isFinite(verifyDelayMs) && verifyDelayMs >= 0
+    ? Math.floor(verifyDelayMs)
+    : 1000;
+
+  const verified = await verifyRecordUpdate(data, { attempts, delayMs });
+  result.verified = verified;
+  if(verified?.applied){
+    result.ok = true;
+    return result;
+  }
+
+  if(capturedNetworkError){
+    reportError('No se pudo confirmar la respuesta del servicio al actualizar el registro.', capturedNetworkError, {
+      toastMessage: false
+    });
+  }
+  return result;
 }
 
 function applyDataToRow(row, data){
@@ -1362,31 +1429,57 @@ function rowMatchesUpdate(row, data){
   return true;
 }
 
-async function verifyRecordUpdate(data){
+async function verifyRecordUpdate(data, options = {}){
   const verified = { applied:false, refreshed:null, row:null };
-  try{
-    const refreshed = await fetchData({ silent:true });
-    if(lastFetchUnauthorized || lastFetchErrorMessage){
-      return verified;
-    }
-    const trips = [];
-    const nextTrip = normalizeFieldValue(data.trip);
-    if(nextTrip) trips.push(nextTrip);
-    const originalTrip = normalizeFieldValue(data.originalTrip);
-    if(originalTrip && !trips.includes(originalTrip)){
-      trips.push(originalTrip);
-    }
-    for(const tripValue of trips){
-      const match = refreshed.find(r => normalizeFieldValue(r?.[COL.trip]) === tripValue);
-      if(match && rowMatchesUpdate(match, data)){
-        return { applied:true, refreshed, row:match };
-      }
-    }
-    return verified;
-  }catch(err){
-    reportError('No se pudo verificar la actualización con el servicio.', err, { toastMessage:false });
-    return verified;
+  const opts = options || {};
+  const attempts = Number.isFinite(opts.attempts) && opts.attempts > 0
+    ? Math.floor(opts.attempts)
+    : 1;
+  const delayMs = Number.isFinite(opts.delayMs) && opts.delayMs >= 0
+    ? Math.floor(opts.delayMs)
+    : 0;
+  const trips = [];
+  const nextTrip = normalizeFieldValue(data?.trip);
+  if(nextTrip) trips.push(nextTrip);
+  const originalTrip = normalizeFieldValue(data?.originalTrip);
+  if(originalTrip && !trips.includes(originalTrip)){
+    trips.push(originalTrip);
   }
+  let lastError = null;
+
+  for(let attempt = 0; attempt < attempts; attempt++){
+    if(attempt > 0 && delayMs > 0){
+      await delay(delayMs);
+    }
+    try{
+      const refreshed = await fetchData({ silent:true });
+      if(lastFetchUnauthorized){
+        return verified;
+      }
+      if(lastFetchErrorMessage){
+        if(attempt === attempts - 1){
+          return verified;
+        }
+        continue;
+      }
+      for(const tripValue of trips){
+        const match = refreshed.find(r => normalizeFieldValue(r?.[COL.trip]) === tripValue);
+        if(match && rowMatchesUpdate(match, data)){
+          return { applied:true, refreshed, row:match };
+        }
+      }
+      if(attempt === attempts - 1){
+        return verified;
+      }
+    }catch(err){
+      lastError = err;
+    }
+  }
+
+  if(lastError){
+    reportError('No se pudo verificar la actualización con el servicio.', lastError, { toastMessage:false });
+  }
+  return verified;
 }
 
 async function handleBulkUpload(file){
@@ -1709,9 +1802,18 @@ function renderRows(rows, hiddenCols=[]){
         docs: r[COL.docs] || '',
         tracking: r[COL.tracking] || ''
       };
-      const ok = await updateRecord(data, { skipQueue:true });
+      const { ok, verified } = await updateRecordWithVerification(data, {
+        skipQueue:true,
+        verifyAttempts:4,
+        verifyDelayMs:1000
+      });
       if(ok){
-        r[COL.estatus] = newStatus;
+        if(verified?.applied && Array.isArray(verified.refreshed)){
+          cache = verified.refreshed;
+          populateEjecutivoFilter(cache);
+        }else{
+          applyDataToRow(r, data);
+        }
         populateStatusFilter(cache);
         renderCurrent();
       }else{
@@ -2044,17 +2146,15 @@ async function main(){
       docs: form.docs.value.trim(),
       tracking: form.tracking.value.trim()
     };
-    let ok = await updateRecord(data, { skipQueue:true, silent:true });
-    let verifiedUpdate = null;
-    if(!ok){
-      verifiedUpdate = await verifyRecordUpdate(data);
-      if(verifiedUpdate?.applied){
-        ok = true;
-      }
-    }
+    const { ok, verified } = await updateRecordWithVerification(data, {
+      skipQueue:true,
+      silent:true,
+      verifyAttempts:4,
+      verifyDelayMs:1000
+    });
     if(ok){
-      if(verifiedUpdate?.applied && Array.isArray(verifiedUpdate.refreshed)){
-        cache = verifiedUpdate.refreshed;
+      if(verified?.applied && Array.isArray(verified.refreshed)){
+        cache = verified.refreshed;
       }else if(row){
         applyDataToRow(row, data);
       }else{
@@ -2107,10 +2207,18 @@ async function main(){
       docs: row[COL.docs] || '',
       tracking: row[COL.tracking] || ''
     };
-    const ok = await updateRecord(data, { skipQueue:true });
+    const { ok, verified } = await updateRecordWithVerification(data, {
+      skipQueue:true,
+      verifyAttempts:4,
+      verifyDelayMs:1000
+    });
     if(ok){
-      row[COL.estatus] = newStatus;
-      row[COL.llegadaEntrega] = data.llegadaEntrega;
+      if(verified?.applied && Array.isArray(verified.refreshed)){
+        cache = verified.refreshed;
+        populateEjecutivoFilter(cache);
+      }else{
+        applyDataToRow(row, data);
+      }
       populateStatusFilter(cache);
       renderCurrent();
     }else{
