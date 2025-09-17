@@ -242,6 +242,77 @@ let offlineQueueInitialized = false;
 let syncState = 'idle';
 let syncBlockingActive = false;
 
+const CONNECTION_INDICATOR_LABELS = Object.freeze({
+  online:'En línea',
+  offline:'Sin conexión',
+  degraded:'Conectividad inestable',
+  unknown:'Verificando conexión…'
+});
+let connectionIndicatorState = 'unknown';
+
+function getConnectionIndicatorElements(){
+  if(typeof document === 'undefined') return null;
+  const container = document.getElementById('connectionIndicator');
+  if(!container) return null;
+  const label = container.querySelector('.connection-indicator__label');
+  return { container, label };
+}
+
+function renderConnectionIndicator(state, elements){
+  const parts = elements || getConnectionIndicatorElements();
+  if(!parts) return;
+  const { container, label } = parts;
+  const normalized = CONNECTION_INDICATOR_LABELS[state] ? state : 'unknown';
+  const text = CONNECTION_INDICATOR_LABELS[normalized] || CONNECTION_INDICATOR_LABELS.unknown;
+  container.dataset.state = normalized;
+  container.setAttribute('title', text);
+  container.setAttribute('aria-label', text);
+  if(label){
+    label.textContent = text;
+  }else{
+    container.textContent = text;
+  }
+}
+
+function computeConnectionIndicatorState(){
+  if(isOffline()){
+    return 'offline';
+  }
+  if(syncState === 'offline'){
+    return 'degraded';
+  }
+  return 'online';
+}
+
+function updateConnectionIndicator(options = {}){
+  const opts = options || {};
+  const forceRender = opts.forceRender === true;
+  const nextState = computeConnectionIndicatorState();
+  const stateChanged = nextState !== connectionIndicatorState;
+  connectionIndicatorState = nextState;
+  const elements = getConnectionIndicatorElements();
+  if(!elements){
+    return;
+  }
+  if(!stateChanged && !forceRender){
+    return;
+  }
+  renderConnectionIndicator(nextState, elements);
+}
+
+if(typeof window !== 'undefined'){
+  window.addEventListener('online', () => updateConnectionIndicator({ forceRender:true }));
+  window.addEventListener('offline', () => updateConnectionIndicator({ forceRender:true }));
+}
+
+if(typeof document !== 'undefined'){
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => updateConnectionIndicator({ forceRender:true }), { once:true });
+  }else{
+    updateConnectionIndicator({ forceRender:true });
+  }
+}
+
 function isOffline(){
   if(typeof navigator === 'undefined' || typeof navigator.onLine !== 'boolean'){
     return false;
@@ -344,6 +415,7 @@ function hideSyncBlockingModal(){
 function setSyncStatus(state, options = {}){
   syncState = state;
   renderSyncStatus();
+  updateConnectionIndicator();
   const blockingOption = options.blocking;
   const shouldBlock = state === 'offline'
     && (blockingOption === true || (blockingOption === undefined && isOffline()));
