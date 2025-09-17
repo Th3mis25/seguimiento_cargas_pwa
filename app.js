@@ -2203,9 +2203,6 @@ async function main(){
         return;
       }
 
-      const refreshed = Array.isArray(addRecord.lastConfirmedData)
-        ? addRecord.lastConfirmedData
-        : await fetchData();
       if(lastFetchUnauthorized){
         return;
       }
