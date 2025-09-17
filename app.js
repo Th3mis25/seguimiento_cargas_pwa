@@ -2023,8 +2023,6 @@ async function main(){
     setActiveTopBtn($('#dailyMenu'));
   }
 
-  fillStatusSelect($('#addForm select[name="estatus"]'), '', true);
-
   $('#refreshBtn').addEventListener('click', async ()=>{
     const refreshed = await fetchData();
     if(lastFetchUnauthorized){
@@ -2067,54 +2065,12 @@ async function main(){
     if(file) handleBulkUpload(file);
   });
 
-  $('#addBtn').addEventListener('click', ()=>{
-    $('#addModal').classList.add('show');
-  });
-  $('#cancelAdd').addEventListener('click', ()=>{
-    $('#addModal').classList.remove('show');
-  });
-  ['#addForm input[name="trip"]', '#editForm input[name="trip"]'].forEach(sel=>{
+  ['#editForm input[name="trip"]'].forEach(sel=>{
     const el = $(sel);
     if(el){
       el.addEventListener('input',()=>{
         el.value = el.value.replace(/\D/g,'');
       });
-    }
-  });
-  $('#addForm').addEventListener('submit', async ev=>{
-    ev.preventDefault();
-    const form = ev.target;
-    const trip = form.trip.value.trim();
-    if(!validateTrip(trip)) return;
-    const data = {
-      trip,
-      ejecutivo: form.ejecutivo.value.trim(),
-      caja: form.caja.value.trim(),
-      estatus: form.estatus.value.trim(),
-      referencia: form.referencia.value.trim(),
-      cliente: form.cliente.value.trim(),
-      destino: form.destino.value.trim(),
-      citaCarga: toGASDate(form.citaCarga.value)
-    };
-    const ok = await addRecord(data, { skipQueue:true });
-    if(ok){
-      const row = {};
-      row[COL.trip] = data.trip;
-      row[COL.ejecutivo] = data.ejecutivo;
-      row[COL.caja] = data.caja;
-      row[COL.estatus] = data.estatus;
-      row[COL.referencia] = data.referencia;
-      row[COL.cliente] = data.cliente;
-      row[COL.destino] = data.destino;
-      row[COL.citaCarga] = data.citaCarga;
-      cache.push(row);
-      populateStatusFilter(cache);
-      populateEjecutivoFilter(cache);
-      renderCurrent();
-      form.reset();
-      $('#addModal').classList.remove('show');
-    }else if(typeof toast === 'function'){
-      toast('Se requiere conexión a internet para agregar un registro.', 'error');
     }
   });
   $('#cancelEdit').addEventListener('click', ()=>{

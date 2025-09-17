@@ -96,7 +96,6 @@
 
         <div class="controls__actions">
           <button id="refreshBtn" class="btn">Actualizar</button>
-          <button id="addBtn" class="btn" type="button">Agregar</button>
           <input type="file" id="bulkUpload" accept=".xlsx,.csv"/>
           <button id="bulkUploadBtn" class="btn" type="button">Carga masiva</button>
           <div id="bulkUploadStatus" class="upload-status"></div>
@@ -141,42 +140,6 @@
       </section>
     </div>
   </main>
-
-  <div id="addModal" class="modal">
-    <div class="modal-content">
-      <h2>Nuevo registro</h2>
-      <form id="addForm">
-        <label>Trip
-          <input name="trip" required inputmode="numeric" pattern="\d+" />
-        </label>
-        <label>Ejecutivo
-          <input name="ejecutivo" />
-        </label>
-        <label>Caja
-          <input name="caja" />
-        </label>
-        <label>Estatus
-          <select name="estatus" required></select>
-        </label>
-        <label>Cliente
-          <input name="cliente" required />
-        </label>
-        <label>Destino
-          <input name="destino" />
-        </label>
-        <label>Referencia
-          <input name="referencia" />
-        </label>
-        <label>Cita carga
-          <input type="datetime-local" name="citaCarga" required lang="es-MX" />
-        </label>
-        <div class="modal-actions">
-          <button type="button" id="cancelAdd" class="btn-mini">Cancelar</button>
-          <button type="submit" class="btn">Guardar</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <div id="editModal" class="modal">
     <div class="modal-content">
