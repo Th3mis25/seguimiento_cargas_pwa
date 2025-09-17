@@ -847,6 +847,26 @@ const STATUS_OPTIONS = [
   'In transit MX','Nuevo Laredo yard','In transit USA','At destination','Delivered'
 ];
 
+const RECORD_UPDATE_FIELDS = Object.freeze([
+  ['trip', COL.trip],
+  ['caja', COL.caja],
+  ['referencia', COL.referencia],
+  ['cliente', COL.cliente],
+  ['destino', COL.destino],
+  ['ejecutivo', COL.ejecutivo],
+  ['estatus', COL.estatus],
+  ['segmento', COL.segmento],
+  ['trmx', COL.trmx],
+  ['trusa', COL.trusa],
+  ['citaCarga', COL.citaCarga],
+  ['llegadaCarga', COL.llegadaCarga],
+  ['citaEntrega', COL.citaEntrega],
+  ['llegadaEntrega', COL.llegadaEntrega],
+  ['comentarios', COL.comentarios],
+  ['docs', COL.docs],
+  ['tracking', COL.tracking]
+]);
+
 const $ = typeof document !== 'undefined'
   ? selector => document.querySelector(selector)
   : () => null;
@@ -1017,15 +1037,21 @@ function normalizeData(raw){
   return raw.map(arrayRowToObj);
 }
 
-async function fetchData(){
+async function fetchData(options = {}){
+  const opts = options || {};
+  const silent = opts.silent === true;
   const tb = $('#loadsTable tbody');
-  tb.innerHTML = `<tr><td colspan="18" style="padding:16px">Cargando…</td></tr>`;
+  if(!silent && tb){
+    tb.innerHTML = `<tr><td colspan="18" style="padding:16px">Cargando…</td></tr>`;
+  }
 
   if(!API_BASE){
     const message = 'API_BASE no configurada';
     lastFetchUnauthorized = false;
     lastFetchErrorMessage = message;
-    tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${message}. Revisa la configuración de la aplicación, tu conexión a internet y que el token sea válido antes de recargar.</td></tr>`;
+    if(!silent && tb){
+      tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${message}. Revisa la configuración de la aplicación, tu conexión a internet y que el token sea válido antes de recargar.</td></tr>`;
+    }
     return [];
   }
 
@@ -1038,7 +1064,9 @@ async function fetchData(){
       lastFetchUnauthorized = true;
       lastFetchErrorMessage = UNAUTHORIZED_MSG;
       notifySecureConfigIssue(UNAUTHORIZED_MSG);
-      tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${UNAUTHORIZED_MSG}</td></tr>`;
+      if(!silent && tb){
+        tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${UNAUTHORIZED_MSG}</td></tr>`;
+      }
       return [];
     }
     lastFetchUnauthorized = false;
@@ -1086,10 +1114,12 @@ async function fetchData(){
     }
     const detail = rawMessage ? ` Detalle: ${escapeHtml(rawMessage)}.` : '';
     lastFetchErrorMessage = rawMessage || plainMessage;
-    tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${userMessage}${detail} ${baseInstruction} URL consultada: ${escapedApiUrl}.</td></tr>`;
+    if(!silent && tb){
+      tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${userMessage}${detail} ${baseInstruction} URL consultada: ${escapedApiUrl}.</td></tr>`;
+    }
     const reportDetail = rawMessage ? `${rawMessage} (URL: ${plainApiUrl})` : `URL consultada: ${plainApiUrl}`;
     const toastMessage = rawMessage ? `No se pudieron cargar los datos: ${rawMessage}` : plainMessage;
-    reportError(plainMessage, err, { detail: reportDetail, toastMessage });
+    reportError(plainMessage, err, { detail: reportDetail, toastMessage: silent ? false : toastMessage });
     return [];
   }
 }
@@ -1302,6 +1332,60 @@ async function updateRecord(data, options = {}){
       toastMessage: `Error al actualizar: ${detailMessage}`
     });
     return false;
+  }
+}
+
+function applyDataToRow(row, data){
+  if(!row || !data) return;
+  for(const [dataKey, colKey] of RECORD_UPDATE_FIELDS){
+    row[colKey] = data[dataKey] ?? '';
+  }
+}
+
+function normalizeFieldValue(value){
+  if(value == null) return '';
+  if(value instanceof Date){
+    return toGASDate(value);
+  }
+  return String(value).trim();
+}
+
+function rowMatchesUpdate(row, data){
+  if(!row || !data) return false;
+  for(const [dataKey, colKey] of RECORD_UPDATE_FIELDS){
+    const expected = normalizeFieldValue(data[dataKey]);
+    const actual = normalizeFieldValue(row[colKey]);
+    if(expected !== actual){
+      return false;
+    }
+  }
+  return true;
+}
+
+async function verifyRecordUpdate(data){
+  const verified = { applied:false, refreshed:null, row:null };
+  try{
+    const refreshed = await fetchData({ silent:true });
+    if(lastFetchUnauthorized || lastFetchErrorMessage){
+      return verified;
+    }
+    const trips = [];
+    const nextTrip = normalizeFieldValue(data.trip);
+    if(nextTrip) trips.push(nextTrip);
+    const originalTrip = normalizeFieldValue(data.originalTrip);
+    if(originalTrip && !trips.includes(originalTrip)){
+      trips.push(originalTrip);
+    }
+    for(const tripValue of trips){
+      const match = refreshed.find(r => normalizeFieldValue(r?.[COL.trip]) === tripValue);
+      if(match && rowMatchesUpdate(match, data)){
+        return { applied:true, refreshed, row:match };
+      }
+    }
+    return verified;
+  }catch(err){
+    reportError('No se pudo verificar la actualización con el servicio.', err, { toastMessage:false });
+    return verified;
   }
 }
 
@@ -1960,31 +2044,32 @@ async function main(){
       docs: form.docs.value.trim(),
       tracking: form.tracking.value.trim()
     };
-    const ok = await updateRecord(data, { skipQueue:true });
-    if(ok && row){
-      row[COL.trip] = data.trip;
-      row[COL.caja] = data.caja;
-      row[COL.referencia] = data.referencia;
-      row[COL.cliente] = data.cliente;
-      row[COL.destino] = data.destino;
-      row[COL.ejecutivo] = data.ejecutivo;
-      row[COL.estatus] = data.estatus;
-      row[COL.segmento] = data.segmento;
-      row[COL.trmx] = data.trmx;
-      row[COL.trusa] = data.trusa;
-      row[COL.citaCarga] = data.citaCarga;
-      row[COL.llegadaCarga] = data.llegadaCarga;
-      row[COL.citaEntrega] = data.citaEntrega;
-      row[COL.llegadaEntrega] = data.llegadaEntrega;
-      row[COL.comentarios] = data.comentarios;
-      row[COL.docs] = data.docs;
-      row[COL.tracking] = data.tracking;
+    let ok = await updateRecord(data, { skipQueue:true, silent:true });
+    let verifiedUpdate = null;
+    if(!ok){
+      verifiedUpdate = await verifyRecordUpdate(data);
+      if(verifiedUpdate?.applied){
+        ok = true;
+      }
     }
     if(ok){
+      if(verifiedUpdate?.applied && Array.isArray(verifiedUpdate.refreshed)){
+        cache = verifiedUpdate.refreshed;
+      }else if(row){
+        applyDataToRow(row, data);
+      }else{
+        const refreshed = await fetchData({ silent:true });
+        if(!lastFetchUnauthorized && !lastFetchErrorMessage && Array.isArray(refreshed) && refreshed.length){
+          cache = refreshed;
+        }
+      }
       populateStatusFilter(cache);
       populateEjecutivoFilter(cache);
       renderCurrent();
       $('#editModal').classList.remove('show');
+      if(typeof toast === 'function'){
+        toast('Registro actualizado');
+      }
     }else if(typeof toast === 'function'){
       toast('Se requiere conexión a internet para guardar los cambios.', 'error');
     }
