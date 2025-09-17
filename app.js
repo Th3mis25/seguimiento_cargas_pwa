@@ -257,8 +257,17 @@ function isOffline(){
 
 function isLikelyNetworkError(err){
   if(!err) return false;
+  if(err.name === 'NetworkError' || err.isNetworkError === true){
+    return true;
+  }
   const message = typeof err.message === 'string' ? err.message : String(err);
-  return err instanceof TypeError && /failed to fetch/i.test(message);
+  if(err instanceof TypeError && /failed to fetch|network ?error|load failed|network request failed/i.test(message)){
+    return true;
+  }
+  if(err.cause && err.cause !== err){
+    return isLikelyNetworkError(err.cause);
+  }
+  return false;
 }
 
 function getSyncStatusElement(){
@@ -513,15 +522,35 @@ async function processOfflineQueue(){
         pendingQueueCount = remaining;
         setSyncStatus(remaining > 0 ? 'syncing' : 'syncing', { pendingCount: remaining });
       }catch(err){
-        const message = `Error de sincronización: ${err && err.message ? err.message : 'Error desconocido'}`;
-        reportError(message, err, { toastMessage: message });
-        if(isOffline()){
-          pendingQueueCount = await countPendingRequests(db);
-          setSyncStatus(pendingQueueCount > 0 ? 'queued' : 'offline', { pendingCount: pendingQueueCount });
+        const isNetworkIssue = isOffline() || isLikelyNetworkError(err);
+        const errorMessage = err && err.message ? err.message : 'Error desconocido';
+        const syncMessage = isNetworkIssue
+          ? 'Sin conexión con el servicio. Reintentaremos la sincronización automáticamente.'
+          : `Error de sincronización: ${errorMessage}`;
+        const reportMessage = isNetworkIssue
+          ? `Error de sincronización: ${errorMessage}`
+          : syncMessage;
+
+        reportError(reportMessage, err, { toastMessage: isNetworkIssue ? false : syncMessage });
+
+        pendingQueueCount = await countPendingRequests(db);
+
+        if(isNetworkIssue){
+          const state = isOffline()
+            ? (pendingQueueCount > 0 ? 'queued' : 'offline')
+            : 'queued';
+          setSyncStatus(state, {
+            pendingCount: pendingQueueCount,
+            message: 'Sin conexión con el servicio. Reintentaremos la sincronización automáticamente.'
+          });
+          scheduleSyncRetry();
           return;
         }
-        pendingQueueCount = await countPendingRequests(db);
-        setSyncStatus('error', { message, pendingCount: pendingQueueCount });
+
+        setSyncStatus('error', {
+          message: `Error de sincronización: ${errorMessage}`,
+          pendingCount: pendingQueueCount
+        });
         scheduleSyncRetry();
         return;
       }
@@ -1252,10 +1281,31 @@ function setupSecureConfigForm(){
 }
 
 async function sendRecordRequest(action, data){
+  if(!API_BASE){
+    const configError = new Error('API_BASE no configurada');
+    configError.name = 'ConfigError';
+    throw configError;
+  }
+
   const token = SECURE_CONFIG.apiToken || '';
   const payload = { action, ...data };
   const body = createApiFormBody(payload, token);
-  const res = await fetch(API_BASE, { method:'POST', body });
+
+  let res;
+  try{
+    res = await fetch(API_BASE, { method:'POST', body });
+  }catch(err){
+    if(isLikelyNetworkError(err)){
+      const networkError = new Error('No se pudo conectar con el servicio.');
+      networkError.name = 'NetworkError';
+      networkError.isNetworkError = true;
+      if(err && typeof err === 'object'){
+        networkError.cause = err;
+      }
+      throw networkError;
+    }
+    throw err;
+  }
   let json;
   try{
     const ct = res.headers.get('content-type') || '';
