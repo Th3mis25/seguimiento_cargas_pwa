@@ -1253,7 +1253,34 @@ async function sendRecordRequest(action, data){
   return json;
 }
 
+async function confirmRecordAdditionViaSync(data){
+  const tripValue = data && data.trip ? String(data.trip).trim() : '';
+  if(!tripValue){
+    return { confirmed:false, refreshed:null };
+  }
+
+  const refreshed = await fetchData({ silent:true });
+  if(lastFetchUnauthorized){
+    return { confirmed:false, refreshed:null };
+  }
+  if(!Array.isArray(refreshed) || !refreshed.length){
+    return { confirmed:false, refreshed:null };
+  }
+
+  const confirmed = refreshed.some(row => {
+    if(!row || typeof row !== 'object') return false;
+    const value = row[COL.trip];
+    return String(value ?? '').trim() === tripValue;
+  });
+
+  return {
+    confirmed,
+    refreshed: confirmed ? refreshed : null
+  };
+}
+
 async function addRecord(data, options = {}){
+  addRecord.lastConfirmedData = null;
   const opts = options || {};
   const notifyOffline = !opts.skipQueue;
   const requirementMessage = 'Se requiere conexión a internet para agregar registros.';
@@ -1282,11 +1309,34 @@ async function addRecord(data, options = {}){
     }
     if(isLikelyNetworkError(err)){
       setSyncStatus('idle');
+      if(opts.confirmOnNetworkError !== false){
+        try{
+          const confirmation = await confirmRecordAdditionViaSync(data);
+          if(confirmation.confirmed){
+            addRecord.lastConfirmedData = confirmation.refreshed;
+            if(!opts.silent && typeof toast === 'function'){
+              toast('Registro agregado. Se validó sincronizando los datos.');
+            }
+            reportError(
+              'El servicio no confirmó la respuesta al agregar el registro, pero se validó al volver a sincronizar.',
+              err,
+              {
+                toastMessage:false,
+                detail:'Se detectó un error de red al leer la respuesta. El registro se confirmó al actualizar los datos desde el servicio.'
+              }
+            );
+            return true;
+          }
+        }catch(confirmationError){
+          reportError('Error al intentar validar el registro tras un error de red.', confirmationError, { toastMessage:false });
+        }
+      }
       if(notifyOffline && typeof toast === 'function'){
         toast(connectionErrorMessage, 'error');
       }
       reportError('No se pudo confirmar la respuesta del servicio al agregar el registro.', err, {
-        toastMessage: false
+        toastMessage:false,
+        detail:'No se pudo obtener confirmación del servicio. Verifica tu conexión a internet y que el servicio permita solicitudes desde el navegador (CORS).'
       });
       return false;
     }
@@ -2153,7 +2203,6 @@ async function main(){
         return;
       }
 
-      const refreshed = await fetchData();
       if(lastFetchUnauthorized){
         return;
       }
