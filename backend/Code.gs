@@ -31,13 +31,36 @@ function isAuthorized(e) {
   return secureCompare(headerToken, AUTH_TOKEN) || secureCompare(paramToken, AUTH_TOKEN);
 }
 
-function createJsonOutput(payload, status) {
+function normalizeOrigin(origin) {
+  if (!origin) return '';
+  var str = String(origin).trim();
+  if (!str) return '';
+  var match = str.match(/^(https?:\/\/[^/]+)/i);
+  return match ? match[1] : '';
+}
+
+function getRequestOrigin(e) {
+  if (!e || !e.headers) return '';
+  var headers = e.headers;
+  var originHeader = headers.Origin || headers.origin || '';
+  var origin = normalizeOrigin(originHeader);
+  if (origin) return origin;
+  var refererHeader = headers.Referer || headers.referer || '';
+  return normalizeOrigin(refererHeader);
+}
+
+function createJsonOutput(payload, status, origin) {
+  var allowedOrigin = normalizeOrigin(origin) || '*';
   var output = ContentService.createTextOutput()
     .setContent(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON)
-    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Origin', allowedOrigin)
     .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+
+  if (allowedOrigin !== '*') {
+    output.setHeader('Vary', 'Origin');
+  }
 
   if (typeof status === 'number') {
     output.setHeader('X-Http-Status-Code-Override', String(status));
@@ -47,12 +70,14 @@ function createJsonOutput(payload, status) {
 }
 
 function doPost(e) {
+  var origin = getRequestOrigin(e);
+
   if (!isAuthorized(e)) {
-    return createJsonOutput({ error: 'Unauthorized' }, 401);
+    return createJsonOutput({ error: 'Unauthorized' }, 401, origin);
   }
 
   if (!e.postData) {
-    return createJsonOutput({ error: 'Missing postData' }, 400);
+    return createJsonOutput({ error: 'Missing postData' }, 400, origin);
   }
 
   try {
@@ -106,7 +131,7 @@ function doPost(e) {
         }
       }
       sheet.appendRow(row);
-      return createJsonOutput({ success: true }, 200);
+      return createJsonOutput({ success: true }, 200, origin);
     } else if (p.action === 'bulkAdd') {
       var rows;
       try {
@@ -168,7 +193,7 @@ function doPost(e) {
       if(values.length){
         sheet.getRange(sheet.getLastRow() + 1, 1, values.length, headers.length).setValues(values);
       }
-      return createJsonOutput({ success: true, inserted: values.length, duplicates: duplicates }, 200);
+      return createJsonOutput({ success: true, inserted: values.length, duplicates: duplicates }, 200, origin);
     } else if (p.action === 'update') {
       var data = sheet.getDataRange().getValues();
       var headers = data[0];
@@ -227,9 +252,9 @@ function doPost(e) {
           sheet.getRange(rowIndex + 1, idx + 1).setValue(map[h]);
         }
       }
-      return createJsonOutput({ success: true }, 200);
+      return createJsonOutput({ success: true }, 200, origin);
     } else {
-      return createJsonOutput({ error: 'Unsupported action' }, 400);
+      return createJsonOutput({ error: 'Unsupported action' }, 400, origin);
     }
   } catch (err) {
     var status = (
@@ -239,13 +264,15 @@ function doPost(e) {
       err.message === 'Trip must be >= 225000' ||
       err.message === 'Trip already exists'
     ) ? 400 : 500;
-    return createJsonOutput({ error: err.message }, status);
+    return createJsonOutput({ error: err.message }, status, origin);
   }
 }
 
 function doGet(e) {
+  var origin = getRequestOrigin(e);
+
   if (!isAuthorized(e)) {
-    return createJsonOutput({ error: 'Unauthorized' }, 401);
+    return createJsonOutput({ error: 'Unauthorized' }, 401, origin);
   }
 
   try {
@@ -261,16 +288,25 @@ function doGet(e) {
           : cell;
       });
     });
-    return createJsonOutput({ data: formattedData }, 200);
+    return createJsonOutput({ data: formattedData }, 200, origin);
   } catch (err) {
-    return createJsonOutput({ error: err.message }, 500);
+    return createJsonOutput({ error: err.message }, 500, origin);
   }
 }
 
 function doOptions(e) {
-  return ContentService.createTextOutput('')
+  var origin = getRequestOrigin(e);
+  var allowedOrigin = normalizeOrigin(origin) || '*';
+  var output = ContentService.createTextOutput('')
     .setMimeType(ContentService.MimeType.TEXT)
-    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Origin', allowedOrigin)
     .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    .setHeader('Access-Control-Max-Age', '3600');
+
+  if (allowedOrigin !== '*') {
+    output.setHeader('Vary', 'Origin');
+  }
+
+  return output;
 }
