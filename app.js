@@ -18,6 +18,122 @@ const SECURE_CONFIG_LOAD_ERROR_MSG = 'No se pudo cargar la configuración segura
 const SECURE_TOKEN_STORAGE_KEY = 'seguimientoSecureToken';
 let secureConfigErrorShown = false;
 
+const ERROR_REPORT_LIMIT = 20;
+const errorReports = [];
+let errorReportFormatter = null;
+
+function normalizeErrorDetail(error){
+  if(!error) return '';
+  if(typeof error === 'string') return error;
+  if(error && typeof error.message === 'string' && error.message.trim()){
+    return error.message.trim();
+  }
+  try{
+    return String(error);
+  }catch(_err){
+    return '';
+  }
+}
+
+function formatErrorReportTimestamp(timestamp){
+  const date = new Date(timestamp);
+  if(Number.isNaN(date.getTime())){
+    return '';
+  }
+  if(!errorReportFormatter){
+    try{
+      errorReportFormatter = new Intl.DateTimeFormat('es-MX', { dateStyle:'short', timeStyle:'medium' });
+    }catch(_err){
+      errorReportFormatter = null;
+    }
+  }
+  if(errorReportFormatter){
+    try{
+      return errorReportFormatter.format(date);
+    }catch(_err){
+      /* ignore formatter errors */
+    }
+  }
+  const pad = v => String(v).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function renderErrorReports(){
+  if(typeof document === 'undefined') return;
+  const container = document.getElementById('errorNotifications');
+  if(!container) return;
+  let list = container.querySelector('.error-notifications__list');
+  if(!list){
+    list = document.createElement('div');
+    list.className = 'error-notifications__list';
+    list.setAttribute('role', 'list');
+    container.appendChild(list);
+  }
+  if(!errorReports.length){
+    list.innerHTML = '';
+    container.hidden = true;
+    return;
+  }
+  const visible = errorReports.slice(-ERROR_REPORT_LIMIT).reverse();
+  const items = visible.map(entry => {
+    const detail = entry.detail ? `<span class="error-notifications__detail">Detalle: ${escapeHtml(entry.detail)}</span>` : '';
+    const stack = entry.stack
+      ? `<details class="error-notifications__stack"><summary>Detalles técnicos</summary><pre>${escapeHtml(entry.stack)}</pre></details>`
+      : '';
+    const timestamp = entry.timestamp ? `<span class="error-notifications__time">${escapeHtml(formatErrorReportTimestamp(entry.timestamp))}</span>` : '';
+    return `<article class="error-notifications__item" role="listitem">${timestamp}<p class="error-notifications__message">${escapeHtml(entry.message)}</p>${detail}${stack}</article>`;
+  }).join('');
+  list.innerHTML = items;
+  container.hidden = false;
+}
+
+function reportError(message, error, options = {}){
+  const opts = options || {};
+  const detail = typeof opts.detail === 'string' ? opts.detail : normalizeErrorDetail(error);
+  const stack = typeof opts.stack === 'string'
+    ? opts.stack
+    : (error && error.stack ? String(error.stack) : '');
+  const entry = {
+    message: message || 'Ocurrió un error inesperado.',
+    detail,
+    stack,
+    timestamp: Date.now()
+  };
+  errorReports.push(entry);
+  if(errorReports.length > ERROR_REPORT_LIMIT){
+    errorReports.splice(0, errorReports.length - ERROR_REPORT_LIMIT);
+  }
+  if(typeof console !== 'undefined' && typeof console.error === 'function'){
+    if(error !== undefined){
+      console.error(message, error);
+    }else{
+      console.error(message);
+    }
+  }
+  const toastMessage = opts.toastMessage === false
+    ? ''
+    : (typeof opts.toastMessage === 'string'
+      ? opts.toastMessage
+      : detail && detail !== message
+        ? `${message} (${detail})`
+        : message);
+  if(toastMessage && typeof toast === 'function'){
+    const toastType = opts.toastType || 'error';
+    toast(toastMessage, toastType);
+  }
+  renderErrorReports();
+  return entry;
+}
+
+if(typeof document !== 'undefined'){
+  const initRender = () => renderErrorReports();
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', initRender, { once:true });
+  }else{
+    initRender();
+  }
+}
+
 function buildApiUrlWithToken(baseUrl, token){
   if(!baseUrl || !token) return baseUrl;
   try{
@@ -108,18 +224,13 @@ function hideSecureConfigWarning(){
   secureConfigErrorShown = false;
 }
 
-function notifySecureConfigIssue(message = SECURE_CONFIG_TOKEN_ERROR_MSG){
-  if(typeof document === 'undefined') return;
+function notifySecureConfigIssue(message = SECURE_CONFIG_TOKEN_ERROR_MSG, error = null){
   const finalMessage = message || SECURE_CONFIG_TOKEN_ERROR_MSG;
-  showSecureConfigWarning(finalMessage);
-  secureConfigErrorShown = true;
-  try{
-    if(typeof toast === 'function'){
-      toast(finalMessage, 'error');
-    }
-  }catch(_err){
-    /* ignore toast errors */
+  if(typeof document !== 'undefined'){
+    showSecureConfigWarning(finalMessage);
   }
+  secureConfigErrorShown = true;
+  reportError(finalMessage, error, { toastType:'error', toastMessage: finalMessage });
 }
 
 /* =========================
@@ -238,7 +349,7 @@ async function getOfflineDb(){
     try{
       const request = window.indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION);
       request.onerror = () => {
-        console.error('IndexedDB open error', request.error);
+        reportError('No se pudo abrir la base de datos offline.', request.error);
         resolve(null);
       };
       request.onupgradeneeded = event => {
@@ -260,7 +371,7 @@ async function getOfflineDb(){
         resolve(db);
       };
     }catch(err){
-      console.error('getOfflineDb exception', err);
+      reportError('No se pudo inicializar la base de datos offline.', err);
       resolve(null);
     }
   });
@@ -281,7 +392,7 @@ async function countPendingRequests(dbInstance){
       reject(err);
     }
   }).catch(err => {
-    console.error('countPendingRequests error', err);
+    reportError('No se pudieron contar las operaciones pendientes sin conexión.', err);
     return 0;
   });
 }
@@ -309,7 +420,9 @@ async function enqueueOfflineRequest(type, data){
     pendingQueueCount = count;
     return { success:true, count };
   }catch(err){
-    console.error('enqueueOfflineRequest error', err);
+    reportError('No se pudo guardar la operación sin conexión.', err, {
+      toastMessage: 'No se pudo guardar la operación sin conexión.'
+    });
     return { success:false, error:err };
   }
 }
@@ -328,7 +441,7 @@ async function getAllOfflineRequests(dbInstance){
       reject(err);
     }
   }).catch(err => {
-    console.error('getAllOfflineRequests error', err);
+    reportError('No se pudieron leer las operaciones pendientes sin conexión.', err);
     return [];
   });
 }
@@ -351,7 +464,7 @@ async function deleteOfflineRequest(id, dbInstance){
     });
     return true;
   }catch(err){
-    console.error('deleteOfflineRequest error', err);
+    reportError('No se pudo eliminar una operación pendiente sin conexión.', err);
     return false;
   }
 }
@@ -374,7 +487,7 @@ async function processOfflineQueue(){
   try{
     pending = await getAllOfflineRequests(db);
   }catch(err){
-    console.error('getAllOfflineRequests error', err);
+    reportError('No se pudieron leer las operaciones pendientes sin conexión.', err);
     setSyncStatus('error', { message:'No se pudo leer la cola offline.' });
     scheduleSyncRetry();
     return;
@@ -400,18 +513,15 @@ async function processOfflineQueue(){
         pendingQueueCount = remaining;
         setSyncStatus(remaining > 0 ? 'syncing' : 'syncing', { pendingCount: remaining });
       }catch(err){
-        console.error('processOfflineQueue item error', err);
+        const message = `Error de sincronización: ${err && err.message ? err.message : 'Error desconocido'}`;
+        reportError(message, err, { toastMessage: message });
         if(isOffline()){
           pendingQueueCount = await countPendingRequests(db);
           setSyncStatus(pendingQueueCount > 0 ? 'queued' : 'offline', { pendingCount: pendingQueueCount });
           return;
         }
-        const message = `Error de sincronización: ${err && err.message ? err.message : 'Error desconocido'}`;
         pendingQueueCount = await countPendingRequests(db);
         setSyncStatus('error', { message, pendingCount: pendingQueueCount });
-        if(typeof toast === 'function'){
-          toast(message, 'error');
-        }
         scheduleSyncRetry();
         return;
       }
@@ -769,12 +879,11 @@ async function bootstrapApp(){
     try{
       await ensureSecureConfigLoaded();
     }catch(err){
-      console.error('loadSecureConfig error', err);
       const detail = err && err.message && err.message !== SECURE_CONFIG_TOKEN_ERROR_MSG ? ` Detalle: ${err.message}` : '';
       const message = err && err.message === SECURE_CONFIG_TOKEN_ERROR_MSG
         ? err.message
         : `${SECURE_CONFIG_LOAD_ERROR_MSG}${detail}`;
-      notifySecureConfigIssue(message);
+      notifySecureConfigIssue(message, err);
     }
 
     const mainEl = document.querySelector('main.container');
@@ -806,7 +915,7 @@ async function bootstrapApp(){
   })();
 
   bootstrapPromise.catch(err => {
-    console.error('bootstrapApp error', err);
+    reportError('No se pudo completar la inicialización de la aplicación.', err);
   });
 
   return bootstrapPromise;
@@ -1058,31 +1167,36 @@ async function fetchData(){
     lastFetchErrorMessage = '';
     return data;
   }catch(err){
-    console.error('[fetchData] Error al consultar', API_BASE, err);
-    if(err && err.stack){
-      console.error('[fetchData] stack', err.stack);
-    }
     lastFetchUnauthorized = false;
     const baseInstruction = 'Revisa tu conexión a internet y que el token sea válido antes de recargar.';
-    const escapedApiUrl = escapeHtml(API_BASE);
+    const plainApiUrl = API_BASE || 'la URL configurada';
+    const escapedApiUrl = escapeHtml(plainApiUrl);
     const rawMessage = err && typeof err.message === 'string' ? err.message : '';
     let userMessage = `No se pudieron cargar los datos desde ${escapedApiUrl}.`;
+    let plainMessage = `No se pudieron cargar los datos desde ${plainApiUrl}.`;
     const httpStatusMatch = rawMessage.match(/^HTTP\s+(\d+)/i);
     const isHttpError = (err && err.name === 'HttpError') || Boolean(httpStatusMatch);
     if(isHttpError){
       const statusValue = typeof err?.httpStatus === 'number' ? err.httpStatus : (httpStatusMatch ? httpStatusMatch[1] : '');
       const statusLabel = statusValue !== '' ? ` ${escapeHtml(String(statusValue))}` : '';
       userMessage = `No se pudieron cargar los datos desde ${escapedApiUrl}. El servicio respondió con un error HTTP${statusLabel}.`;
+      plainMessage = `No se pudieron cargar los datos desde ${plainApiUrl}. El servicio respondió con un error HTTP${statusValue || ''}.`;
     }else if(/cors|blocked by cors policy/i.test(rawMessage)){
       userMessage = `No se pudieron cargar los datos desde ${escapedApiUrl}. Es posible que el navegador haya bloqueado la solicitud por políticas de CORS.`;
+      plainMessage = `No se pudieron cargar los datos desde ${plainApiUrl}. Es posible que el navegador haya bloqueado la solicitud por políticas de CORS.`;
     }else if(/dns|enotfound|getaddrinfo|name not resolved|err_name_not_resolved/i.test(rawMessage)){
       userMessage = `No se pudieron cargar los datos desde ${escapedApiUrl}. No se pudo resolver el dominio (error DNS).`;
+      plainMessage = `No se pudieron cargar los datos desde ${plainApiUrl}. No se pudo resolver el dominio (error DNS).`;
     }else if(err instanceof TypeError){
       userMessage = `No se pudieron cargar los datos desde ${escapedApiUrl}. No se pudo establecer la conexión con el servicio.`;
+      plainMessage = `No se pudieron cargar los datos desde ${plainApiUrl}. No se pudo establecer la conexión con el servicio.`;
     }
     const detail = rawMessage ? ` Detalle: ${escapeHtml(rawMessage)}.` : '';
-    lastFetchErrorMessage = rawMessage || userMessage;
+    lastFetchErrorMessage = rawMessage || plainMessage;
     tb.innerHTML = `<tr><td colspan="18" style="padding:16px;color:#ffb4b4">${userMessage}${detail} ${baseInstruction} URL consultada: ${escapedApiUrl}.</td></tr>`;
+    const reportDetail = rawMessage ? `${rawMessage} (URL: ${plainApiUrl})` : `URL consultada: ${plainApiUrl}`;
+    const toastMessage = rawMessage ? `No se pudieron cargar los datos: ${rawMessage}` : plainMessage;
+    reportError(plainMessage, err, { detail: reportDetail, toastMessage });
     return [];
   }
 }
@@ -1180,9 +1294,6 @@ async function addRecord(data, options = {}){
       return true;
     }
     setSyncStatus('error', { message:'Sin conexión y no se pudo guardar la operación offline.' });
-    if(typeof toast === 'function'){
-      toast('Sin conexión y no fue posible guardar localmente.', 'error');
-    }
     return false;
   }
 
@@ -1193,7 +1304,6 @@ async function addRecord(data, options = {}){
     }
     return true;
   }catch(err){
-    console.error('addRecord error', err);
     if(!opts.skipQueue && (isOffline() || isLikelyNetworkError(err))){
       const queued = await enqueueOfflineRequest('add', data);
       if(queued.success){
@@ -1208,14 +1318,12 @@ async function addRecord(data, options = {}){
         return true;
       }
       setSyncStatus('error', { message:'No se pudo guardar el registro sin conexión.' });
-      if(typeof toast === 'function'){
-        toast('No se pudo guardar el registro sin conexión.', 'error');
-      }
       return false;
     }
-    if(typeof toast === 'function'){
-      toast('Error al agregar: ' + err.message,'error');
-    }
+    const detailMessage = err && err.message ? err.message : 'Error desconocido';
+    reportError('Error al agregar el registro.', err, {
+      toastMessage: `Error al agregar: ${detailMessage}`
+    });
     return false;
   }
 }
@@ -1232,9 +1340,6 @@ async function updateRecord(data, options = {}){
       return true;
     }
     setSyncStatus('error', { message:'Sin conexión y no se pudo guardar la operación offline.' });
-    if(typeof toast === 'function'){
-      toast('Sin conexión y no fue posible guardar los cambios localmente.', 'error');
-    }
     return false;
   }
 
@@ -1245,7 +1350,6 @@ async function updateRecord(data, options = {}){
     }
     return true;
   }catch(err){
-    console.error('updateRecord error', err);
     if(!opts.skipQueue && (isOffline() || isLikelyNetworkError(err))){
       const queued = await enqueueOfflineRequest('update', data);
       if(queued.success){
@@ -1260,14 +1364,12 @@ async function updateRecord(data, options = {}){
         return true;
       }
       setSyncStatus('error', { message:'No se pudieron guardar los cambios sin conexión.' });
-      if(typeof toast === 'function'){
-        toast('No se pudieron guardar los cambios sin conexión.', 'error');
-      }
       return false;
     }
-    if(typeof toast === 'function'){
-      toast('Error al actualizar: ' + err.message,'error');
-    }
+    const detailMessage = err && err.message ? err.message : 'Error desconocido';
+    reportError('Error al actualizar el registro.', err, {
+      toastMessage: `Error al actualizar: ${detailMessage}`
+    });
     return false;
   }
 }
@@ -1352,8 +1454,11 @@ async function handleBulkUpload(file){
     populateEjecutivoFilter(cache);
     renderCurrent();
   }catch(err){
-    console.error('handleBulkUpload error', err);
-    if(statusEl) statusEl.textContent = 'Error: ' + err.message;
+    const detailMessage = err && err.message ? err.message : 'Error desconocido';
+    reportError('Error durante la importación masiva.', err, {
+      toastMessage: `Error en la importación: ${detailMessage}`
+    });
+    if(statusEl) statusEl.textContent = `Error: ${detailMessage}`;
   }
 }
 
@@ -2075,7 +2180,9 @@ if (typeof document !== 'undefined') {
         try{
           await ensureSecureConfigLoaded();
         }catch(err){
-          console.error('ensureSecureConfigLoaded error', err);
+          reportError('No se pudo cargar la configuración segura.', err, {
+            toastMessage: 'No se pudo cargar la configuración segura.'
+          });
         }
 
         const allowedUsers = getConfiguredUsers();
@@ -2105,13 +2212,12 @@ if (typeof document !== 'undefined') {
         await bootstrapApp();
         focusSearchBox();
       }catch(err){
-        console.error('Error inicializando la aplicación tras iniciar sesión', err);
+        reportError('No se pudo iniciar la aplicación tras iniciar sesión.', err, {
+          toastMessage: 'No se pudo iniciar la aplicación'
+        });
         hasAuthenticated = false;
         toggleAuthSections(false);
         focusLoginInput();
-        if(typeof toast === 'function'){
-          toast('No se pudo iniciar la aplicación', 'error');
-        }
       }finally{
         if(submitBtn) submitBtn.disabled = false;
       }
