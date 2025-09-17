@@ -237,16 +237,9 @@ function notifySecureConfigIssue(message = SECURE_CONFIG_TOKEN_ERROR_MSG, error 
    OFFLINE QUEUE
 ========================= */
 
-const OFFLINE_DB_NAME = 'seguimientoOfflineQueue';
-const OFFLINE_DB_VERSION = 1;
-const OFFLINE_STORE_NAME = 'pendingRequests';
-let offlineDbPromise = null;
+const OFFLINE_QUEUE_DISABLED_MESSAGE = 'La cola offline está deshabilitada.';
 let offlineQueueInitialized = false;
-let pendingQueueCount = 0;
 let syncState = 'idle';
-let syncStatusMessage = '';
-let syncInProgress = false;
-let syncRetryTimer = null;
 let syncBlockingActive = false;
 
 function isOffline(){
@@ -276,34 +269,12 @@ function getSyncStatusElement(){
   return document.getElementById('syncStatus');
 }
 
-function buildOfflineStatusMessage(count){
-  const pending = Number.isFinite(count) ? count : Number(count) || 0;
-  if(pending > 0){
-    return `Sin conexión a internet. ${pending} cambio${pending === 1 ? '' : 's'} pendiente${pending === 1 ? '' : 's'} por sincronizar.`;
-  }
-  return 'Sin conexión a internet. Conéctate para continuar.';
+function buildOfflineStatusMessage(){
+  return 'Sin conexión';
 }
 
 function getEffectiveSyncMessage(){
-  if(syncStatusMessage){
-    return syncStatusMessage;
-  }
-  switch(syncState){
-    case 'idle':
-      return 'Sincronizado';
-    case 'offline':
-      return buildOfflineStatusMessage(pendingQueueCount);
-    case 'queued':
-      return buildOfflineStatusMessage(pendingQueueCount);
-    case 'syncing':
-      return pendingQueueCount > 0
-        ? `Sincronizando… ${pendingQueueCount} pendiente${pendingQueueCount === 1 ? '' : 's'}.`
-        : 'Sincronizando…';
-    case 'error':
-      return 'Error de sincronización. Reintentando…';
-    default:
-      return '';
-  }
+  return syncState === 'offline' ? buildOfflineStatusMessage() : '';
 }
 
 function renderSyncStatus(){
@@ -350,7 +321,7 @@ function showSyncBlockingModal(message){
   if(!modal) return;
   const msgEl = modal.querySelector('#syncBlockingMessage');
   if(msgEl){
-    msgEl.textContent = message || 'Sin conexión a internet. Conéctate para continuar.';
+    msgEl.textContent = message || buildOfflineStatusMessage();
   }
   modal.setAttribute('aria-hidden', 'false');
   modal.classList.add('show');
@@ -372,20 +343,14 @@ function hideSyncBlockingModal(){
 
 function setSyncStatus(state, options = {}){
   syncState = state;
-  if(Object.prototype.hasOwnProperty.call(options, 'message')){
-    syncStatusMessage = options.message || '';
-  }else{
-    syncStatusMessage = '';
-  }
-  if(typeof options.pendingCount === 'number' && Number.isFinite(options.pendingCount)){
-    pendingQueueCount = Math.max(0, options.pendingCount);
-  }
   renderSyncStatus();
-  const message = getEffectiveSyncMessage();
   const blockingOption = options.blocking;
-  const shouldBlock = blockingOption === true
-    || (blockingOption === undefined && (state === 'offline' || state === 'queued') && isOffline());
-  if(shouldBlock && message){
+  const shouldBlock = state === 'offline'
+    && (blockingOption === true || (blockingOption === undefined && isOffline()));
+  if(shouldBlock){
+    const message = typeof options.message === 'string' && options.message
+      ? options.message
+      : buildOfflineStatusMessage();
     showSyncBlockingModal(message);
     syncBlockingActive = true;
   }else if(syncBlockingActive){
@@ -397,290 +362,42 @@ function setSyncStatus(state, options = {}){
   }
 }
 
-function scheduleSyncRetry(delay = 5000){
-  if(typeof setTimeout !== 'function') return;
-  if(syncRetryTimer) return;
-  syncRetryTimer = setTimeout(() => {
-    syncRetryTimer = null;
-    processOfflineQueue();
-  }, delay);
+function offlineQueueRejectedPromise(){
+  return Promise.reject(new Error(OFFLINE_QUEUE_DISABLED_MESSAGE));
 }
 
-function resetSyncRetryTimer(){
-  if(syncRetryTimer){
-    clearTimeout(syncRetryTimer);
-    syncRetryTimer = null;
-  }
+function getOfflineDb(){
+  return offlineQueueRejectedPromise();
 }
 
-async function getOfflineDb(){
-  if(typeof window === 'undefined' || !('indexedDB' in window)){
-    return null;
-  }
-  if(offlineDbPromise){
-    return offlineDbPromise;
-  }
-  offlineDbPromise = new Promise(resolve => {
-    try{
-      const request = window.indexedDB.open(OFFLINE_DB_NAME, OFFLINE_DB_VERSION);
-      request.onerror = () => {
-        reportError('No se pudo abrir la base de datos offline.', request.error);
-        resolve(null);
-      };
-      request.onupgradeneeded = event => {
-        const db = event.target.result;
-        if(!db.objectStoreNames.contains(OFFLINE_STORE_NAME)){
-          db.createObjectStore(OFFLINE_STORE_NAME, { keyPath:'id', autoIncrement:true });
-        }
-      };
-      request.onsuccess = () => {
-        const db = request.result;
-        db.onversionchange = () => {
-          try{ db.close(); }
-          catch(_err){ /* ignore close errors */ }
-          offlineDbPromise = null;
-        };
-        db.onclose = () => {
-          offlineDbPromise = null;
-        };
-        resolve(db);
-      };
-    }catch(err){
-      reportError('No se pudo inicializar la base de datos offline.', err);
-      resolve(null);
-    }
-  });
-  return offlineDbPromise;
+function countPendingRequests(){
+  return offlineQueueRejectedPromise();
 }
 
-async function countPendingRequests(dbInstance){
-  const db = dbInstance || await getOfflineDb();
-  if(!db) return 0;
-  return new Promise((resolve, reject) => {
-    try{
-      const tx = db.transaction(OFFLINE_STORE_NAME, 'readonly');
-      const store = tx.objectStore(OFFLINE_STORE_NAME);
-      const req = store.count();
-      req.onsuccess = () => resolve(req.result || 0);
-      req.onerror = () => reject(req.error);
-    }catch(err){
-      reject(err);
-    }
-  }).catch(err => {
-    reportError('No se pudieron contar las operaciones pendientes sin conexión.', err);
-    return 0;
-  });
+function enqueueOfflineRequest(){
+  return offlineQueueRejectedPromise();
 }
 
-async function enqueueOfflineRequest(type, data){
-  const db = await getOfflineDb();
-  if(!db){
-    return { success:false, error:new Error('IndexedDB no disponible') };
-  }
-  const payload = JSON.parse(JSON.stringify(data));
-  try{
-    await new Promise((resolve, reject) => {
-      try{
-        const tx = db.transaction(OFFLINE_STORE_NAME, 'readwrite');
-        tx.oncomplete = resolve;
-        tx.onerror = () => reject(tx.error);
-        tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
-        const store = tx.objectStore(OFFLINE_STORE_NAME);
-        store.add({ type, payload, createdAt: Date.now() });
-      }catch(err){
-        reject(err);
-      }
-    });
-    const count = await countPendingRequests(db);
-    pendingQueueCount = count;
-    return { success:true, count };
-  }catch(err){
-    reportError('No se pudo guardar la operación sin conexión.', err, {
-      toastMessage: 'No se pudo guardar la operación sin conexión.'
-    });
-    return { success:false, error:err };
-  }
+function getAllOfflineRequests(){
+  return offlineQueueRejectedPromise();
 }
 
-async function getAllOfflineRequests(dbInstance){
-  const db = dbInstance || await getOfflineDb();
-  if(!db) return [];
-  return new Promise((resolve, reject) => {
-    try{
-      const tx = db.transaction(OFFLINE_STORE_NAME, 'readonly');
-      const store = tx.objectStore(OFFLINE_STORE_NAME);
-      const req = store.getAll();
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = () => reject(req.error);
-    }catch(err){
-      reject(err);
-    }
-  }).catch(err => {
-    reportError('No se pudieron leer las operaciones pendientes sin conexión.', err);
-    return [];
-  });
+function deleteOfflineRequest(){
+  return offlineQueueRejectedPromise();
 }
 
-async function deleteOfflineRequest(id, dbInstance){
-  const db = dbInstance || await getOfflineDb();
-  if(!db) return false;
-  try{
-    await new Promise((resolve, reject) => {
-      try{
-        const tx = db.transaction(OFFLINE_STORE_NAME, 'readwrite');
-        tx.oncomplete = resolve;
-        tx.onerror = () => reject(tx.error);
-        tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
-        const store = tx.objectStore(OFFLINE_STORE_NAME);
-        store.delete(id);
-      }catch(err){
-        reject(err);
-      }
-    });
-    return true;
-  }catch(err){
-    reportError('No se pudo eliminar una operación pendiente sin conexión.', err);
-    return false;
-  }
-}
-
-async function processOfflineQueue(){
-  if(syncInProgress) return;
-  resetSyncRetryTimer();
-  if(isOffline()){
-    setSyncStatus(pendingQueueCount > 0 ? 'queued' : 'offline', { pendingCount: pendingQueueCount });
-    return;
-  }
-
-  const db = await getOfflineDb();
-  if(!db){
-    setSyncStatus('idle', { pendingCount: pendingQueueCount });
-    return;
-  }
-
-  let pending;
-  try{
-    pending = await getAllOfflineRequests(db);
-  }catch(err){
-    reportError('No se pudieron leer las operaciones pendientes sin conexión.', err);
-    setSyncStatus('error', { message:'No se pudo leer la cola offline.' });
-    scheduleSyncRetry();
-    return;
-  }
-
-  pendingQueueCount = Array.isArray(pending) ? pending.length : 0;
-  if(!pendingQueueCount){
-    setSyncStatus(isOffline() ? 'offline' : 'idle', { pendingCount: 0 });
-    return;
-  }
-
-  syncInProgress = true;
-  setSyncStatus('syncing', { pendingCount: pendingQueueCount });
-
-  try{
-    let remaining = pendingQueueCount;
-    for(const entry of pending){
-      const action = entry?.type === 'update' ? 'update' : 'add';
-      try{
-        await sendRecordRequest(action, entry?.payload || {});
-        await deleteOfflineRequest(entry?.id, db);
-        remaining = Math.max(0, remaining - 1);
-        pendingQueueCount = remaining;
-        setSyncStatus(remaining > 0 ? 'syncing' : 'syncing', { pendingCount: remaining });
-      }catch(err){
-        const isNetworkIssue = isOffline() || isLikelyNetworkError(err);
-        const errorMessage = err && err.message ? err.message : 'Error desconocido';
-        const syncMessage = isNetworkIssue
-          ? 'Sin conexión con el servicio. Reintentaremos la sincronización automáticamente.'
-          : `Error de sincronización: ${errorMessage}`;
-        const reportMessage = isNetworkIssue
-          ? `Error de sincronización: ${errorMessage}`
-          : syncMessage;
-
-        reportError(reportMessage, err, { toastMessage: isNetworkIssue ? false : syncMessage });
-
-        pendingQueueCount = await countPendingRequests(db);
-
-        if(isNetworkIssue){
-          const state = isOffline()
-            ? (pendingQueueCount > 0 ? 'queued' : 'offline')
-            : 'queued';
-          setSyncStatus(state, {
-            pendingCount: pendingQueueCount,
-            message: 'Sin conexión con el servicio. Reintentaremos la sincronización automáticamente.'
-          });
-          scheduleSyncRetry();
-          return;
-        }
-
-        setSyncStatus('error', {
-          message: `Error de sincronización: ${errorMessage}`,
-          pendingCount: pendingQueueCount
-        });
-        scheduleSyncRetry();
-        return;
-      }
-    }
-  }finally{
-    syncInProgress = false;
-  }
-
-  pendingQueueCount = await countPendingRequests(db);
-  if(pendingQueueCount > 0){
-    setSyncStatus('syncing', { pendingCount: pendingQueueCount });
-    scheduleSyncRetry();
-    return;
-  }
-
-  setSyncStatus('idle', { pendingCount: 0 });
-  if(typeof toast === 'function'){
-    toast('Cambios sincronizados', 'success');
-  }
+function processOfflineQueue(){
+  return offlineQueueRejectedPromise();
 }
 
 async function initializeOfflineQueue(){
   if(offlineQueueInitialized) return;
   offlineQueueInitialized = true;
 
-  const db = await getOfflineDb();
-  if(db){
-    pendingQueueCount = await countPendingRequests(db);
-  }else{
-    pendingQueueCount = 0;
-  }
-
   if(isOffline()){
-    const state = pendingQueueCount > 0 ? 'queued' : 'offline';
-    setSyncStatus(state, {
-      pendingCount: pendingQueueCount,
-      message: buildOfflineStatusMessage(pendingQueueCount)
-    });
-  }else if(pendingQueueCount > 0){
-    setSyncStatus('syncing', { pendingCount: pendingQueueCount });
+    setSyncStatus('offline', { blocking:true });
   }else{
-    setSyncStatus('idle', { pendingCount: 0 });
-  }
-
-  if(typeof window !== 'undefined'){
-    window.addEventListener('online', () => {
-      if(pendingQueueCount > 0){
-        setSyncStatus('syncing', { pendingCount: pendingQueueCount });
-      }else{
-        setSyncStatus('idle', { pendingCount: 0 });
-      }
-      processOfflineQueue();
-    });
-    window.addEventListener('offline', () => {
-      const state = pendingQueueCount > 0 ? 'queued' : 'offline';
-      setSyncStatus(state, {
-        pendingCount: pendingQueueCount,
-        message: buildOfflineStatusMessage(pendingQueueCount)
-      });
-    });
-  }
-
-  if(!isOffline()){
-    processOfflineQueue();
+    setSyncStatus('idle');
   }
 }
 
@@ -1008,8 +725,6 @@ async function bootstrapApp(){
     }
 
     if(mainEl) mainEl.style.display = '';
-
-    await initializeOfflineQueue();
 
     if(!mainInitialized){
       main();
