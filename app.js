@@ -1133,6 +1133,10 @@ async function sendRecordRequest(action, data){
   if(!res.ok || json.error){
     throw new Error(json.error || `HTTP ${res.status}`);
   }
+
+  // Clear any stale offline indicators once a request succeeds.
+  setSyncStatus('idle');
+
   return json;
 }
 
