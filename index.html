@@ -95,6 +95,7 @@
         </div>
 
         <div class="controls__actions">
+          <button id="addRecordBtn" class="btn" type="button">Nuevo registro</button>
           <button id="refreshBtn" class="btn">Actualizar</button>
           <input type="file" id="bulkUpload" accept=".xlsx,.csv"/>
           <button id="bulkUploadBtn" class="btn" type="button">Carga masiva</button>
@@ -140,6 +141,42 @@
       </section>
     </div>
   </main>
+
+  <div id="addRecordModal" class="modal">
+    <div class="modal-content modal-content--form">
+      <h2>Agregar registro</h2>
+      <form id="addRecordForm">
+        <label>Trip
+          <input type="text" name="trip" inputmode="numeric" pattern="\d+" autocomplete="off" required />
+        </label>
+        <label>Ejecutivo
+          <input type="text" name="ejecutivo" autocomplete="off" required />
+        </label>
+        <label>Caja
+          <input type="text" name="caja" autocomplete="off" required />
+        </label>
+        <label>Referencia
+          <input type="text" name="referencia" autocomplete="off" required />
+        </label>
+        <label>Cliente
+          <input type="text" name="cliente" autocomplete="off" required />
+        </label>
+        <label>Destino
+          <input type="text" name="destino" autocomplete="off" required />
+        </label>
+        <label>Estatus
+          <select name="estatus" required></select>
+        </label>
+        <label>Cita carga
+          <input type="datetime-local" name="citaCarga" required lang="es-MX" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="cancelAddRecord" class="btn-mini">Cancelar</button>
+          <button type="submit" class="btn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div id="arrivalModal" class="modal">
     <div class="modal-content">
