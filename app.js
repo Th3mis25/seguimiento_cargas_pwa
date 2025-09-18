@@ -241,12 +241,6 @@ function notifySecureConfigIssue(message = SECURE_CONFIG_TOKEN_ERROR_MSG, error 
   reportError(finalMessage, error, { toastType:'error', toastMessage: finalMessage });
 }
 
-/* =========================
-   OFFLINE QUEUE
-========================= */
-
-const OFFLINE_QUEUE_DISABLED_MESSAGE = 'La cola offline está deshabilitada.';
-let offlineQueueInitialized = false;
 let syncState = 'idle';
 let syncBlockingActive = false;
 
@@ -439,45 +433,6 @@ function setSyncStatus(state, options = {}){
   }else{
     hideSyncBlockingModal();
     syncBlockingActive = false;
-  }
-}
-
-function offlineQueueRejectedPromise(){
-  return Promise.reject(new Error(OFFLINE_QUEUE_DISABLED_MESSAGE));
-}
-
-function getOfflineDb(){
-  return offlineQueueRejectedPromise();
-}
-
-function countPendingRequests(){
-  return offlineQueueRejectedPromise();
-}
-
-function enqueueOfflineRequest(){
-  return offlineQueueRejectedPromise();
-}
-
-function getAllOfflineRequests(){
-  return offlineQueueRejectedPromise();
-}
-
-function deleteOfflineRequest(){
-  return offlineQueueRejectedPromise();
-}
-
-function processOfflineQueue(){
-  return offlineQueueRejectedPromise();
-}
-
-async function initializeOfflineQueue(){
-  if(offlineQueueInitialized) return;
-  offlineQueueInitialized = true;
-
-  if(isOffline()){
-    setSyncStatus('offline', { blocking:true });
-  }else{
-    setSyncStatus('idle');
   }
 }
 
@@ -1944,15 +1899,6 @@ function setActiveTopBtn(btn){
     btn.classList.add('active');
     btn.setAttribute('aria-current', 'page');
   }
-}
-
-function setDefaultDate(){
-  const now = new Date();
-  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString()
-    .split('T')[0];
-  $('#startDate').value = localDate;
-  $('#endDate').value = localDate;
 }
 
 function renderGeneral(rows){
