@@ -1276,13 +1276,15 @@
 
       const startTime = isValidDate(normalizedDateRange.start) ? normalizedDateRange.start.getTime() : null;
       const endTime = isValidDate(normalizedDateRange.end) ? normalizedDateRange.end.getTime() : null;
-      const hasDateRange = (startTime != null || endTime != null) && dateColumnIndices.length > 0;
+      const citaCargaIndex = typeof columnMap.citaCarga === 'number' && columnMap.citaCarga >= 0 ? columnMap.citaCarga : null;
+      const dateFilterIndices = citaCargaIndex != null ? [citaCargaIndex] : [];
+      const hasDateRange = (startTime != null || endTime != null) && dateFilterIndices.length > 0;
 
       if (hasDateRange) {
         rowsToRender = rowsToRender.filter(function (entry) {
           const row = Array.isArray(entry.row) ? entry.row : [];
-          for (let i = 0; i < dateColumnIndices.length; i++) {
-            const columnIndex = dateColumnIndices[i];
+          for (let i = 0; i < dateFilterIndices.length; i++) {
+            const columnIndex = dateFilterIndices[i];
             if (columnIndex >= row.length) {
               continue;
             }
