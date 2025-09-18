@@ -38,6 +38,47 @@
             data-filter-search
           />
         </label>
+        <div class="sheet-grid__filter-field sheet-grid__filter-field--date" data-date-filter>
+          <span class="sheet-grid__filter-label">Fecha:</span>
+          <div class="date-filter">
+            <button type="button" class="date-filter__nav" data-action="date-prev" aria-label="Rango anterior">
+              <span aria-hidden="true">&#x2039;</span>
+            </button>
+            <button
+              type="button"
+              class="date-filter__toggle"
+              data-action="date-toggle"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+            >
+              <svg class="date-filter__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  d="M7 2a1 1 0 0 0-1 1v1H5a3 3 0 0 0-3 3v11a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3h-1V3a1 1 0 1 0-2 0v1H8V3a1 1 0 0 0-1-1Zm12 6H5v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
+                  fill="currentColor"
+                ></path>
+              </svg>
+              <span class="date-filter__label" data-date-label>Hoy</span>
+            </button>
+            <button type="button" class="date-filter__nav" data-action="date-next" aria-label="Rango siguiente">
+              <span aria-hidden="true">&#x203A;</span>
+            </button>
+          </div>
+          <div class="date-filter__popover" data-date-popover hidden>
+            <div class="date-filter__group">
+              <label>
+                <span>Desde</span>
+                <input type="date" data-date-start />
+              </label>
+              <label>
+                <span>Hasta</span>
+                <input type="date" data-date-end />
+              </label>
+            </div>
+            <div class="date-filter__actions">
+              <button type="button" class="date-filter__clear" data-action="date-clear">Limpiar</button>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="sheet-grid__viewport" role="region" aria-live="polite" aria-label="Tabla de seguimiento">
         <table class="sheet-table">
