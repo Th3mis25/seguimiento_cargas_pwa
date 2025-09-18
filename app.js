@@ -854,10 +854,28 @@
         });
       }
 
-      if (dateColumnIndices.length > 0 && rowsToRender.length > 1) {
+      const sortColumnIndices = (function () {
+        if (dateColumnIndices.length === 0) {
+          return [];
+        }
+        const indices = dateColumnIndices.slice();
+        if (activeView && activeView.id === 'daily-loads') {
+          const citaCargaIndex = columnMap.citaCarga;
+          if (typeof citaCargaIndex === 'number' && citaCargaIndex >= 0) {
+            const filtered = indices.filter(function (value) {
+              return value !== citaCargaIndex;
+            });
+            filtered.unshift(citaCargaIndex);
+            return filtered;
+          }
+        }
+        return indices;
+      })();
+
+      if (sortColumnIndices.length > 0 && rowsToRender.length > 1) {
         const sortableEntries = rowsToRender.map(function (entry) {
           const row = Array.isArray(entry.row) ? entry.row : [];
-          const sortValues = dateColumnIndices.map(function (columnIndex) {
+          const sortValues = sortColumnIndices.map(function (columnIndex) {
             if (columnIndex >= row.length) {
               return Number.POSITIVE_INFINITY;
             }
@@ -870,7 +888,7 @@
         });
 
         sortableEntries.sort(function (a, b) {
-          for (let i = 0; i < dateColumnIndices.length; i++) {
+          for (let i = 0; i < sortColumnIndices.length; i++) {
             const aValue = a.sortValues[i];
             const bValue = b.sortValues[i];
             if (aValue < bValue) {
