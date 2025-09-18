@@ -163,6 +163,7 @@ body {
   padding: 12px 16px;
   border-bottom: 1px solid var(--sheet-border);
   background: var(--sheet-header-bg);
+  flex-wrap: wrap;
 }
 
 .sheet-grid__filter-field {
@@ -173,6 +174,12 @@ body {
   max-width: 360px;
   font-size: 0.9rem;
   color: var(--sheet-text-soft);
+}
+
+.sheet-grid__filter-field--date {
+  max-width: none;
+  width: auto;
+  position: relative;
 }
 
 .sheet-grid__filter-label {
@@ -188,6 +195,138 @@ body {
   color: var(--sheet-text);
   background: #fff;
   transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.date-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-filter__nav,
+.date-filter__toggle {
+  border: 1px solid var(--sheet-border);
+  background: #fff;
+  color: var(--sheet-text);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), box-shadow var(--transition), color var(--transition);
+}
+
+.date-filter__nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.date-filter__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+}
+
+.date-filter__icon {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+
+.date-filter__label {
+  color: var(--sheet-text);
+}
+
+.date-filter__nav:hover,
+.date-filter__toggle:hover {
+  border-color: rgba(26, 115, 232, 0.35);
+  color: var(--accent);
+}
+
+.date-filter__nav:focus,
+.date-filter__toggle:focus {
+  outline: none;
+  border-color: rgba(26, 115, 232, 0.6);
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.25);
+}
+
+.sheet-grid__filter-field--date.is-open .date-filter__toggle,
+.sheet-grid__filter-field--date[data-has-range='true'] .date-filter__toggle {
+  border-color: rgba(26, 115, 232, 0.5);
+}
+
+.date-filter__popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  padding: 16px;
+  min-width: 260px;
+  border-radius: 12px;
+  border: 1px solid var(--sheet-border);
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(60, 64, 67, 0.18);
+  z-index: 20;
+}
+
+.date-filter__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.date-filter__group label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--sheet-text-soft);
+  min-width: 120px;
+}
+
+.date-filter__group input[type='date'] {
+  flex: initial;
+  width: 100%;
+  border: 1px solid var(--sheet-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  color: var(--sheet-text);
+  background: #fff;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.date-filter__group input[type='date']:focus {
+  border-color: rgba(26, 115, 232, 0.6);
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+  outline: none;
+}
+
+.date-filter__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.date-filter__clear {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.date-filter__clear:hover {
+  color: var(--accent-hover);
 }
 
 .sheet-grid__filter-field input:focus {

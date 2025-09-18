@@ -26,6 +26,7 @@
   ];
   const DATE_FIELD_KEYS = ['citaCarga', 'llegadaCarga', 'citaEntrega', 'llegadaEntrega'];
   const DATE_FIELD_SET = new Set(DATE_FIELD_KEYS);
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const COLUMN_LABEL_TO_KEY = COLUMN_CONFIG.reduce(function (acc, column) {
     if (column && column.label) {
       acc[String(column.label).trim().toLowerCase()] = column.key;
@@ -245,6 +246,168 @@
       'T' + pad2(hour) +
       ':' + pad2(minute)
     );
+  }
+
+  function isValidDate(value) {
+    return value instanceof Date && !isNaN(value.getTime());
+  }
+
+  function startOfDay(value) {
+    if (!isValidDate(value)) {
+      return null;
+    }
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  function endOfDay(value) {
+    if (!isValidDate(value)) {
+      return null;
+    }
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate(), 23, 59, 59, 999);
+  }
+
+  function isSameDay(a, b) {
+    if (!isValidDate(a) || !isValidDate(b)) {
+      return false;
+    }
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function normalizeDateRange(range) {
+    const normalized = { start: null, end: null };
+
+    if (range && range.start != null) {
+      let startDate = range.start;
+      if (!isValidDate(startDate)) {
+        if (typeof startDate === 'string' && startDate.trim()) {
+          startDate = parseDateValue(startDate);
+        } else if (typeof startDate === 'number' && Number.isFinite(startDate)) {
+          startDate = new Date(startDate);
+        } else {
+          startDate = null;
+        }
+      }
+      if (isValidDate(startDate)) {
+        normalized.start = startOfDay(startDate);
+      }
+    }
+
+    if (range && range.end != null) {
+      let endDate = range.end;
+      if (!isValidDate(endDate)) {
+        if (typeof endDate === 'string' && endDate.trim()) {
+          endDate = parseDateValue(endDate);
+        } else if (typeof endDate === 'number' && Number.isFinite(endDate)) {
+          endDate = new Date(endDate);
+        } else {
+          endDate = null;
+        }
+      }
+      if (isValidDate(endDate)) {
+        normalized.end = endOfDay(endDate);
+      }
+    }
+
+    if (normalized.start && normalized.end && normalized.start.getTime() > normalized.end.getTime()) {
+      const originalStart = normalized.start;
+      const originalEnd = normalized.end;
+      normalized.start = startOfDay(originalEnd);
+      normalized.end = endOfDay(originalStart);
+    }
+
+    return normalized;
+  }
+
+  function areRangesEqual(a, b) {
+    const aStart = isValidDate(a && a.start) ? a.start.getTime() : null;
+    const bStart = isValidDate(b && b.start) ? b.start.getTime() : null;
+    const aEnd = isValidDate(a && a.end) ? a.end.getTime() : null;
+    const bEnd = isValidDate(b && b.end) ? b.end.getTime() : null;
+    return aStart === bStart && aEnd === bEnd;
+  }
+
+  function formatDateOnly(date, locale, includeYear) {
+    if (!isValidDate(date)) {
+      return '';
+    }
+    const options = includeYear
+      ? { day: '2-digit', month: 'short', year: 'numeric' }
+      : { day: '2-digit', month: 'short' };
+    const formatter = new Intl.DateTimeFormat(resolveLocale(locale), options);
+    return formatter.format(date);
+  }
+
+  function formatDateRangeLabel(range, locale) {
+    const normalized = normalizeDateRange(range || {});
+    const start = normalized.start;
+    const end = normalized.end;
+
+    if (!start && !end) {
+      return 'Todos';
+    }
+
+    const today = new Date();
+    if (start && end && isSameDay(start, end) && isSameDay(start, today)) {
+      return 'Hoy';
+    }
+
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+    if (start && end && isSameDay(start, end) && isSameDay(start, yesterday)) {
+      return 'Ayer';
+    }
+
+    if (start && end && isSameDay(start, end)) {
+      return formatDateOnly(start, locale, true);
+    }
+
+    if (start && end) {
+      const sameYear = start.getFullYear() === end.getFullYear();
+      const startLabel = formatDateOnly(start, locale, !sameYear);
+      const endLabel = formatDateOnly(end, locale, true);
+      return `${startLabel} – ${endLabel}`;
+    }
+
+    if (start) {
+      return `Desde ${formatDateOnly(start, locale, true)}`;
+    }
+
+    if (end) {
+      return `Hasta ${formatDateOnly(end, locale, true)}`;
+    }
+
+    return 'Todos';
+  }
+
+  function dateToInputDateValue(date) {
+    if (!isValidDate(date)) {
+      return '';
+    }
+    const year = date.getFullYear();
+    const month = pad2(date.getMonth() + 1);
+    const day = pad2(date.getDate());
+    return `${year}-${month}-${day}`;
+  }
+
+  function parseInputDateValue(value) {
+    if (!value) {
+      return null;
+    }
+    const parts = parseDateParts(value);
+    if (!parts) {
+      return null;
+    }
+    const year = Number(parts.year);
+    const month = Number(parts.month);
+    const day = Number(parts.day);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+      return null;
+    }
+    return new Date(year, month - 1, day);
+  }
+
+  function createTodayRange() {
+    const today = new Date();
+    return normalizeDateRange({ start: today, end: today });
   }
 
   function toApiDateValue(value) {
@@ -621,6 +784,15 @@
       logoutButton: doc.querySelector('[data-action="logout"]'),
       changeTokenButton: doc.querySelector('[data-action="change-token"]'),
       filterSearchInput: doc.querySelector('[data-filter-search]'),
+      dateFilter: doc.querySelector('[data-date-filter]'),
+      dateLabel: doc.querySelector('[data-date-label]'),
+      datePopover: doc.querySelector('[data-date-popover]'),
+      dateStartInput: doc.querySelector('[data-date-start]'),
+      dateEndInput: doc.querySelector('[data-date-end]'),
+      datePrevButton: doc.querySelector('[data-action="date-prev"]'),
+      dateNextButton: doc.querySelector('[data-action="date-next"]'),
+      dateToggleButton: doc.querySelector('[data-action="date-toggle"]'),
+      dateClearButton: doc.querySelector('[data-action="date-clear"]'),
       lastUpdated: doc.querySelector('[data-last-updated]'),
       currentUser: doc.querySelector('[data-current-user]'),
       loginModal: doc.querySelector('[data-login-modal]'),
@@ -649,13 +821,19 @@
       editingRecord: null,
       currentViewId: TABLE_VIEWS[0] ? TABLE_VIEWS[0].id : 'all',
       filters: {
-        searchText: ''
-      }
+        searchText: '',
+        dateRange: createTodayRange()
+      },
+      isDatePopoverOpen: false
     };
+
+    let wasDatePopoverOpen = false;
 
     if (refs.filterSearchInput) {
       refs.filterSearchInput.value = state.filters.searchText;
     }
+
+    renderDateFilter();
 
     const EDIT_MODAL_CONTENT = {
       edit: {
@@ -722,11 +900,167 @@
       });
     }
 
+    function syncDateInputsWithState(range) {
+      const normalized = normalizeDateRange(range || {});
+      if (refs.dateStartInput) {
+        refs.dateStartInput.value = dateToInputDateValue(normalized.start);
+      }
+      if (refs.dateEndInput) {
+        refs.dateEndInput.value = dateToInputDateValue(normalized.end);
+      }
+    }
+
+    function renderDateFilter() {
+      const normalized = normalizeDateRange(state.filters.dateRange || {});
+      state.filters.dateRange = normalized;
+      const hasRange = isValidDate(normalized.start) || isValidDate(normalized.end);
+
+      if (refs.dateLabel) {
+        refs.dateLabel.textContent = formatDateRangeLabel(normalized, state.locale);
+      }
+
+      if (refs.dateFilter) {
+        if (state.isDatePopoverOpen) {
+          refs.dateFilter.classList.add('is-open');
+        } else {
+          refs.dateFilter.classList.remove('is-open');
+        }
+        refs.dateFilter.setAttribute('data-has-range', hasRange ? 'true' : 'false');
+      }
+
+      if (refs.datePopover) {
+        refs.datePopover.hidden = !state.isDatePopoverOpen;
+      }
+
+      if (refs.dateToggleButton) {
+        refs.dateToggleButton.setAttribute('aria-expanded', state.isDatePopoverOpen ? 'true' : 'false');
+      }
+
+      syncDateInputsWithState(normalized);
+
+      if (state.isDatePopoverOpen && !wasDatePopoverOpen && refs.dateStartInput) {
+        refs.dateStartInput.focus();
+      }
+
+      wasDatePopoverOpen = state.isDatePopoverOpen;
+    }
+
+    function openDatePopover() {
+      if (state.isDatePopoverOpen) {
+        return;
+      }
+      state.isDatePopoverOpen = true;
+      renderDateFilter();
+    }
+
+    function closeDatePopover() {
+      if (!state.isDatePopoverOpen) {
+        return;
+      }
+      state.isDatePopoverOpen = false;
+      renderDateFilter();
+    }
+
+    function toggleDatePopover() {
+      if (state.isDatePopoverOpen) {
+        closeDatePopover();
+      } else {
+        openDatePopover();
+      }
+    }
+
+    function applyDateRange(range) {
+      const currentRange = normalizeDateRange(state.filters.dateRange || {});
+      const nextRange = normalizeDateRange(range || {});
+      if (areRangesEqual(currentRange, nextRange)) {
+        state.filters.dateRange = currentRange;
+        renderDateFilter();
+        return;
+      }
+      state.filters.dateRange = nextRange;
+      renderDateFilter();
+      renderTable();
+    }
+
+    function shiftCurrentDateRange(days) {
+      const normalized = normalizeDateRange(state.filters.dateRange || {});
+      const hasRange = isValidDate(normalized.start) || isValidDate(normalized.end);
+      const baseRange = hasRange ? normalized : createTodayRange();
+      const delta = Number(days) * MS_PER_DAY;
+      const nextStart = isValidDate(baseRange.start) ? new Date(baseRange.start.getTime() + delta) : null;
+      const nextEnd = isValidDate(baseRange.end) ? new Date(baseRange.end.getTime() + delta) : null;
+      applyDateRange({ start: nextStart, end: nextEnd });
+    }
+
+    function handleDateInputChange() {
+      const startValue = refs.dateStartInput ? refs.dateStartInput.value : '';
+      const endValue = refs.dateEndInput ? refs.dateEndInput.value : '';
+      const startDate = parseInputDateValue(startValue);
+      const endDate = parseInputDateValue(endValue);
+      applyDateRange({ start: startDate, end: endDate });
+    }
+
+    function handleDatePrev(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      shiftCurrentDateRange(-1);
+    }
+
+    function handleDateNext(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      shiftCurrentDateRange(1);
+    }
+
+    function handleDateToggle(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      toggleDatePopover();
+    }
+
+    function handleDateClear(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      applyDateRange({ start: null, end: null });
+      closeDatePopover();
+    }
+
+    function handleDocumentClick(event) {
+      if (!state.isDatePopoverOpen) {
+        return;
+      }
+      const container = refs.dateFilter;
+      if (!container) {
+        return;
+      }
+      const target = event && event.target ? event.target : null;
+      if (target && container.contains(target)) {
+        return;
+      }
+      closeDatePopover();
+    }
+
+    function handleDocumentKeydown(event) {
+      if (!state.isDatePopoverOpen) {
+        return;
+      }
+      if (event && (event.key === 'Escape' || event.key === 'Esc')) {
+        closeDatePopover();
+      }
+    }
+
     function resetFilters() {
       state.filters.searchText = '';
+      state.filters.dateRange = createTodayRange();
+      state.isDatePopoverOpen = false;
       if (refs.filterSearchInput) {
         refs.filterSearchInput.value = '';
       }
+      renderDateFilter();
     }
 
     function getActiveView() {
@@ -930,6 +1264,42 @@
           } catch (err) {
             return false;
           }
+        });
+      }
+
+      const normalizedDateRange = normalizeDateRange(state.filters.dateRange || {});
+      const rangeChanged = !areRangesEqual(state.filters.dateRange || {}, normalizedDateRange);
+      state.filters.dateRange = normalizedDateRange;
+      if (rangeChanged) {
+        renderDateFilter();
+      }
+
+      const startTime = isValidDate(normalizedDateRange.start) ? normalizedDateRange.start.getTime() : null;
+      const endTime = isValidDate(normalizedDateRange.end) ? normalizedDateRange.end.getTime() : null;
+      const hasDateRange = (startTime != null || endTime != null) && dateColumnIndices.length > 0;
+
+      if (hasDateRange) {
+        rowsToRender = rowsToRender.filter(function (entry) {
+          const row = Array.isArray(entry.row) ? entry.row : [];
+          for (let i = 0; i < dateColumnIndices.length; i++) {
+            const columnIndex = dateColumnIndices[i];
+            if (columnIndex >= row.length) {
+              continue;
+            }
+            const cellValue = row[columnIndex];
+            if (cellValue == null || cellValue === '') {
+              continue;
+            }
+            const cellDate = parseDateValue(cellValue);
+            if (!cellDate) {
+              continue;
+            }
+            const cellTime = cellDate.getTime();
+            if ((startTime == null || cellTime >= startTime) && (endTime == null || cellTime <= endTime)) {
+              return true;
+            }
+          }
+          return false;
         });
       }
 
@@ -1570,9 +1940,30 @@
     if (refs.filterSearchInput) {
       refs.filterSearchInput.addEventListener('input', handleFilterSearchInput);
     }
+    if (refs.dateToggleButton) {
+      refs.dateToggleButton.addEventListener('click', handleDateToggle);
+    }
+    if (refs.datePrevButton) {
+      refs.datePrevButton.addEventListener('click', handleDatePrev);
+    }
+    if (refs.dateNextButton) {
+      refs.dateNextButton.addEventListener('click', handleDateNext);
+    }
+    if (refs.dateStartInput) {
+      refs.dateStartInput.addEventListener('change', handleDateInputChange);
+    }
+    if (refs.dateEndInput) {
+      refs.dateEndInput.addEventListener('change', handleDateInputChange);
+    }
+    if (refs.dateClearButton) {
+      refs.dateClearButton.addEventListener('click', handleDateClear);
+    }
     if (refs.viewMenu) {
       refs.viewMenu.addEventListener('click', handleViewMenuClick);
     }
+
+    doc.addEventListener('click', handleDocumentClick);
+    doc.addEventListener('keydown', handleDocumentKeydown);
 
     renderViewMenu();
 
