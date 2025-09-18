@@ -1314,17 +1314,14 @@ async function addRecord(data, options = {}){
           const confirmation = await confirmRecordAdditionViaSync(data);
           if(confirmation.confirmed){
             addRecord.lastConfirmedData = confirmation.refreshed;
+            const confirmationMessage = 'Registro agregado. Se validó sincronizando los datos.';
             if(!opts.silent && typeof toast === 'function'){
-              toast('Registro agregado. Se validó sincronizando los datos.');
+              toast(confirmationMessage);
             }
-            reportError(
-              'El servicio no confirmó la respuesta al agregar el registro, pero se validó al volver a sincronizar.',
-              err,
-              {
-                toastMessage:false,
-                detail:'Se detectó un error de red al leer la respuesta. El registro se confirmó al actualizar los datos desde el servicio.'
-              }
-            );
+            if(typeof console !== 'undefined' && typeof console.info === 'function'){
+              console.info(confirmationMessage);
+              console.info('El servicio no confirmó la respuesta inicial, pero la sincronización posterior confirmó el registro.');
+            }
             return true;
           }
         }catch(confirmationError){
@@ -2202,6 +2199,10 @@ async function main(){
       if(!success){
         return;
       }
+
+      const refreshed = Array.isArray(addRecord.lastConfirmedData)
+        ? addRecord.lastConfirmedData
+        : await fetchData();
 
       if(lastFetchUnauthorized){
         return;
