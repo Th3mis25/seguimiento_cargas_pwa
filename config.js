@@ -18,7 +18,7 @@
   };
 
   // URL predeterminada del Web App activo de Apps Script.
-  const DEFAULT_API_BASE = 'https://script.google.com/macros/s/AKfycbwzW0yFCoI_wVFhpkGXXtrnArRl8p9hlWgtVexGxGl-EWULuEZq-QdyIDPGY5e4M-L3/exec';
+  const DEFAULT_API_BASE = 'https://script.google.com/macros/s/AKfycbx0INv5e9-V2QKXtBvfbpLWCq_4lo66RXIsHfkafeUE1BvRXDxj-catjPxEtQo79Vin/exec';
 
   const apiBase = readEnvValue('API_BASE') || DEFAULT_API_BASE;
   const inlineToken = readEnvValue('API_TOKEN');
