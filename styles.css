@@ -30,9 +30,9 @@ body {
 }
 
 .sheet-app {
-  width: min(1440px, 100%);
+  width: 100%;
   margin: 0 auto;
-  padding: 32px clamp(16px, 5vw, 48px) 48px;
+  padding: 32px clamp(16px, 3vw, 40px) 48px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -154,7 +154,6 @@ body {
 
 .sheet-table {
   width: 100%;
-  min-width: 1280px;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.9rem;
@@ -178,22 +177,6 @@ body {
   font-weight: 600;
   color: var(--sheet-text);
   z-index: 2;
-}
-
-.sheet-table thead th:first-child {
-  left: 0;
-  z-index: 3;
-}
-
-.sheet-table tbody th {
-  background: var(--sheet-header-bg);
-  font-weight: 500;
-  text-align: right;
-  color: var(--sheet-text-soft);
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  min-width: 56px;
 }
 
 .sheet-table tbody tr:nth-child(even) td {
