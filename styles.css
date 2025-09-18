@@ -666,6 +666,30 @@ body:not(.is-authenticated) .login-form{
 .action-bar{
   display:flex; flex-wrap:nowrap; gap:8px; align-items:center;
 }
+.trip-button{
+  background:none;
+  border:none;
+  color:var(--accent);
+  cursor:pointer;
+  font:inherit;
+  padding:0;
+  text-decoration:underline;
+  transition:color .2s ease, text-decoration-color .2s ease;
+}
+.trip-button:hover,
+.trip-button:focus-visible{
+  color:var(--accent-2);
+  text-decoration-thickness:2px;
+}
+.trip-button:focus-visible{
+  outline:2px solid var(--accent-2);
+  outline-offset:2px;
+}
+.trip-button:disabled{
+  color:var(--muted);
+  cursor:not-allowed;
+  text-decoration:none;
+}
 .btn-mini{
   background:#fff; color:#0d2360; border:1px solid #d1d5db;
   border-radius:8px; padding:6px 8px; font-size:.85rem; cursor:pointer;

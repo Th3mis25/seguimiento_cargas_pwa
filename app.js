@@ -979,6 +979,13 @@ function toGASDate(v){
   const pad = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
+function toInputDateTime(v){
+  if(!v) return '';
+  const d = parseDate(v);
+  if(!d) return '';
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 function fillStatusSelect(sel, current='', allowEmpty=false){
   if(!sel) return;
   sel.innerHTML = (allowEmpty?'<option value=""></option>':'') +
@@ -1754,9 +1761,16 @@ function renderRows(rows, hiddenCols=[]){
 
     const tripTd = document.createElement('td');
     tripTd.classList.add('nowrap');
-    const tripSpan = document.createElement('span');
-    tripSpan.textContent = r[COL.trip];
-    tripTd.appendChild(tripSpan);
+    const tripValue = String(r[COL.trip] ?? '');
+    const tripBtn = document.createElement('button');
+    tripBtn.type = 'button';
+    tripBtn.className = 'trip-button';
+    tripBtn.dataset.act = 'edit';
+    tripBtn.dataset.trip = tripValue;
+    tripBtn.textContent = tripValue || '—';
+    tripBtn.title = tripValue ? `Editar trip ${tripValue}` : 'Editar registro';
+    tripBtn.disabled = !tripValue;
+    tripTd.appendChild(tripBtn);
     tr.appendChild(tripTd);
 
     addTextCell(tr, r[COL.caja], 'nowrap');
@@ -2221,6 +2235,214 @@ async function main(){
     }
   });
 
+  const editRecordModal = $('#editRecordModal');
+  const editRecordForm = $('#editRecordForm');
+  const cancelEditRecordBtn = $('#cancelEditRecord');
+  const editRecordStatusSelect = editRecordForm?.querySelector('select[name="estatus"]');
+  let currentEditRow = null;
+
+  fillStatusSelect(editRecordStatusSelect, '', true);
+
+  const setEditFieldValue = (name, value) => {
+    if(!editRecordForm) return;
+    const field = editRecordForm.querySelector(`[name="${name}"]`);
+    if(field){
+      field.value = value == null ? '' : String(value);
+    }
+  };
+  const setEditDateFieldValue = (name, value) => {
+    setEditFieldValue(name, toInputDateTime(value));
+  };
+  const closeEditRecordModal = () => {
+    if(!editRecordModal || !editRecordForm) return;
+    editRecordForm.reset();
+    editRecordForm.dataset.originalTrip = '';
+    editRecordModal.classList.remove('show');
+    currentEditRow = null;
+  };
+  const openEditRecordModal = row => {
+    if(!editRecordModal || !editRecordForm) return;
+    currentEditRow = row || null;
+    const originalTrip = row && row[COL.trip] != null ? String(row[COL.trip]) : '';
+    editRecordForm.dataset.originalTrip = originalTrip;
+    editRecordForm.reset();
+    fillStatusSelect(editRecordStatusSelect, row?.[COL.estatus] || '', true);
+    setEditFieldValue('trip', row?.[COL.trip] ?? '');
+    setEditFieldValue('ejecutivo', row?.[COL.ejecutivo] ?? '');
+    setEditFieldValue('caja', row?.[COL.caja] ?? '');
+    setEditFieldValue('referencia', row?.[COL.referencia] ?? '');
+    setEditFieldValue('cliente', row?.[COL.cliente] ?? '');
+    setEditFieldValue('destino', row?.[COL.destino] ?? '');
+    setEditFieldValue('segmento', row?.[COL.segmento] ?? '');
+    setEditFieldValue('trmx', row?.[COL.trmx] ?? '');
+    setEditFieldValue('trusa', row?.[COL.trusa] ?? '');
+    setEditDateFieldValue('citaCarga', row?.[COL.citaCarga]);
+    setEditDateFieldValue('llegadaCarga', row?.[COL.llegadaCarga]);
+    setEditDateFieldValue('citaEntrega', row?.[COL.citaEntrega]);
+    setEditDateFieldValue('llegadaEntrega', row?.[COL.llegadaEntrega]);
+    setEditFieldValue('comentarios', row?.[COL.comentarios] ?? '');
+    setEditFieldValue('docs', row?.[COL.docs] ?? '');
+    setEditFieldValue('tracking', row?.[COL.tracking] ?? '');
+    editRecordModal.classList.add('show');
+    editRecordForm.querySelector('input[name="trip"]')?.focus();
+  };
+
+  cancelEditRecordBtn?.addEventListener('click', () => {
+    closeEditRecordModal();
+  });
+
+  editRecordForm?.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    if(!editRecordForm) return;
+
+    const submitBtn = editRecordForm.querySelector('button[type="submit"]');
+    if(submitBtn) submitBtn.disabled = true;
+
+    try{
+      const formData = new FormData(editRecordForm);
+      const getTrimmed = name => String(formData.get(name) ?? '').trim();
+
+      const storedOriginalTrip = editRecordForm.dataset.originalTrip || '';
+      const originalTrip = storedOriginalTrip || String(currentEditRow?.[COL.trip] ?? '');
+      const trip = getTrimmed('trip');
+      const ejecutivo = getTrimmed('ejecutivo');
+      const caja = getTrimmed('caja');
+      const referencia = getTrimmed('referencia');
+      const cliente = getTrimmed('cliente');
+      const destino = getTrimmed('destino');
+      const estatus = getTrimmed('estatus');
+      const segmento = getTrimmed('segmento');
+      const trmx = getTrimmed('trmx');
+      const trusa = getTrimmed('trusa');
+      const citaCargaRaw = getTrimmed('citaCarga');
+      const llegadaCargaRaw = getTrimmed('llegadaCarga');
+      const citaEntregaRaw = getTrimmed('citaEntrega');
+      const llegadaEntregaRaw = getTrimmed('llegadaEntrega');
+      const comentarios = getTrimmed('comentarios');
+      const docs = getTrimmed('docs');
+      const tracking = getTrimmed('tracking');
+
+      const tripInput = editRecordForm.querySelector('input[name="trip"]');
+      const ejecutivoInput = editRecordForm.querySelector('input[name="ejecutivo"]');
+      const cajaInput = editRecordForm.querySelector('input[name="caja"]');
+      const referenciaInput = editRecordForm.querySelector('input[name="referencia"]');
+      const clienteInput = editRecordForm.querySelector('input[name="cliente"]');
+      const destinoInput = editRecordForm.querySelector('input[name="destino"]');
+      const estatusSelect = editRecordStatusSelect || editRecordForm.querySelector('select[name="estatus"]');
+      const citaCargaInput = editRecordForm.querySelector('input[name="citaCarga"]');
+
+      if(tripInput) tripInput.value = trip;
+      if(ejecutivoInput) ejecutivoInput.value = ejecutivo;
+      if(cajaInput) cajaInput.value = caja;
+      if(referenciaInput) referenciaInput.value = referencia;
+      if(clienteInput) clienteInput.value = cliente;
+      if(destinoInput) destinoInput.value = destino;
+      if(estatusSelect) estatusSelect.value = estatus;
+
+      if(!originalTrip){
+        toast('No se pudo identificar el Trip original', 'error');
+        tripInput?.focus();
+        return;
+      }
+      if(!trip){
+        toast('Proporciona un Trip válido', 'error');
+        tripInput?.focus();
+        return;
+      }
+      if(!validateTrip(trip, originalTrip)){
+        tripInput?.focus();
+        return;
+      }
+      if(!ejecutivo){
+        toast('Proporciona un Ejecutivo', 'error');
+        ejecutivoInput?.focus();
+        return;
+      }
+      if(!caja){
+        toast('Proporciona una Caja', 'error');
+        cajaInput?.focus();
+        return;
+      }
+      if(!referencia){
+        toast('Proporciona una Referencia', 'error');
+        referenciaInput?.focus();
+        return;
+      }
+      if(!cliente){
+        toast('Proporciona un Cliente', 'error');
+        clienteInput?.focus();
+        return;
+      }
+      if(!destino){
+        toast('Proporciona un Destino', 'error');
+        destinoInput?.focus();
+        return;
+      }
+      if(!estatus){
+        toast('Selecciona un Estatus', 'error');
+        estatusSelect?.focus();
+        return;
+      }
+
+      const citaCarga = toGASDate(citaCargaRaw);
+      if(!citaCarga){
+        toast('Proporciona una Cita carga válida', 'error');
+        citaCargaInput?.focus();
+        return;
+      }
+
+      const data = {
+        originalTrip,
+        trip,
+        caja,
+        referencia,
+        cliente,
+        destino,
+        ejecutivo,
+        estatus,
+        segmento,
+        trmx,
+        trusa,
+        citaCarga,
+        llegadaCarga: llegadaCargaRaw ? toGASDate(llegadaCargaRaw) : '',
+        citaEntrega: citaEntregaRaw ? toGASDate(citaEntregaRaw) : '',
+        llegadaEntrega: llegadaEntregaRaw ? toGASDate(llegadaEntregaRaw) : '',
+        comentarios,
+        docs,
+        tracking
+      };
+
+      const { ok, verified } = await updateRecordWithVerification(data, {
+        skipQueue:true,
+        verifyAttempts:4,
+        verifyDelayMs:1000
+      });
+
+      if(ok){
+        let targetRow = currentEditRow;
+        if(!targetRow || String(targetRow[COL.trip]) !== originalTrip){
+          targetRow = cache.find(r => String(r[COL.trip]) === originalTrip);
+        }
+        if(verified?.applied && Array.isArray(verified.refreshed)){
+          cache = verified.refreshed;
+        }else if(targetRow){
+          applyDataToRow(targetRow, data);
+        }else{
+          const refreshed = await fetchData();
+          if(!lastFetchUnauthorized){
+            cache = refreshed;
+          }
+        }
+        populateStatusFilter(cache);
+        populateEjecutivoFilter(cache);
+        renderCurrent();
+        closeEditRecordModal();
+      }
+    }finally{
+      if(submitBtn) submitBtn.disabled = false;
+    }
+  });
+
   $('#cancelArrival').addEventListener('click', ()=>{
     $('#arrivalModal').classList.remove('show');
     $('#arrivalForm').reset();
@@ -2314,6 +2536,13 @@ async function main(){
         catch{
           const ta=document.createElement('textarea'); ta.value=msg; document.body.appendChild(ta);
           ta.select(); document.execCommand('copy'); ta.remove(); toast('Texto copiado');
+        }
+      }else if(act==='edit'){
+        const row = cache.find(r => String(r[COL.trip]) === String(trip));
+        if(row){
+          openEditRecordModal(row);
+        }else{
+          toast('No se encontró el registro a editar', 'error');
         }
       }
       return;
