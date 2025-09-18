@@ -7,207 +7,67 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <main class="layout">
-    <header class="layout__header">
-      <h1>Seguimiento de cargas</h1>
-      <p>Resumen visual de la hoja de cálculo.</p>
+  <div class="sheet-app" data-app>
+    <header class="sheet-app__toolbar">
+      <div class="sheet-app__title-group">
+        <h1>Seguimiento de cargas</h1>
+        <p class="sheet-app__subtitle">Vista conectada directamente con la hoja de cálculo.</p>
+      </div>
+      <div class="sheet-app__controls">
+        <button type="button" class="button" data-action="change-token">Cambiar token</button>
+        <button type="button" class="button" data-action="refresh">Actualizar</button>
+        <button type="button" class="button button--secondary" data-action="logout">Cerrar sesión</button>
+      </div>
     </header>
 
-    <div class="table-wrapper">
-      <table class="loads-table">
-        <thead>
-          <tr>
-            <th>Ejecutivo</th>
-            <th>Trip</th>
-            <th>Caja</th>
-            <th>Referencia</th>
-            <th>Cliente</th>
-            <th>Destino</th>
-            <th>Estatus</th>
-            <th>Segmento</th>
-            <th>TR-MX</th>
-            <th>TR-USA</th>
-            <th>Cita carga</th>
-            <th>Llegada carga</th>
-            <th>Comentarios</th>
-            <th>Tracking</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="is-critical">
-            <td>VP</td>
-            <td>PRUEBA</td>
-            <td>PRUEBA</td>
-            <td>PRUEBA</td>
-            <td>PRUEBA</td>
-            <td>Live</td>
-            <td>Drop</td>
-            <td>REG</td>
-            <td>10/02/2025 20:00</td>
-            <td>10/02/2025 22:00</td>
-            <td>10/02/2025 20:00</td>
-            <td>—</td>
-            <td>Por confirmar</td>
-            <td>—</td>
-            <td>🔍</td>
-          </tr>
-          <tr class="is-critical">
-            <td>VP</td>
-            <td>9993</td>
-            <td>8274</td>
-            <td>PO76</td>
-            <td>Ride Control</td>
-            <td>Chickasha, OK</td>
-            <td>Live</td>
-            <td>Drop</td>
-            <td>CTR</td>
-            <td>—</td>
-            <td>10/02/2025 20:00</td>
-            <td>—</td>
-            <td>Requiere confirmación</td>
-            <td>—</td>
-            <td>🔍</td>
-          </tr>
-          <tr>
-            <td>VP</td>
-            <td>376744</td>
-            <td>—</td>
-            <td>—</td>
-            <td>Hubtex TX</td>
-            <td>Humble, TX</td>
-            <td>Drop</td>
-            <td>REG</td>
-            <td>—</td>
-            <td>—</td>
-            <td>10/02/2025 20:00</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>🔍</td>
-          </tr>
-          <tr>
-            <td>VP</td>
-            <td>802-3155</td>
-            <td>—</td>
-            <td>—</td>
-            <td>Trentlog FPI</td>
-            <td>Lansing, MI</td>
-            <td>Live</td>
-            <td>Drop</td>
-            <td>—</td>
-            <td>—</td>
-            <td>10/02/2025 20:00</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>🔍</td>
-          </tr>
-          <tr>
-            <td>VP</td>
-            <td>885-3155/3072</td>
-            <td>—</td>
-            <td>—</td>
-            <td>Trentlog FPI</td>
-            <td>Humble, TX</td>
-            <td>Live</td>
-            <td>Drop</td>
-            <td>—</td>
-            <td>—</td>
-            <td>10/02/2025 20:00</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>🔍</td>
-          </tr>
-          <tr>
-            <td>VP</td>
-            <td>885-3155/3073</td>
-            <td>—</td>
-            <td>—</td>
-            <td>Trentlog FPI</td>
-            <td>Tennberg FPI</td>
-            <td>Live</td>
-            <td>Drop</td>
-            <td>—</td>
-            <td>—</td>
-            <td>10/02/2025 20:00</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>🔍</td>
-          </tr>
-          <tr>
-            <td>VP</td>
-            <td>885-3155/3074</td>
-            <td>—</td>
-            <td>—</td>
-            <td>Trentlog FPI</td>
-            <td>Tennberg FPI</td>
-            <td>Live</td>
-            <td>Drop</td>
-            <td>—</td>
-            <td>—</td>
-            <td>10/02/2025 20:00</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>🔍</td>
-          </tr>
-          <tr>
-            <td>VP</td>
-            <td>885-3155/3075</td>
-            <td>—</td>
-            <td>—</td>
-            <td>Trentlog FPI</td>
-            <td>Tennberg FPI</td>
-            <td>Live</td>
-            <td>Drop</td>
-            <td>—</td>
-            <td>—</td>
-            <td>10/02/2025 20:00</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>🔍</td>
-          </tr>
-          <tr>
-            <td>VP</td>
-            <td>885-3155/3076</td>
-            <td>—</td>
-            <td>—</td>
-            <td>Trentlog FPI</td>
-            <td>Tennberg FPI</td>
-            <td>Live</td>
-            <td>Drop</td>
-            <td>—</td>
-            <td>—</td>
-            <td>10/02/2025 20:00</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>🔍</td>
-          </tr>
-          <tr>
-            <td>VP</td>
-            <td>885-3155/3077</td>
-            <td>—</td>
-            <td>—</td>
-            <td>Trentlog FPI</td>
-            <td>Tennberg FPI</td>
-            <td>Live</td>
-            <td>Drop</td>
-            <td>—</td>
-            <td>—</td>
-            <td>10/02/2025 20:00</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>🔍</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="sheet-app__status" data-status aria-live="polite" hidden></div>
+
+    <div class="sheet-grid">
+      <div class="sheet-grid__viewport" role="region" aria-live="polite" aria-label="Tabla de seguimiento">
+        <table class="sheet-table">
+          <thead data-table-head></thead>
+          <tbody data-table-body></tbody>
+        </table>
+      </div>
     </div>
-  </main>
+
+    <footer class="sheet-app__footer">
+      <span class="sheet-app__footer-item" data-last-updated>Última actualización: —</span>
+      <span class="sheet-app__footer-item" data-current-user></span>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop hidden" data-backdrop></div>
+
+  <section class="login-modal hidden" data-login-modal aria-modal="true" role="dialog" aria-labelledby="loginTitle">
+    <form class="login-modal__form" data-login-form novalidate>
+      <h2 id="loginTitle">Iniciar sesión</h2>
+      <p class="login-modal__hint">Introduce tus credenciales para mostrar los datos de la hoja.</p>
+      <div class="form-field">
+        <label for="username">Usuario</label>
+        <input id="username" name="username" type="text" autocomplete="username" required />
+      </div>
+      <div class="form-field">
+        <label for="password">Contraseña</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+      </div>
+      <div class="form-field" data-token-field>
+        <label for="token">Token de API</label>
+        <input id="token" name="token" type="text" autocomplete="off" />
+        <p class="form-field__hint">El token se define en el Apps Script o en secure-config.json.</p>
+      </div>
+      <p class="login-modal__error" data-login-error aria-live="assertive"></p>
+      <div class="login-modal__actions">
+        <button type="submit" class="button button--primary">Entrar</button>
+      </div>
+    </form>
+  </section>
+
+  <noscript>
+    <p class="noscript">Activa JavaScript para visualizar la tabla conectada con la hoja.</p>
+  </noscript>
+
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
