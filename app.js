@@ -1152,67 +1152,102 @@ async function sendRecordRequest(action, data){
   }
 
   const token = SECURE_CONFIG.apiToken || '';
-  const payload = { action, ...data };
-  const bodyParams = createApiFormBody(payload, token);
-  const bodyString = typeof bodyParams.toString === 'function'
-    ? bodyParams.toString()
-    : String(bodyParams || '');
   const url = buildApiUrlWithToken(API_BASE, token);
-
-  let res;
-  try{
-    res = await fetch(url, {
-      method:'POST',
-      body: bodyString,
-      mode:'cors',
-      redirect:'follow',
-      credentials:'omit',
-      cache:'no-store',
-      headers:{
-        'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',
-        'Accept':'application/json'
-      }
+  const formPayload = createApiFormBody({ action, ...data }, token);
+  const payload = {};
+  if(formPayload && typeof formPayload.forEach === 'function'){
+    formPayload.forEach((value, key) => {
+      payload[key] = value;
     });
-  }catch(err){
-    if(isLikelyNetworkError(err)){
-      const networkError = new Error('No se pudo conectar con el servicio.');
-      networkError.name = 'NetworkError';
-      networkError.isNetworkError = true;
-      if(err && typeof err === 'object'){
-        networkError.cause = err;
-      }
-      throw networkError;
+  }else{
+    Object.assign(payload, { action, ...data });
+    if(token && !Object.prototype.hasOwnProperty.call(payload, 'token')){
+      payload.token = token;
     }
-    throw err;
   }
+
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 10000);
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'Pragma': 'no-cache',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(payload),
+    mode: 'cors',
+    cache: 'no-store',
+    redirect: 'follow',
+    credentials: 'omit',
+    signal: controller.signal
+  }).catch(err => {
+    clearTimeout(t);
+    const message = err && err.message ? err.message : String(err || '');
+    const networkError = new Error('NetworkError: ' + message);
+    networkError.name = 'NetworkError';
+    networkError.isNetworkError = true;
+    if(err && typeof err === 'object'){
+      networkError.cause = err;
+    }
+    throw networkError;
+  });
+
+  clearTimeout(t);
+
+  if(!res.ok){
+    const txt = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status} al guardar. Respuesta: ${txt}`);
+  }
+
   let json;
   try{
-    const ct = res.headers.get('content-type') || '';
-    if(!ct.includes('application/json')){
-      throw new Error('Missing application/json header');
-    }
     json = await res.json();
   }catch(err){
-    if(err.message === 'Missing application/json header') throw err;
     throw new Error('Invalid JSON');
   }
-  if(res.status === 401){
-    throw new Error(json.error || 'Unauthorized');
-  }
-  if(res.status === 400){
-    throw new Error(json.error || 'Bad Request');
-  }
-  if(res.status >= 500){
-    throw new Error(json.error || 'Server error');
-  }
-  if(!res.ok || json.error){
-    throw new Error(json.error || `HTTP ${res.status}`);
+
+  if(json && json.error){
+    throw new Error(json.error);
   }
 
   // Clear any stale offline indicators once a request succeeds.
   setSyncStatus('idle');
 
   return json;
+}
+
+async function fetchRecordById(baseUrl, id){
+  const url = `${baseUrl}?id=${encodeURIComponent(id)}&_=${Date.now()}`;
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 8000);
+
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'Pragma': 'no-cache'
+    },
+    mode: 'cors',
+    cache: 'no-store',
+    signal: controller.signal
+  }).catch(err => {
+    clearTimeout(t);
+    const message = err && err.message ? err.message : String(err || '');
+    const networkError = new Error('NetworkError: ' + message);
+    networkError.name = 'NetworkError';
+    networkError.isNetworkError = true;
+    if(err && typeof err === 'object'){
+      networkError.cause = err;
+    }
+    throw networkError;
+  });
+
+  clearTimeout(t);
+  if(!res.ok) throw new Error(`HTTP ${res.status} al verificar`);
+  return res.json();
 }
 
 async function confirmRecordAdditionViaSync(data){
