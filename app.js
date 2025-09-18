@@ -168,6 +168,18 @@
     return partsToDate(parts);
   }
 
+  function getDateSortValue(value) {
+    const date = parseDateValue(value);
+    if (!date) {
+      return Number.POSITIVE_INFINITY;
+    }
+    const time = date.getTime();
+    if (!Number.isFinite(time)) {
+      return Number.POSITIVE_INFINITY;
+    }
+    return time;
+  }
+
   function resolveLocale(locale) {
     if (typeof locale !== 'string' || !locale.trim()) {
       return DEFAULT_LOCALE;
@@ -807,10 +819,14 @@
       }
 
       const columnMap = {};
+      const dateColumnIndices = [];
       headers.forEach(function (header, index) {
         const key = getColumnKeyFromHeader(header);
         if (key) {
           columnMap[key] = index;
+        }
+        if (isDateHeader(header)) {
+          dateColumnIndices.push(index);
         }
       });
 
@@ -835,6 +851,40 @@
           } catch (err) {
             return false;
           }
+        });
+      }
+
+      if (dateColumnIndices.length > 0 && rowsToRender.length > 1) {
+        const sortableEntries = rowsToRender.map(function (entry) {
+          const row = Array.isArray(entry.row) ? entry.row : [];
+          const sortValues = dateColumnIndices.map(function (columnIndex) {
+            if (columnIndex >= row.length) {
+              return Number.POSITIVE_INFINITY;
+            }
+            return getDateSortValue(row[columnIndex]);
+          });
+          return {
+            entry: entry,
+            sortValues: sortValues
+          };
+        });
+
+        sortableEntries.sort(function (a, b) {
+          for (let i = 0; i < dateColumnIndices.length; i++) {
+            const aValue = a.sortValues[i];
+            const bValue = b.sortValues[i];
+            if (aValue < bValue) {
+              return -1;
+            }
+            if (aValue > bValue) {
+              return 1;
+            }
+          }
+          return a.entry.dataIndex - b.entry.dataIndex;
+        });
+
+        rowsToRender = sortableEntries.map(function (item) {
+          return item.entry;
         });
       }
 
