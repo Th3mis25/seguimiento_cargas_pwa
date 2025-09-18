@@ -137,6 +137,37 @@
     return null;
   }
 
+  function partsToDate(parts) {
+    if (!parts) {
+      return null;
+    }
+    const year = Number(parts.year);
+    const month = Number(parts.month);
+    const day = Number(parts.day);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+      return null;
+    }
+    const hour = Number.isFinite(parts.hour) ? Number(parts.hour) : 0;
+    const minute = Number.isFinite(parts.minute) ? Number(parts.minute) : 0;
+    const second = Number.isFinite(parts.second) ? Number(parts.second) : 0;
+    const date = new Date(year, month - 1, day, hour, minute, second, 0);
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    return date;
+  }
+
+  function parseDateValue(input) {
+    if (input == null || input === '') {
+      return null;
+    }
+    const parts = parseDateParts(input);
+    if (!parts) {
+      return null;
+    }
+    return partsToDate(parts);
+  }
+
   function resolveLocale(locale) {
     if (typeof locale !== 'string' || !locale.trim()) {
       return DEFAULT_LOCALE;
@@ -244,6 +275,55 @@
     }
     return null;
   }
+
+  const DAILY_VIEW_ALLOWED_STATUS_SET = new Set(
+    ['drop', 'live', 'qro yard', 'mty yard', 'loading', 'in transit mx'].map(function (status) {
+      return status.toLowerCase();
+    })
+  );
+
+  function matchesDailyLoadsView(row, context) {
+    if (!row || !context || !context.columnMap) {
+      return false;
+    }
+    const columnMap = context.columnMap;
+    const citaCargaIndex = columnMap.citaCarga;
+    const estatusIndex = columnMap.estatus;
+    if (citaCargaIndex == null || estatusIndex == null) {
+      return false;
+    }
+    const rawStatus = row[estatusIndex];
+    const rawDate = row[citaCargaIndex];
+    if (rawStatus == null || rawStatus === '' || rawDate == null || rawDate === '') {
+      return false;
+    }
+    const normalizedStatus = String(rawStatus).trim().toLowerCase();
+    if (!DAILY_VIEW_ALLOWED_STATUS_SET.has(normalizedStatus)) {
+      return false;
+    }
+    const citaDate = parseDateValue(rawDate);
+    if (!citaDate) {
+      return false;
+    }
+    const now = context.now instanceof Date ? context.now : new Date();
+    const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    return citaDate < startOfTomorrow;
+  }
+
+  const TABLE_VIEWS = [
+    {
+      id: 'all',
+      label: 'Todas las cargas',
+      filter: function () {
+        return true;
+      }
+    },
+    {
+      id: 'daily-loads',
+      label: 'Cargas diarias',
+      filter: matchesDailyLoadsView
+    }
+  ];
 
   function columnLetter(index) {
     let result = '';
@@ -522,6 +602,7 @@
     const refs = {
       tableHead: doc.querySelector('[data-table-head]'),
       tableBody: doc.querySelector('[data-table-body]'),
+      viewMenu: doc.querySelector('[data-view-menu]'),
       status: doc.querySelector('[data-status]'),
       refreshButton: doc.querySelector('[data-action="refresh"]'),
       logoutButton: doc.querySelector('[data-action="logout"]'),
@@ -548,7 +629,8 @@
       currentUser: null,
       loading: false,
       secureConfigLoaded: false,
-      editingRecord: null
+      editingRecord: null,
+      currentViewId: TABLE_VIEWS[0] ? TABLE_VIEWS[0].id : 'all'
     };
 
     function setStatus(message, type) {
@@ -564,6 +646,77 @@
       el.className = statusClass;
       el.hidden = false;
       el.textContent = message;
+    }
+
+    function getActiveView() {
+      const currentId = state.currentViewId;
+      for (let i = 0; i < TABLE_VIEWS.length; i++) {
+        const view = TABLE_VIEWS[i];
+        if (view && view.id === currentId) {
+          return view;
+        }
+      }
+      return TABLE_VIEWS[0];
+    }
+
+    function renderViewMenu() {
+      const container = refs.viewMenu;
+      if (!container) {
+        return;
+      }
+      container.innerHTML = '';
+      const fragment = doc.createDocumentFragment();
+      const label = doc.createElement('span');
+      label.className = 'sheet-grid__views-label';
+      label.textContent = 'Vistas:';
+      fragment.appendChild(label);
+      TABLE_VIEWS.forEach(function (view) {
+        if (!view) {
+          return;
+        }
+        const button = doc.createElement('button');
+        button.type = 'button';
+        button.className =
+          'sheet-grid__view-button' + (view.id === state.currentViewId ? ' is-active' : '');
+        button.setAttribute('data-view-id', view.id);
+        button.setAttribute('aria-pressed', view.id === state.currentViewId ? 'true' : 'false');
+        button.textContent = view.label;
+        fragment.appendChild(button);
+      });
+      container.appendChild(fragment);
+    }
+
+    function setCurrentView(viewId) {
+      const exists = TABLE_VIEWS.some(function (view) {
+        return view && view.id === viewId;
+      });
+      const nextId = exists ? viewId : state.currentViewId;
+      if (!nextId) {
+        return;
+      }
+      if (state.currentViewId === nextId) {
+        renderViewMenu();
+        return;
+      }
+      state.currentViewId = nextId;
+      renderViewMenu();
+      renderTable();
+    }
+
+    function handleViewMenuClick(event) {
+      const target = event.target;
+      if (!target || typeof target.closest !== 'function') {
+        return;
+      }
+      const button = target.closest('[data-view-id]');
+      if (!button) {
+        return;
+      }
+      event.preventDefault();
+      const viewId = button.getAttribute('data-view-id');
+      if (viewId) {
+        setCurrentView(viewId);
+      }
     }
 
     function showBackdrop() {
@@ -645,12 +798,44 @@
       }
 
       const headers = state.data[0] || [];
-      const rows = state.data.slice(1);
+      const dataRows = state.data.slice(1);
       let columnCount = headers.length;
-      for (let i = 0; i < rows.length; i++) {
-        if (Array.isArray(rows[i]) && rows[i].length > columnCount) {
-          columnCount = rows[i].length;
+      for (let i = 0; i < dataRows.length; i++) {
+        if (Array.isArray(dataRows[i]) && dataRows[i].length > columnCount) {
+          columnCount = dataRows[i].length;
         }
+      }
+
+      const columnMap = {};
+      headers.forEach(function (header, index) {
+        const key = getColumnKeyFromHeader(header);
+        if (key) {
+          columnMap[key] = index;
+        }
+      });
+
+      const rowsWithIndex = dataRows.map(function (row, index) {
+        return {
+          row: row,
+          dataIndex: index + 1
+        };
+      });
+
+      const activeView = getActiveView();
+      const filterContext = {
+        columnMap: columnMap,
+        headers: headers,
+        now: new Date()
+      };
+      let rowsToRender = rowsWithIndex;
+      if (activeView && typeof activeView.filter === 'function') {
+        rowsToRender = rowsWithIndex.filter(function (entry) {
+          try {
+            return activeView.filter(entry.row, filterContext);
+          } catch (err) {
+            return false;
+          }
+        });
       }
 
       const headerRow = doc.createElement('tr');
@@ -669,7 +854,8 @@
       refs.tableHead.appendChild(headerRow);
 
       const fragment = doc.createDocumentFragment();
-      rows.forEach(function (row, rowIndex) {
+      rowsToRender.forEach(function (entry) {
+        const row = Array.isArray(entry.row) ? entry.row : [];
         const tr = doc.createElement('tr');
 
         for (let c = 0; c < columnCount; c++) {
@@ -693,7 +879,7 @@
               button.type = 'button';
               button.className = 'table-link-button';
               button.setAttribute('data-action', 'open-edit');
-              button.setAttribute('data-row-index', String(rowIndex + 1));
+              button.setAttribute('data-row-index', String(entry.dataIndex));
               button.setAttribute('aria-label', `Editar registro del trip ${displayValue}`);
               button.title = 'Editar registro';
               button.textContent = displayValue;
@@ -712,7 +898,12 @@
       });
 
       refs.tableBody.appendChild(fragment);
-      setStatus('Datos sincronizados correctamente.', 'success');
+
+      if (rowsToRender.length === 0) {
+        setStatus('No hay registros para la vista seleccionada.', 'info');
+      } else {
+        setStatus('Datos sincronizados correctamente.', 'success');
+      }
     }
 
     function getRowDataForIndex(dataIndex) {
@@ -1164,6 +1355,11 @@
     if (refs.changeTokenButton) {
       refs.changeTokenButton.addEventListener('click', handleChangeToken);
     }
+    if (refs.viewMenu) {
+      refs.viewMenu.addEventListener('click', handleViewMenuClick);
+    }
+
+    renderViewMenu();
 
     bootstrap();
 
