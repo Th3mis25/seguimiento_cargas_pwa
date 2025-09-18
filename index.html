@@ -1,266 +1,213 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Tablero de seguimiento</title>
-  <link rel="manifest" href="./manifest.json"/>
-  <link rel="stylesheet" href="./styles.css"/>
-  <meta name="theme-color" content="#0F2C5C"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seguimiento de cargas</title>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <header class="app-header">
-    <img src="assets/logo.png" alt="TM Transportation" class="app-logo" id="homeBtn"/>
-    <h1>Tablero de seguimiento</h1>
-    <div class="theme-switch">
-      <span>Tema</span>
-      <label>
-        <input type="checkbox" id="themeToggle" />
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div id="connectionIndicator" class="connection-indicator" role="status" aria-live="polite" aria-atomic="true" data-state="unknown">
-      <span class="connection-indicator__dot" aria-hidden="true"></span>
-      <span class="connection-indicator__label">Verificando conexión…</span>
-    </div>
-  </header>
+  <main class="layout">
+    <header class="layout__header">
+      <h1>Seguimiento de cargas</h1>
+      <p>Resumen visual de la hoja de cálculo.</p>
+    </header>
 
-  <main class="container">
-    <section class="login-panel" aria-labelledby="loginTitle">
-      <h2 id="loginTitle">Inicio de sesión</h2>
-      <form id="loginForm" class="login-form">
-        <div class="form-field">
-          <label for="loginUser">Usuario</label>
-          <input id="loginUser" name="username" type="text" autocomplete="username" required />
-        </div>
-        <div class="form-field">
-          <label for="loginPassword">Contraseña</label>
-          <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
-        </div>
-        <button type="submit" class="btn">Iniciar sesión</button>
-      </form>
-    </section>
-
-    <div id="appContent" class="app-content" hidden>
-      <div id="secureConfigMessage" role="alert" aria-live="assertive" hidden>
-        <p id="secureConfigMessageText"></p>
-        <form id="secureConfigForm" class="secure-config-form">
-          <label for="secureConfigToken">Token de API</label>
-          <input id="secureConfigToken" type="password" autocomplete="off" spellcheck="false" />
-          <div class="secure-config-actions">
-            <button type="submit" class="btn-mini">Guardar token</button>
-            <button type="button" id="secureConfigClear" class="btn-mini">Borrar token</button>
-          </div>
-          <p class="secure-config-hint">El token se almacenará solo en este dispositivo.</p>
-        </form>
-      </div>
-
-      <section id="errorNotifications" class="error-notifications" aria-live="assertive" aria-atomic="false" aria-label="Notificaciones de errores" hidden>
-        <div class="error-notifications__title">Se detectaron problemas recientes</div>
-        <div class="error-notifications__list" role="list"></div>
-      </section>
-
-      <section class="controls">
-        <div class="controls__filters">
-          <div class="filter">
-            <label for="statusFilter">Estatus</label>
-            <select id="statusFilter">
-              <option value="">Todos</option>
-            </select>
-          </div>
-
-          <div class="filter">
-            <label for="ejecutivoFilter">Ejecutivo</label>
-            <select id="ejecutivoFilter">
-              <option value="">Todos</option>
-            </select>
-          </div>
-
-          <div class="filter filter--search">
-            <label for="searchBox">Buscar</label>
-            <div class="search-wrapper">
-              <input id="searchBox" type="text" placeholder="Trip, Caja, Cliente, Destino"/>
-              <button id="clearSearch" type="button" class="clear-search" aria-label="Limpiar búsqueda">×</button>
-            </div>
-          </div>
-
-          <div class="filter filter--date-range">
-            <label for="startDate">Cita carga</label>
-            <div class="date-range">
-              <input type="date" id="startDate"/>
-              <span class="date-separator">→</span>
-              <input type="date" id="endDate"/>
-            </div>
-          </div>
-        </div>
-
-        <div class="controls__actions">
-          <button id="addRecordBtn" class="btn" type="button">Nuevo registro</button>
-          <button id="refreshBtn" class="btn">Actualizar</button>
-          <input type="file" id="bulkUpload" accept=".xlsx,.csv"/>
-          <button id="bulkUploadBtn" class="btn" type="button">Carga masiva</button>
-          <div id="bulkUploadStatus" class="upload-status"></div>
-          <div id="syncStatus" class="sync-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-        </div>
-      </section>
-
-      <nav class="top-menu">
-        <button id="generalMenu" class="top-btn">📋 General</button>
-        <button id="dailyMenu" class="top-btn">📅 Cargas Diarias</button>
-        <button id="weeklyMenu" class="top-btn">🗓️ Programa semanal</button>
-        <button id="deliveryMenu" class="top-btn">🚚 Entregas hoy</button>
-        <button id="nlarMenu" class="top-btn">🏭 Inventario Nlar</button>
-      </nav>
-
-      <section class="table-wrap">
-        <table id="loadsTable">
-          <thead>
-            <tr>
-              <th>Ejecutivo</th>
-              <th>Trip</th>
-              <th>Caja</th>
-              <th>Referencia</th>
-              <th>Cliente</th>
-              <th>Destino</th>
-              <th>Estatus</th>
-              <th>Segmento</th>
-              <th>TR-MX</th>
-              <th>TR-USA</th>
-              <th>Cita carga</th>
-              <th>Llegada carga</th>
-              <th>Cita entrega</th>
-              <th>Llegada entrega</th>
-              <th>Comentarios</th>
-              <th>Docs</th>
-              <th>Tracking</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </section>
+    <div class="table-wrapper">
+      <table class="loads-table">
+        <thead>
+          <tr>
+            <th>Ejecutivo</th>
+            <th>Trip</th>
+            <th>Caja</th>
+            <th>Referencia</th>
+            <th>Cliente</th>
+            <th>Destino</th>
+            <th>Estatus</th>
+            <th>Segmento</th>
+            <th>TR-MX</th>
+            <th>TR-USA</th>
+            <th>Cita carga</th>
+            <th>Llegada carga</th>
+            <th>Comentarios</th>
+            <th>Tracking</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="is-critical">
+            <td>VP</td>
+            <td>PRUEBA</td>
+            <td>PRUEBA</td>
+            <td>PRUEBA</td>
+            <td>PRUEBA</td>
+            <td>Live</td>
+            <td>Drop</td>
+            <td>REG</td>
+            <td>10/02/2025 20:00</td>
+            <td>10/02/2025 22:00</td>
+            <td>10/02/2025 20:00</td>
+            <td>—</td>
+            <td>Por confirmar</td>
+            <td>—</td>
+            <td>🔍</td>
+          </tr>
+          <tr class="is-critical">
+            <td>VP</td>
+            <td>9993</td>
+            <td>8274</td>
+            <td>PO76</td>
+            <td>Ride Control</td>
+            <td>Chickasha, OK</td>
+            <td>Live</td>
+            <td>Drop</td>
+            <td>CTR</td>
+            <td>—</td>
+            <td>10/02/2025 20:00</td>
+            <td>—</td>
+            <td>Requiere confirmación</td>
+            <td>—</td>
+            <td>🔍</td>
+          </tr>
+          <tr>
+            <td>VP</td>
+            <td>376744</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Hubtex TX</td>
+            <td>Humble, TX</td>
+            <td>Drop</td>
+            <td>REG</td>
+            <td>—</td>
+            <td>—</td>
+            <td>10/02/2025 20:00</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>🔍</td>
+          </tr>
+          <tr>
+            <td>VP</td>
+            <td>802-3155</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Trentlog FPI</td>
+            <td>Lansing, MI</td>
+            <td>Live</td>
+            <td>Drop</td>
+            <td>—</td>
+            <td>—</td>
+            <td>10/02/2025 20:00</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>🔍</td>
+          </tr>
+          <tr>
+            <td>VP</td>
+            <td>885-3155/3072</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Trentlog FPI</td>
+            <td>Humble, TX</td>
+            <td>Live</td>
+            <td>Drop</td>
+            <td>—</td>
+            <td>—</td>
+            <td>10/02/2025 20:00</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>🔍</td>
+          </tr>
+          <tr>
+            <td>VP</td>
+            <td>885-3155/3073</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Trentlog FPI</td>
+            <td>Tennberg FPI</td>
+            <td>Live</td>
+            <td>Drop</td>
+            <td>—</td>
+            <td>—</td>
+            <td>10/02/2025 20:00</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>🔍</td>
+          </tr>
+          <tr>
+            <td>VP</td>
+            <td>885-3155/3074</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Trentlog FPI</td>
+            <td>Tennberg FPI</td>
+            <td>Live</td>
+            <td>Drop</td>
+            <td>—</td>
+            <td>—</td>
+            <td>10/02/2025 20:00</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>🔍</td>
+          </tr>
+          <tr>
+            <td>VP</td>
+            <td>885-3155/3075</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Trentlog FPI</td>
+            <td>Tennberg FPI</td>
+            <td>Live</td>
+            <td>Drop</td>
+            <td>—</td>
+            <td>—</td>
+            <td>10/02/2025 20:00</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>🔍</td>
+          </tr>
+          <tr>
+            <td>VP</td>
+            <td>885-3155/3076</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Trentlog FPI</td>
+            <td>Tennberg FPI</td>
+            <td>Live</td>
+            <td>Drop</td>
+            <td>—</td>
+            <td>—</td>
+            <td>10/02/2025 20:00</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>🔍</td>
+          </tr>
+          <tr>
+            <td>VP</td>
+            <td>885-3155/3077</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Trentlog FPI</td>
+            <td>Tennberg FPI</td>
+            <td>Live</td>
+            <td>Drop</td>
+            <td>—</td>
+            <td>—</td>
+            <td>10/02/2025 20:00</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>🔍</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </main>
-
-  <div id="addRecordModal" class="modal">
-    <div class="modal-content modal-content--form">
-      <h2>Agregar registro</h2>
-      <form id="addRecordForm">
-        <label>Trip
-          <input type="text" name="trip" inputmode="numeric" pattern="\d+" autocomplete="off" required />
-        </label>
-        <label>Ejecutivo
-          <input type="text" name="ejecutivo" autocomplete="off" required />
-        </label>
-        <label>Caja
-          <input type="text" name="caja" autocomplete="off" required />
-        </label>
-        <label>Referencia
-          <input type="text" name="referencia" autocomplete="off" required />
-        </label>
-        <label>Cliente
-          <input type="text" name="cliente" autocomplete="off" required />
-        </label>
-        <label>Destino
-          <input type="text" name="destino" autocomplete="off" required />
-        </label>
-        <label>Estatus
-          <select name="estatus" required></select>
-        </label>
-        <label>Cita carga
-          <input type="datetime-local" name="citaCarga" required lang="es-MX" />
-        </label>
-        <div class="modal-actions">
-          <button type="button" id="cancelAddRecord" class="btn-mini">Cancelar</button>
-          <button type="submit" class="btn">Guardar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div id="editRecordModal" class="modal">
-    <div class="modal-content modal-content--form">
-      <h2>Editar registro</h2>
-      <form id="editRecordForm">
-        <label>Trip
-          <input type="text" name="trip" inputmode="numeric" pattern="\d+" autocomplete="off" required />
-        </label>
-        <label>Ejecutivo
-          <input type="text" name="ejecutivo" autocomplete="off" required />
-        </label>
-        <label>Caja
-          <input type="text" name="caja" autocomplete="off" required />
-        </label>
-        <label>Referencia
-          <input type="text" name="referencia" autocomplete="off" required />
-        </label>
-        <label>Cliente
-          <input type="text" name="cliente" autocomplete="off" required />
-        </label>
-        <label>Destino
-          <input type="text" name="destino" autocomplete="off" required />
-        </label>
-        <label>Estatus
-          <select name="estatus" required></select>
-        </label>
-        <label>Segmento
-          <input type="text" name="segmento" autocomplete="off" />
-        </label>
-        <label>TR-MX
-          <input type="text" name="trmx" autocomplete="off" />
-        </label>
-        <label>TR-USA
-          <input type="text" name="trusa" autocomplete="off" />
-        </label>
-        <label>Cita carga
-          <input type="datetime-local" name="citaCarga" required lang="es-MX" />
-        </label>
-        <label>Llegada carga
-          <input type="datetime-local" name="llegadaCarga" lang="es-MX" />
-        </label>
-        <label>Cita entrega
-          <input type="datetime-local" name="citaEntrega" lang="es-MX" />
-        </label>
-        <label>Llegada entrega
-          <input type="datetime-local" name="llegadaEntrega" lang="es-MX" />
-        </label>
-        <label>Comentarios
-          <input type="text" name="comentarios" autocomplete="off" />
-        </label>
-        <label>Docs
-          <input type="text" name="docs" autocomplete="off" />
-        </label>
-        <label>Tracking
-          <input type="text" name="tracking" autocomplete="off" />
-        </label>
-        <div class="modal-actions">
-          <button type="button" id="cancelEditRecord" class="btn-mini">Cancelar</button>
-          <button type="submit" class="btn">Guardar cambios</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div id="arrivalModal" class="modal">
-    <div class="modal-content">
-      <h2>Llegada entrega</h2>
-      <form id="arrivalForm">
-        <label>Llegada entrega
-          <input type="datetime-local" name="llegadaEntrega" required lang="es-MX" />
-        </label>
-        <div class="modal-actions">
-          <button type="button" id="cancelArrival" class="btn-mini">Cancelar</button>
-          <button type="submit" class="btn">Guardar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div id="toast" class="toast">OK</div>
-
-<script src="./config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="./app.js"></script>
-
 </body>
 </html>
