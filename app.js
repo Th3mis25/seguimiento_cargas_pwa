@@ -620,6 +620,7 @@
       newRecordButton: doc.querySelector('[data-action="new-record"]'),
       logoutButton: doc.querySelector('[data-action="logout"]'),
       changeTokenButton: doc.querySelector('[data-action="change-token"]'),
+      filterSearchInput: doc.querySelector('[data-filter-search]'),
       lastUpdated: doc.querySelector('[data-last-updated]'),
       currentUser: doc.querySelector('[data-current-user]'),
       loginModal: doc.querySelector('[data-login-modal]'),
@@ -646,8 +647,15 @@
       loading: false,
       secureConfigLoaded: false,
       editingRecord: null,
-      currentViewId: TABLE_VIEWS[0] ? TABLE_VIEWS[0].id : 'all'
+      currentViewId: TABLE_VIEWS[0] ? TABLE_VIEWS[0].id : 'all',
+      filters: {
+        searchText: ''
+      }
     };
+
+    if (refs.filterSearchInput) {
+      refs.filterSearchInput.value = state.filters.searchText;
+    }
 
     const EDIT_MODAL_CONTENT = {
       edit: {
@@ -712,6 +720,13 @@
           input.value = preparedValue || '';
         }
       });
+    }
+
+    function resetFilters() {
+      state.filters.searchText = '';
+      if (refs.filterSearchInput) {
+        refs.filterSearchInput.value = '';
+      }
     }
 
     function getActiveView() {
@@ -783,6 +798,16 @@
       if (viewId) {
         setCurrentView(viewId);
       }
+    }
+
+    function handleFilterSearchInput(event) {
+      const target = event && event.target ? event.target : null;
+      const value = target && target.value != null ? String(target.value) : '';
+      if (state.filters.searchText === value) {
+        return;
+      }
+      state.filters.searchText = value;
+      renderTable();
     }
 
     function showBackdrop() {
@@ -906,6 +931,33 @@
             return false;
           }
         });
+      }
+
+      const searchQuery = String(state.filters.searchText || '').trim().toLowerCase();
+      if (searchQuery) {
+        const searchableKeys = ['trip', 'caja', 'referencia'];
+        const searchableIndices = searchableKeys
+          .map(function (key) {
+            return columnMap[key];
+          })
+          .filter(function (index) {
+            return typeof index === 'number' && index >= 0;
+          });
+        if (searchableIndices.length > 0) {
+          rowsToRender = rowsToRender.filter(function (entry) {
+            const row = Array.isArray(entry.row) ? entry.row : [];
+            return searchableIndices.some(function (index) {
+              if (index >= row.length) {
+                return false;
+              }
+              const cellValue = row[index];
+              if (cellValue == null) {
+                return false;
+              }
+              return String(cellValue).toLowerCase().indexOf(searchQuery) !== -1;
+            });
+          });
+        }
       }
 
       const sortColumnIndices = (function () {
@@ -1407,6 +1459,7 @@
     function handleLogout() {
       closeEditModal();
       state.currentUser = null;
+      resetFilters();
       updateUserBadge();
       setStatus('Sesión cerrada. Vuelve a iniciar sesión para ver la hoja.', 'info');
       clearTable();
@@ -1513,6 +1566,9 @@
     }
     if (refs.changeTokenButton) {
       refs.changeTokenButton.addEventListener('click', handleChangeToken);
+    }
+    if (refs.filterSearchInput) {
+      refs.filterSearchInput.addEventListener('input', handleFilterSearchInput);
     }
     if (refs.viewMenu) {
       refs.viewMenu.addEventListener('click', handleViewMenuClick);

@@ -25,6 +25,20 @@
 
     <div class="sheet-grid">
       <div class="sheet-grid__views" data-view-menu role="toolbar" aria-label="Vistas de la tabla"></div>
+      <div class="sheet-grid__filters" data-filter-panel>
+        <label class="sheet-grid__filter-field" for="filterSearch">
+          <span class="sheet-grid__filter-label">Buscar:</span>
+          <input
+            id="filterSearch"
+            type="search"
+            name="filterSearch"
+            placeholder="Trip, Caja o Referencia"
+            autocomplete="off"
+            spellcheck="false"
+            data-filter-search
+          />
+        </label>
+      </div>
       <div class="sheet-grid__viewport" role="region" aria-live="polite" aria-label="Tabla de seguimiento">
         <table class="sheet-table">
           <thead data-table-head></thead>
