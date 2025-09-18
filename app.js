@@ -654,11 +654,6 @@
       }
 
       const headerRow = doc.createElement('tr');
-      const cornerCell = doc.createElement('th');
-      cornerCell.className = 'row-number-header';
-      cornerCell.scope = 'col';
-      cornerCell.textContent = '';
-      headerRow.appendChild(cornerCell);
 
       for (let c = 0; c < columnCount; c++) {
         const th = doc.createElement('th');
@@ -676,11 +671,6 @@
       const fragment = doc.createDocumentFragment();
       rows.forEach(function (row, rowIndex) {
         const tr = doc.createElement('tr');
-        const rowHeader = doc.createElement('th');
-        rowHeader.className = 'row-number-cell';
-        rowHeader.scope = 'row';
-        rowHeader.textContent = String(rowIndex + 1);
-        tr.appendChild(rowHeader);
 
         for (let c = 0; c < columnCount; c++) {
           const td = doc.createElement('td');
