@@ -548,7 +548,7 @@
     }
   }
 
-  async function submitUpdateRequest(apiBase, token, payload) {
+  async function submitRecordRequest(apiBase, token, payload) {
     if (!apiBase) {
       throw new Error('Falta configurar la URL del Apps Script.');
     }
@@ -617,6 +617,7 @@
       viewMenu: doc.querySelector('[data-view-menu]'),
       status: doc.querySelector('[data-status]'),
       refreshButton: doc.querySelector('[data-action="refresh"]'),
+      newRecordButton: doc.querySelector('[data-action="new-record"]'),
       logoutButton: doc.querySelector('[data-action="logout"]'),
       changeTokenButton: doc.querySelector('[data-action="change-token"]'),
       lastUpdated: doc.querySelector('[data-last-updated]'),
@@ -629,7 +630,10 @@
       editModal: doc.querySelector('[data-edit-modal]'),
       editForm: doc.querySelector('[data-edit-form]'),
       editError: doc.querySelector('[data-edit-error]'),
-      cancelEditButton: doc.querySelector('[data-action="cancel-edit"]')
+      cancelEditButton: doc.querySelector('[data-action="cancel-edit"]'),
+      editTitle: doc.querySelector('[data-edit-title]'),
+      editHint: doc.querySelector('[data-edit-hint]'),
+      editSubmitButton: doc.querySelector('[data-edit-submit]')
     };
 
     const state = {
@@ -645,6 +649,19 @@
       currentViewId: TABLE_VIEWS[0] ? TABLE_VIEWS[0].id : 'all'
     };
 
+    const EDIT_MODAL_CONTENT = {
+      edit: {
+        title: 'Editar registro',
+        hint: 'Actualiza la información del viaje y guarda los cambios.',
+        submit: 'Guardar cambios'
+      },
+      create: {
+        title: 'Nuevo registro',
+        hint: 'Captura la información del viaje y guarda el registro.',
+        submit: 'Agregar registro'
+      }
+    };
+
     function setStatus(message, type) {
       const el = refs.status;
       if (!el) return;
@@ -658,6 +675,43 @@
       el.className = statusClass;
       el.hidden = false;
       el.textContent = message;
+    }
+
+    function setEditModalMode(mode) {
+      const content = EDIT_MODAL_CONTENT[mode] || EDIT_MODAL_CONTENT.edit;
+      if (refs.editTitle) {
+        refs.editTitle.textContent = content.title;
+      }
+      if (refs.editHint) {
+        refs.editHint.textContent = content.hint;
+      }
+      if (refs.editSubmitButton) {
+        refs.editSubmitButton.textContent = content.submit;
+      }
+    }
+
+    function populateEditFormValues(values) {
+      if (!refs.editForm || !values) {
+        return;
+      }
+      Object.keys(values).forEach(function (key) {
+        const input = refs.editForm.querySelector('[name="' + key + '"]');
+        if (!input) {
+          return;
+        }
+        const rawValue = values[key];
+        let preparedValue;
+        if (DATE_FIELD_SET.has(key)) {
+          preparedValue = toDateInputValue(rawValue);
+        } else if (rawValue == null) {
+          preparedValue = '';
+        } else {
+          preparedValue = String(rawValue);
+        }
+        if (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA') {
+          input.value = preparedValue || '';
+        }
+      });
     }
 
     function getActiveView() {
@@ -1077,31 +1131,16 @@
       state.editingRecord = {
         dataIndex: dataIndex,
         originalTrip: originalTripValue,
-        values: values
+        values: values,
+        mode: 'edit'
       };
       refs.editForm.reset();
       setEditFormDisabled(false);
-      Object.keys(values).forEach(function (key) {
-        const input = refs.editForm.querySelector('[name="' + key + '"]');
-        if (!input) {
-          return;
-        }
-        const rawValue = values[key];
-        let preparedValue;
-        if (DATE_FIELD_SET.has(key)) {
-          preparedValue = toDateInputValue(rawValue);
-        } else if (rawValue == null) {
-          preparedValue = '';
-        } else {
-          preparedValue = String(rawValue);
-        }
-        if (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA') {
-          input.value = preparedValue || '';
-        }
-      });
+      populateEditFormValues(values);
       if (refs.editError) {
         refs.editError.textContent = '';
       }
+      setEditModalMode('edit');
       showBackdrop();
       refs.editModal.classList.remove('hidden');
       refs.editModal.classList.add('is-visible');
@@ -1111,6 +1150,42 @@
         if (typeof tripInput.select === 'function') {
           tripInput.select();
         }
+      }
+    }
+
+    function openCreateModal() {
+      if (!refs.editForm || !refs.editModal) {
+        return;
+      }
+      if (!state.currentUser) {
+        showLoginModal();
+        return;
+      }
+      const values = COLUMN_CONFIG.reduce(function (acc, column) {
+        if (column && column.key) {
+          acc[column.key] = '';
+        }
+        return acc;
+      }, {});
+      state.editingRecord = {
+        dataIndex: null,
+        originalTrip: '',
+        values: values,
+        mode: 'create'
+      };
+      refs.editForm.reset();
+      setEditFormDisabled(false);
+      populateEditFormValues(values);
+      if (refs.editError) {
+        refs.editError.textContent = '';
+      }
+      setEditModalMode('create');
+      showBackdrop();
+      refs.editModal.classList.remove('hidden');
+      refs.editModal.classList.add('is-visible');
+      const tripInput = refs.editForm.querySelector('[name="trip"]');
+      if (tripInput) {
+        tripInput.focus();
       }
     }
 
@@ -1179,7 +1254,9 @@
         }
         return;
       }
-      if (!state.editingRecord.originalTrip) {
+
+      const mode = state.editingRecord.mode === 'create' ? 'create' : 'edit';
+      if (mode === 'edit' && !state.editingRecord.originalTrip) {
         if (refs.editError) {
           refs.editError.textContent = 'No se encontró el trip original del registro.';
         }
@@ -1210,8 +1287,7 @@
       }
 
       const payload = {
-        action: 'update',
-        originalTrip: state.editingRecord.originalTrip,
+        action: mode === 'create' ? 'add' : 'update',
         trip: tripValue,
         ejecutivo: ejecutivoValue,
         caja: getTrimmed('caja'),
@@ -1234,6 +1310,10 @@
         tracking: getTrimmed('tracking')
       };
 
+      if (mode === 'edit') {
+        payload.originalTrip = state.editingRecord.originalTrip;
+      }
+
       if (refs.editError) {
         refs.editError.textContent = '';
       }
@@ -1241,14 +1321,20 @@
       setStatus('Guardando cambios…', 'info');
 
       try {
-        await submitUpdateRequest(state.config.API_BASE, state.token, payload);
+        await submitRecordRequest(state.config.API_BASE, state.token, payload);
         closeEditModal();
         await loadData();
         if (!refs.status || !refs.status.classList.contains('is-error')) {
-          setStatus('Registro actualizado correctamente.', 'success');
+          const successMessage =
+            mode === 'create'
+              ? 'Registro agregado correctamente.'
+              : 'Registro actualizado correctamente.';
+          setStatus(successMessage, 'success');
         }
       } catch (err) {
-        const message = err && err.message ? err.message : 'Error al actualizar el registro.';
+        const fallbackMessage =
+          mode === 'create' ? 'Error al agregar el registro.' : 'Error al actualizar el registro.';
+        const message = err && err.message ? err.message : fallbackMessage;
         if (err && err.status === 401) {
           state.token = '';
           setStoredValue(STORAGE_TOKEN_KEY, null);
@@ -1415,6 +1501,11 @@
     if (refs.refreshButton) {
       refs.refreshButton.addEventListener('click', function () {
         loadData();
+      });
+    }
+    if (refs.newRecordButton) {
+      refs.newRecordButton.addEventListener('click', function () {
+        openCreateModal();
       });
     }
     if (refs.logoutButton) {
