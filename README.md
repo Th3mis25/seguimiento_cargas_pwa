@@ -38,7 +38,10 @@ El servidor auxiliar (`scripts/secure-config-server.js`) expone por omisión las
 2. **Verifica la URL del despliegue (`API_BASE`).**
    - Ingresa a `Deploy` → `Manage deployments`, abre el despliegue vigente y copia el campo **Web app URL**.
    - Usa exactamente esa URL en `config.js` o expórtala como `API_BASE` al generar `runtime-env.js`.
-3. **Prueba manualmente el endpoint de Apps Script.**
+3. **Confirma los permisos del despliegue web.**
+   - En el menú `Deploy` → `Manage deployments` selecciona tu despliegue, abre la sección **Web app** y establece **"Who has access"** en *Anyone* (sin necesidad de iniciar sesión). Esto evita respuestas sin encabezados CORS que provocarían errores de conexión en la PWA.
+   - Cada vez que modifiques el código en Apps Script crea una nueva versión y actualiza el deployment para conservar estos permisos de acceso públicos.
+4. **Prueba manualmente el endpoint de Apps Script.**
    - Ejecuta una petición GET para validar el token y la URL (sustituye los valores entre `<...>`):
 
      ```bash
@@ -59,7 +62,7 @@ El servidor auxiliar (`scripts/secure-config-server.js`) expone por omisión las
      ```
 
      Usa un número de trip temporal y elimina la fila desde la hoja si no la necesitas.
-4. **Actualiza la PWA con los valores verificados.**
+5. **Actualiza la PWA con los valores verificados.**
    - Guarda el token en `secure-config.json` (o en tu fuente segura) y coloca la URL en `config.js`/`API_BASE` antes de abrir la aplicación.
 
 Siguiendo estos pasos podrás detectar problemas de autenticación o de URL antes de levantar la PWA.
