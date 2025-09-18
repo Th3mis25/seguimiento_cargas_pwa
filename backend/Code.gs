@@ -106,27 +106,30 @@ function doPost(e) {
         if (String(data[i][tripIdx]) === trip) throw new Error('Trip already exists');
       }
       var citaCargaDate = p.citaCarga ? Utilities.parseDate(p.citaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var llegadaCargaDate = p.llegadaCarga ? Utilities.parseDate(p.llegadaCarga, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var citaEntregaDate = p.citaEntrega ? Utilities.parseDate(p.citaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
+      var llegadaEntregaDate = p.llegadaEntrega ? Utilities.parseDate(p.llegadaEntrega, timeZone, "yyyy-MM-dd'T'HH:mm:ss") : '';
       var ejecutivo = (p.ejecutivo || p.Ejecutivo || '').trim();
       if (!ejecutivo) throw new Error('Missing ejecutivo');
       var row = new Array(headers.length).fill('');
       var map = {
         'Ejecutivo': ejecutivo,
         'Trip': trip,
-        'Caja': '',
+        'Caja': p.caja || '',
         'Referencia': p.referencia || '',
         'Cliente': p.cliente || '',
         'Destino': p.destino || '',
         'Estatus': p.estatus || '',
-        'Segmento': '',
-        'TR-MX': '',
-        'TR-USA': '',
+        'Segmento': p.segmento || '',
+        'TR-MX': p.trmx || '',
+        'TR-USA': p.trusa || '',
         'Cita carga': citaCargaDate,
-        'Llegada carga': '',
-        'Cita entrega': '',
-        'Llegada entrega': '',
-        'Comentarios': '',
-        'Docs': '',
-        'Tracking': ''
+        'Llegada carga': llegadaCargaDate,
+        'Cita entrega': citaEntregaDate,
+        'Llegada entrega': llegadaEntregaDate,
+        'Comentarios': p.comentarios || '',
+        'Docs': p.docs || '',
+        'Tracking': p.tracking || ''
       };
       for (var h in map) {
         var idx = headerMap[h.toLowerCase()];
