@@ -5,6 +5,25 @@
   const STORAGE_TOKEN_KEY = 'seguimiento_cargas_token';
   const STORAGE_USER_KEY = 'seguimiento_cargas_user';
   const DATE_HEADER_REGEX = /(fecha|cita|llegada|salida|hora)/i;
+  const COLUMN_CONFIG = [
+    { key: 'trip', label: 'Trip' },
+    { key: 'ejecutivo', label: 'Ejecutivo' },
+    { key: 'caja', label: 'Caja' },
+    { key: 'referencia', label: 'Referencia' },
+    { key: 'cliente', label: 'Cliente' },
+    { key: 'destino', label: 'Destino' },
+    { key: 'estatus', label: 'Estatus' },
+    { key: 'segmento', label: 'Segmento' },
+    { key: 'trmx', label: 'TR-MX' },
+    { key: 'trusa', label: 'TR-USA' },
+    { key: 'citaCarga', label: 'Cita carga' },
+    { key: 'llegadaCarga', label: 'Llegada carga' },
+    { key: 'citaEntrega', label: 'Cita entrega' },
+    { key: 'llegadaEntrega', label: 'Llegada entrega' },
+    { key: 'comentarios', label: 'Comentarios' },
+    { key: 'docs', label: 'Docs' },
+    { key: 'tracking', label: 'Tracking' }
+  ];
   const DEFAULT_USER = {
     id: 'admin',
     username: 'admin',
@@ -267,6 +286,54 @@
     }
   }
 
+  function normalizeObjectRows(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return [];
+    }
+
+    const configuredColumns = COLUMN_CONFIG.filter(function (column) {
+      return rows.some(function (row) {
+        return row && Object.prototype.hasOwnProperty.call(row, column.key);
+      });
+    });
+
+    const knownKeys = configuredColumns.map(function (column) {
+      return column.key;
+    });
+
+    const extraKeys = [];
+    rows.forEach(function (row) {
+      if (!row || typeof row !== 'object') {
+        return;
+      }
+      Object.keys(row).forEach(function (key) {
+        if (knownKeys.indexOf(key) === -1 && extraKeys.indexOf(key) === -1) {
+          extraKeys.push(key);
+        }
+      });
+    });
+
+    const headers = configuredColumns
+      .map(function (column) { return column.label; })
+      .concat(extraKeys);
+
+    const values = rows.map(function (row) {
+      const baseValues = configuredColumns.map(function (column) {
+        return row && Object.prototype.hasOwnProperty.call(row, column.key)
+          ? row[column.key]
+          : '';
+      });
+      const extraValues = extraKeys.map(function (key) {
+        return row && Object.prototype.hasOwnProperty.call(row, key)
+          ? row[key]
+          : '';
+      });
+      return baseValues.concat(extraValues);
+    });
+
+    return [headers].concat(values);
+  }
+
   async function fetchSheetData(apiBase, token) {
     if (!apiBase) {
       throw new Error('Falta configurar la URL del Apps Script.');
@@ -291,7 +358,20 @@
       if (!payload || !Array.isArray(payload.data)) {
         return [];
       }
-      return payload.data;
+      if (payload.data.length === 0) {
+        return [];
+      }
+
+      const firstRow = payload.data[0];
+      if (Array.isArray(firstRow)) {
+        return payload.data;
+      }
+
+      if (firstRow && typeof firstRow === 'object') {
+        return normalizeObjectRows(payload.data);
+      }
+
+      return [];
     } catch (err) {
       if (err instanceof Error) {
         if (!err.message || err.message === 'Failed to fetch') {
