@@ -39,6 +39,88 @@
 
   <div class="modal-backdrop hidden" data-backdrop></div>
 
+  <section class="edit-modal hidden" data-edit-modal aria-modal="true" role="dialog" aria-labelledby="editTitle">
+    <form class="edit-modal__form" data-edit-form novalidate>
+      <h2 id="editTitle">Editar registro</h2>
+      <p class="edit-modal__hint">Actualiza la información del viaje y guarda los cambios.</p>
+      <div class="edit-modal__grid">
+        <div class="form-field">
+          <label for="editTrip">Trip</label>
+          <input id="editTrip" name="trip" type="number" inputmode="numeric" min="225000" step="1" required />
+        </div>
+        <div class="form-field">
+          <label for="editEjecutivo">Ejecutivo</label>
+          <input id="editEjecutivo" name="ejecutivo" type="text" required />
+        </div>
+        <div class="form-field">
+          <label for="editCaja">Caja</label>
+          <input id="editCaja" name="caja" type="text" />
+        </div>
+        <div class="form-field">
+          <label for="editReferencia">Referencia</label>
+          <input id="editReferencia" name="referencia" type="text" />
+        </div>
+        <div class="form-field">
+          <label for="editCliente">Cliente</label>
+          <input id="editCliente" name="cliente" type="text" />
+        </div>
+        <div class="form-field">
+          <label for="editDestino">Destino</label>
+          <input id="editDestino" name="destino" type="text" />
+        </div>
+        <div class="form-field">
+          <label for="editEstatus">Estatus</label>
+          <input id="editEstatus" name="estatus" type="text" />
+        </div>
+        <div class="form-field">
+          <label for="editSegmento">Segmento</label>
+          <input id="editSegmento" name="segmento" type="text" />
+        </div>
+        <div class="form-field">
+          <label for="editTrmx">TR-MX</label>
+          <input id="editTrmx" name="trmx" type="text" />
+        </div>
+        <div class="form-field">
+          <label for="editTrusa">TR-USA</label>
+          <input id="editTrusa" name="trusa" type="text" />
+        </div>
+        <div class="form-field">
+          <label for="editCitaCarga">Cita carga</label>
+          <input id="editCitaCarga" name="citaCarga" type="datetime-local" />
+        </div>
+        <div class="form-field">
+          <label for="editLlegadaCarga">Llegada carga</label>
+          <input id="editLlegadaCarga" name="llegadaCarga" type="datetime-local" />
+        </div>
+        <div class="form-field">
+          <label for="editCitaEntrega">Cita entrega</label>
+          <input id="editCitaEntrega" name="citaEntrega" type="datetime-local" />
+        </div>
+        <div class="form-field">
+          <label for="editLlegadaEntrega">Llegada entrega</label>
+          <input id="editLlegadaEntrega" name="llegadaEntrega" type="datetime-local" />
+        </div>
+        <div class="form-field form-field--full">
+          <label for="editComentarios">Comentarios</label>
+          <textarea id="editComentarios" name="comentarios" rows="3"></textarea>
+        </div>
+        <div class="form-field form-field--full">
+          <label for="editDocs">Docs</label>
+          <input id="editDocs" name="docs" type="text" />
+        </div>
+        <div class="form-field form-field--full">
+          <label for="editTracking">Tracking</label>
+          <input id="editTracking" name="tracking" type="text" />
+        </div>
+      </div>
+      <p class="edit-modal__error" data-edit-error aria-live="assertive"></p>
+      <div class="edit-modal__actions">
+        <button type="button" class="button button--secondary" data-action="cancel-edit">Cancelar</button>
+        <button type="submit" class="button button--primary">Guardar cambios</button>
+      </div>
+    </form>
+  </section>
+
   <section class="login-modal hidden" data-login-modal aria-modal="true" role="dialog" aria-labelledby="loginTitle">
     <form class="login-modal__form" data-login-form novalidate>
       <h2 id="loginTitle">Iniciar sesión</h2>

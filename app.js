@@ -24,6 +24,14 @@
     { key: 'docs', label: 'Docs' },
     { key: 'tracking', label: 'Tracking' }
   ];
+  const DATE_FIELD_KEYS = ['citaCarga', 'llegadaCarga', 'citaEntrega', 'llegadaEntrega'];
+  const DATE_FIELD_SET = new Set(DATE_FIELD_KEYS);
+  const COLUMN_LABEL_TO_KEY = COLUMN_CONFIG.reduce(function (acc, column) {
+    if (column && column.label) {
+      acc[String(column.label).trim().toLowerCase()] = column.key;
+    }
+    return acc;
+  }, {});
   const DEFAULT_USER = {
     id: 'admin',
     username: 'admin',
@@ -172,6 +180,69 @@
     const formattedDate = dateSegments.join(separator);
     const formattedTime = `${pad2(parts.hour)}:${pad2(parts.minute)}`;
     return `${formattedDate} ${formattedTime}`.trim();
+  }
+
+  function toDateInputValue(value) {
+    const parts = parseDateParts(value);
+    if (!parts) {
+      return '';
+    }
+    const year = Number(parts.year);
+    const month = Number(parts.month);
+    const day = Number(parts.day);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+      return '';
+    }
+    const hour = Number.isFinite(parts.hour) ? Number(parts.hour) : 0;
+    const minute = Number.isFinite(parts.minute) ? Number(parts.minute) : 0;
+    return (
+      year +
+      '-' + pad2(month) +
+      '-' + pad2(day) +
+      'T' + pad2(hour) +
+      ':' + pad2(minute)
+    );
+  }
+
+  function toApiDateValue(value) {
+    if (value == null || value === '') {
+      return '';
+    }
+    const parts = parseDateParts(value);
+    if (!parts) {
+      return '';
+    }
+    const year = Number(parts.year);
+    const month = Number(parts.month);
+    const day = Number(parts.day);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+      return '';
+    }
+    const hour = Number.isFinite(parts.hour) ? Number(parts.hour) : 0;
+    const minute = Number.isFinite(parts.minute) ? Number(parts.minute) : 0;
+    const second = Number.isFinite(parts.second) ? Number(parts.second) : 0;
+    return (
+      year +
+      '-' + pad2(month) +
+      '-' + pad2(day) +
+      'T' + pad2(hour) +
+      ':' + pad2(minute) +
+      ':' + pad2(second)
+    );
+  }
+
+  function getColumnKeyFromHeader(headerLabel) {
+    if (headerLabel == null) {
+      return null;
+    }
+    const normalized = String(headerLabel).trim().toLowerCase();
+    if (!normalized) {
+      return null;
+    }
+    if (Object.prototype.hasOwnProperty.call(COLUMN_LABEL_TO_KEY, normalized)) {
+      return COLUMN_LABEL_TO_KEY[normalized];
+    }
+    return null;
   }
 
   function columnLetter(index) {
@@ -385,6 +456,58 @@
     }
   }
 
+  async function submitUpdateRequest(apiBase, token, payload) {
+    if (!apiBase) {
+      throw new Error('Falta configurar la URL del Apps Script.');
+    }
+    const url = new URL(apiBase);
+    if (token) {
+      url.searchParams.set('token', token);
+    }
+    const params = new URLSearchParams();
+    Object.keys(payload || {}).forEach(function (key) {
+      const value = payload[key];
+      if (value == null) {
+        params.append(key, '');
+      } else {
+        params.append(key, String(value));
+      }
+    });
+    try {
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          Accept: 'application/json'
+        },
+        body: params.toString()
+      });
+      const result = await response.json().catch(function () { return {}; });
+      if (!response.ok) {
+        const errorMessage = result && result.error ? result.error : `Error ${response.status}`;
+        const err = new Error(errorMessage);
+        err.status = response.status;
+        throw err;
+      }
+      if (result && result.error) {
+        const err = new Error(result.error);
+        err.status = response.status;
+        throw err;
+      }
+      return result;
+    } catch (err) {
+      if (err instanceof Error) {
+        if (!err.message || err.message === 'Failed to fetch') {
+          const friendly = new Error('No se pudo conectar con el Apps Script.');
+          friendly.cause = err;
+          throw friendly;
+        }
+        throw err;
+      }
+      throw new Error('No se pudo conectar con el Apps Script.');
+    }
+  }
+
   function initApp() {
     if (!global.document) {
       return;
@@ -409,7 +532,11 @@
       loginForm: doc.querySelector('[data-login-form]'),
       loginError: doc.querySelector('[data-login-error]'),
       loginTokenField: doc.querySelector('[data-token-field]'),
-      backdrop: doc.querySelector('[data-backdrop]')
+      backdrop: doc.querySelector('[data-backdrop]'),
+      editModal: doc.querySelector('[data-edit-modal]'),
+      editForm: doc.querySelector('[data-edit-form]'),
+      editError: doc.querySelector('[data-edit-error]'),
+      cancelEditButton: doc.querySelector('[data-action="cancel-edit"]')
     };
 
     const state = {
@@ -420,7 +547,8 @@
       locale: (global.navigator && global.navigator.language) || DEFAULT_LOCALE,
       currentUser: null,
       loading: false,
-      secureConfigLoaded: false
+      secureConfigLoaded: false,
+      editingRecord: null
     };
 
     function setStatus(message, type) {
@@ -436,6 +564,36 @@
       el.className = statusClass;
       el.hidden = false;
       el.textContent = message;
+    }
+
+    function showBackdrop() {
+      if (!refs.backdrop) {
+        return;
+      }
+      refs.backdrop.classList.remove('hidden');
+      refs.backdrop.classList.add('is-visible');
+    }
+
+    function hideBackdropIfNoModalVisible() {
+      if (!refs.backdrop) {
+        return;
+      }
+      const loginVisible = refs.loginModal && refs.loginModal.classList.contains('is-visible');
+      const editVisible = refs.editModal && refs.editModal.classList.contains('is-visible');
+      if (!loginVisible && !editVisible) {
+        refs.backdrop.classList.remove('is-visible');
+        refs.backdrop.classList.add('hidden');
+      }
+    }
+
+    function setEditFormDisabled(isDisabled) {
+      if (!refs.editForm) {
+        return;
+      }
+      const elements = refs.editForm.querySelectorAll('input, textarea, button');
+      elements.forEach(function (element) {
+        element.disabled = Boolean(isDisabled);
+      });
     }
 
     function updateLastUpdated(date) {
@@ -528,6 +686,8 @@
           const td = doc.createElement('td');
           const headerLabel = headers[c];
           let value = row && row[c] != null ? row[c] : '';
+          const normalizedHeader = headerLabel == null ? '' : String(headerLabel).trim().toLowerCase();
+          const isTripColumn = normalizedHeader === 'trip';
           if (isDateHeader(headerLabel) && value !== '') {
             const formatted = fmtDate(value, state.locale);
             value = formatted || value;
@@ -536,6 +696,22 @@
           if (value === null || value === undefined || value === '') {
             td.classList.add('is-empty');
             td.textContent = '';
+          } else if (isTripColumn) {
+            const displayValue = typeof value === 'string' ? value : String(value);
+            if (displayValue) {
+              const button = doc.createElement('button');
+              button.type = 'button';
+              button.className = 'table-link-button';
+              button.setAttribute('data-action', 'open-edit');
+              button.setAttribute('data-row-index', String(rowIndex + 1));
+              button.setAttribute('aria-label', `Editar registro del trip ${displayValue}`);
+              button.title = 'Editar registro';
+              button.textContent = displayValue;
+              td.appendChild(button);
+            } else {
+              td.classList.add('is-empty');
+              td.textContent = '';
+            }
           } else {
             td.textContent = typeof value === 'string' ? value : String(value);
           }
@@ -549,11 +725,41 @@
       setStatus('Datos sincronizados correctamente.', 'success');
     }
 
-    function showLoginModal() {
-      if (refs.backdrop) {
-        refs.backdrop.classList.remove('hidden');
-        refs.backdrop.classList.add('is-visible');
+    function getRowDataForIndex(dataIndex) {
+      if (!Array.isArray(state.data) || state.data.length <= dataIndex) {
+        return null;
       }
+      const headers = state.data[0];
+      const row = state.data[dataIndex];
+      if (!Array.isArray(headers) || !Array.isArray(row)) {
+        return null;
+      }
+      const columnMap = {};
+      headers.forEach(function (header, index) {
+        const key = getColumnKeyFromHeader(header);
+        if (key) {
+          columnMap[key] = index;
+        }
+      });
+      const values = {};
+      COLUMN_CONFIG.forEach(function (column) {
+        const idx = columnMap[column.key];
+        if (idx != null) {
+          const cellValue = row[idx];
+          values[column.key] = cellValue == null ? '' : cellValue;
+        } else {
+          values[column.key] = '';
+        }
+      });
+      return {
+        headers: headers,
+        values: values,
+        columnMap: columnMap
+      };
+    }
+
+    function showLoginModal() {
+      showBackdrop();
       if (refs.loginModal) {
         refs.loginModal.classList.remove('hidden');
         refs.loginModal.classList.add('is-visible');
@@ -590,16 +796,228 @@
     }
 
     function hideLoginModal() {
-      if (refs.backdrop) {
-        refs.backdrop.classList.remove('is-visible');
-        refs.backdrop.classList.add('hidden');
-      }
       if (refs.loginModal) {
         refs.loginModal.classList.remove('is-visible');
         refs.loginModal.classList.add('hidden');
       }
       if (refs.loginError) {
         refs.loginError.textContent = '';
+      }
+      hideBackdropIfNoModalVisible();
+    }
+
+    function openEditModal(dataIndex) {
+      if (!refs.editForm || !refs.editModal) {
+        return;
+      }
+      if (!state.currentUser) {
+        showLoginModal();
+        return;
+      }
+      const rowData = getRowDataForIndex(dataIndex);
+      if (!rowData) {
+        setStatus('No fue posible cargar el registro seleccionado.', 'error');
+        return;
+      }
+      const values = rowData.values || {};
+      const originalTripValue = values.trip == null ? '' : String(values.trip).trim();
+      if (!originalTripValue) {
+        setStatus('El registro seleccionado no tiene número de trip.', 'error');
+        return;
+      }
+      state.editingRecord = {
+        dataIndex: dataIndex,
+        originalTrip: originalTripValue,
+        values: values
+      };
+      refs.editForm.reset();
+      setEditFormDisabled(false);
+      Object.keys(values).forEach(function (key) {
+        const input = refs.editForm.querySelector('[name="' + key + '"]');
+        if (!input) {
+          return;
+        }
+        const rawValue = values[key];
+        let preparedValue;
+        if (DATE_FIELD_SET.has(key)) {
+          preparedValue = toDateInputValue(rawValue);
+        } else if (rawValue == null) {
+          preparedValue = '';
+        } else {
+          preparedValue = String(rawValue);
+        }
+        if (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA') {
+          input.value = preparedValue || '';
+        }
+      });
+      if (refs.editError) {
+        refs.editError.textContent = '';
+      }
+      showBackdrop();
+      refs.editModal.classList.remove('hidden');
+      refs.editModal.classList.add('is-visible');
+      const tripInput = refs.editForm.querySelector('[name="trip"]');
+      if (tripInput) {
+        tripInput.focus();
+        if (typeof tripInput.select === 'function') {
+          tripInput.select();
+        }
+      }
+    }
+
+    function closeEditModal() {
+      if (refs.editModal) {
+        refs.editModal.classList.remove('is-visible');
+        refs.editModal.classList.add('hidden');
+      }
+      if (refs.editError) {
+        refs.editError.textContent = '';
+      }
+      setEditFormDisabled(false);
+      if (refs.editForm) {
+        refs.editForm.reset();
+      }
+      state.editingRecord = null;
+      hideBackdropIfNoModalVisible();
+    }
+
+    function handleTableBodyClick(event) {
+      const target = event.target;
+      if (!target || typeof target.closest !== 'function') {
+        return;
+      }
+      const trigger = target.closest('[data-action="open-edit"]');
+      if (!trigger) {
+        return;
+      }
+      event.preventDefault();
+      const rowIndexAttr = trigger.getAttribute('data-row-index');
+      const dataIndex = rowIndexAttr == null ? NaN : parseInt(rowIndexAttr, 10);
+      if (Number.isNaN(dataIndex)) {
+        return;
+      }
+      openEditModal(dataIndex);
+    }
+
+    async function handleEditSubmit(event) {
+      event.preventDefault();
+      if (!refs.editForm) {
+        return;
+      }
+      if (!state.editingRecord) {
+        return;
+      }
+      const formData = new global.FormData(refs.editForm);
+      const tripValue = String(formData.get('trip') || '').trim();
+      const ejecutivoValue = String(formData.get('ejecutivo') || '').trim();
+      if (!tripValue || !/^\d+$/.test(tripValue)) {
+        if (refs.editError) {
+          refs.editError.textContent = 'Ingresa un número de trip válido.';
+        }
+        const tripInput = refs.editForm.querySelector('[name="trip"]');
+        if (tripInput) {
+          tripInput.focus();
+        }
+        return;
+      }
+      if (!ejecutivoValue) {
+        if (refs.editError) {
+          refs.editError.textContent = 'El campo Ejecutivo es obligatorio.';
+        }
+        const ejecutivoInput = refs.editForm.querySelector('[name="ejecutivo"]');
+        if (ejecutivoInput) {
+          ejecutivoInput.focus();
+        }
+        return;
+      }
+      if (!state.editingRecord.originalTrip) {
+        if (refs.editError) {
+          refs.editError.textContent = 'No se encontró el trip original del registro.';
+        }
+        return;
+      }
+      if (!state.config || !state.config.API_BASE) {
+        const message = 'Falta configurar la URL del Apps Script.';
+        if (refs.editError) {
+          refs.editError.textContent = message;
+        }
+        setStatus(message, 'error');
+        return;
+      }
+      if (!state.token) {
+        const message = 'Sesión expirada. Inicia sesión nuevamente.';
+        if (refs.editError) {
+          refs.editError.textContent = message;
+        }
+        setStatus(message, 'error');
+        closeEditModal();
+        showLoginModal();
+        return;
+      }
+
+      function getTrimmed(name) {
+        const value = formData.get(name);
+        return value == null ? '' : String(value).trim();
+      }
+
+      const payload = {
+        action: 'update',
+        originalTrip: state.editingRecord.originalTrip,
+        trip: tripValue,
+        ejecutivo: ejecutivoValue,
+        caja: getTrimmed('caja'),
+        referencia: getTrimmed('referencia'),
+        cliente: getTrimmed('cliente'),
+        destino: getTrimmed('destino'),
+        estatus: getTrimmed('estatus'),
+        segmento: getTrimmed('segmento'),
+        trmx: getTrimmed('trmx'),
+        trusa: getTrimmed('trusa'),
+        citaCarga: toApiDateValue(formData.get('citaCarga')),
+        llegadaCarga: toApiDateValue(formData.get('llegadaCarga')),
+        citaEntrega: toApiDateValue(formData.get('citaEntrega')),
+        llegadaEntrega: toApiDateValue(formData.get('llegadaEntrega')),
+        comentarios: (function () {
+          const value = formData.get('comentarios');
+          return value == null ? '' : String(value);
+        })(),
+        docs: getTrimmed('docs'),
+        tracking: getTrimmed('tracking')
+      };
+
+      if (refs.editError) {
+        refs.editError.textContent = '';
+      }
+      setEditFormDisabled(true);
+      setStatus('Guardando cambios…', 'info');
+
+      try {
+        await submitUpdateRequest(state.config.API_BASE, state.token, payload);
+        closeEditModal();
+        await loadData();
+        if (!refs.status || !refs.status.classList.contains('is-error')) {
+          setStatus('Registro actualizado correctamente.', 'success');
+        }
+      } catch (err) {
+        const message = err && err.message ? err.message : 'Error al actualizar el registro.';
+        if (err && err.status === 401) {
+          state.token = '';
+          setStoredValue(STORAGE_TOKEN_KEY, null);
+          state.currentUser = null;
+          updateUserBadge();
+          clearTable();
+          updateLastUpdated(null);
+          closeEditModal();
+          setStatus('Sesión expirada. Inicia sesión nuevamente.', 'error');
+          showLoginModal();
+          return;
+        }
+        if (refs.editError) {
+          refs.editError.textContent = message;
+        }
+        setStatus(message, 'error');
+      } finally {
+        setEditFormDisabled(false);
       }
     }
 
@@ -652,6 +1070,7 @@
     }
 
     function handleLogout() {
+      closeEditModal();
       state.currentUser = null;
       updateUserBadge();
       setStatus('Sesión cerrada. Vuelve a iniciar sesión para ver la hoja.', 'info');
@@ -732,6 +1151,17 @@
 
     if (refs.loginForm) {
       refs.loginForm.addEventListener('submit', handleLoginSubmit);
+    }
+    if (refs.tableBody) {
+      refs.tableBody.addEventListener('click', handleTableBodyClick);
+    }
+    if (refs.editForm) {
+      refs.editForm.addEventListener('submit', handleEditSubmit);
+    }
+    if (refs.cancelEditButton) {
+      refs.cancelEditButton.addEventListener('click', function () {
+        closeEditModal();
+      });
     }
     if (refs.refreshButton) {
       refs.refreshButton.addEventListener('click', function () {
