@@ -56,15 +56,15 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
   --sheet-border: #1b2a44;
-  --sheet-header-bg: #13213a;
+  --sheet-header-bg: #101d33;
   --table-header-bg: linear-gradient(180deg, rgba(103, 165, 241, 0.32) 0%, rgba(58, 109, 189, 0.18) 100%);
   --table-header-text: #e7f1ff;
   --table-header-border: rgba(91, 147, 226, 0.4);
-  --sheet-background: #070f1f;
-  --sheet-surface: #0d182c;
-  --sheet-surface-alt: #12213a;
-  --sheet-surface-muted: #152542;
-  --sheet-popover: #152542;
+  --sheet-background: #0a1526;
+  --sheet-surface: #11213a;
+  --sheet-surface-alt: #1a2e4d;
+  --sheet-surface-muted: #243a60;
+  --sheet-popover: #1e3356;
   --modal-surface: #162948;
   --sheet-text: #f2f7ff;
   --sheet-text-soft: #a7c4e8;
