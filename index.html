@@ -13,6 +13,21 @@
         <h1>Seguimiento de cargas</h1>
       </div>
       <div class="sheet-app__controls">
+        <div class="theme-toggle" data-theme-toggle>
+          <input
+            type="checkbox"
+            class="theme-toggle__input"
+            id="themeToggle"
+            data-theme-switch
+            aria-label="Cambiar entre tema claro y oscuro"
+          />
+          <label class="theme-toggle__label" for="themeToggle">
+            <span class="theme-toggle__icon" aria-hidden="true">☀</span>
+            <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
+            <span class="theme-toggle__thumb" aria-hidden="true"></span>
+          </label>
+          <span class="theme-toggle__text" data-theme-label>Tema claro</span>
+        </div>
         <button type="button" class="button is-hidden" data-action="change-token">Cambiar token</button>
         <button type="button" class="button" data-action="refresh">Actualizar</button>
         <button type="button" class="button button--primary" data-action="new-record">Nuevo registro</button>
