@@ -1123,6 +1123,19 @@
       return String(value).trim();
     }
 
+    function getStatusBadgeSlug(value) {
+      const normalized = normalizeStatusValue(value);
+      if (!normalized) {
+        return '';
+      }
+      return normalized
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
     function isSameStatus(a, b) {
       return normalizeStatusValue(a).toLowerCase() === normalizeStatusValue(b).toLowerCase();
     }
@@ -2096,6 +2109,7 @@
           const normalizedHeader = headerLabel == null ? '' : String(headerLabel).trim().toLowerCase();
           const isTripColumn = normalizedHeader === 'trip';
           const isTrackingColumn = normalizedHeader === 'tracking';
+          const isStatusColumn = normalizedHeader === 'estatus';
           if (isDateHeader(headerLabel) && value !== '') {
             const formatted = fmtDate(value, state.locale);
             value = formatted || value;
@@ -2130,6 +2144,21 @@
               link.rel = 'noopener noreferrer';
               link.className = 'table-link';
               td.appendChild(link);
+            } else {
+              td.classList.add('is-empty');
+              td.textContent = '';
+            }
+          } else if (isStatusColumn) {
+            const normalizedStatus = normalizeStatusValue(value);
+            if (normalizedStatus) {
+              const badge = doc.createElement('span');
+              const slug = getStatusBadgeSlug(normalizedStatus);
+              badge.className = 'status-badge';
+              if (slug) {
+                badge.classList.add('status-badge--' + slug);
+              }
+              badge.textContent = normalizedStatus;
+              td.appendChild(badge);
             } else {
               td.classList.add('is-empty');
               td.textContent = '';
