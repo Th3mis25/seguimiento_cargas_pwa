@@ -106,6 +106,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 100vh;
 }
 
 .sheet-app__toolbar {
@@ -291,6 +292,9 @@ body {
   border: 1px solid var(--sheet-border);
   box-shadow: var(--sheet-shadow);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
 }
 
 .sheet-grid__views {
@@ -662,6 +666,8 @@ body {
   width: 100%;
   overflow: auto;
   max-height: calc(100vh - 220px);
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .sheet-table {
@@ -717,6 +723,7 @@ body {
   color: var(--sheet-text-soft);
   font-size: 0.9rem;
   align-items: center;
+  margin-top: auto;
 }
 
 .sheet-app__footer-item {
