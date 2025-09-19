@@ -1658,6 +1658,7 @@
           let value = row && row[c] != null ? row[c] : '';
           const normalizedHeader = headerLabel == null ? '' : String(headerLabel).trim().toLowerCase();
           const isTripColumn = normalizedHeader === 'trip';
+          const isTrackingColumn = normalizedHeader === 'tracking';
           if (isDateHeader(headerLabel) && value !== '') {
             const formatted = fmtDate(value, state.locale);
             value = formatted || value;
@@ -1678,6 +1679,20 @@
               button.title = 'Editar registro';
               button.textContent = displayValue;
               td.appendChild(button);
+            } else {
+              td.classList.add('is-empty');
+              td.textContent = '';
+            }
+          } else if (isTrackingColumn) {
+            const displayValue = typeof value === 'string' ? value.trim() : String(value).trim();
+            if (displayValue) {
+              const link = doc.createElement('a');
+              link.href = displayValue;
+              link.textContent = displayValue;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              link.className = 'table-link';
+              td.appendChild(link);
             } else {
               td.classList.add('is-empty');
               td.textContent = '';
