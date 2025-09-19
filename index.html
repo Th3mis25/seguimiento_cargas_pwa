@@ -11,7 +11,6 @@
     <header class="sheet-app__toolbar">
       <div class="sheet-app__title-group">
         <h1>Seguimiento de cargas</h1>
-        <p class="sheet-app__subtitle">Vista conectada directamente con la hoja de cálculo.</p>
       </div>
       <div class="sheet-app__controls">
         <button type="button" class="button is-hidden" data-action="change-token">Cambiar token</button>
@@ -20,8 +19,6 @@
         <button type="button" class="button button--secondary" data-action="logout">Cerrar sesión</button>
       </div>
     </header>
-
-    <div class="sheet-app__status" data-status aria-live="polite" hidden></div>
 
     <div class="sheet-grid">
       <div class="sheet-grid__views" data-view-menu role="toolbar" aria-label="Vistas de la tabla"></div>
@@ -90,6 +87,9 @@
 
     <footer class="sheet-app__footer">
       <span class="sheet-app__footer-item" data-last-updated>Última actualización: —</span>
+      <span class="sheet-app__footer-item sheet-app__footer-item--status">
+        <span class="sheet-status" data-status aria-live="polite" hidden></span>
+      </span>
       <span class="sheet-app__footer-item" data-current-user></span>
     </footer>
   </div>

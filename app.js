@@ -853,14 +853,16 @@
       if (!el) return;
       if (!message) {
         el.textContent = '';
-        el.className = 'sheet-app__status';
+        el.className = 'sheet-status';
         el.hidden = true;
+        el.removeAttribute('title');
         return;
       }
-      const statusClass = 'sheet-app__status' + (type ? ` is-${type}` : '');
+      const statusClass = 'sheet-status' + (type ? ` is-${type}` : '');
       el.className = statusClass;
       el.hidden = false;
       el.textContent = message;
+      el.title = message;
     }
 
     function setEditModalMode(mode) {
@@ -1446,7 +1448,7 @@
       if (rowsToRender.length === 0) {
         setStatus('No hay registros para la vista seleccionada.', 'info');
       } else {
-        setStatus('Datos sincronizados correctamente.', 'success');
+        setStatus('Sincronizado', 'success');
       }
     }
 
