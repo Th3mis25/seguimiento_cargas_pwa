@@ -109,25 +109,58 @@ body {
   min-height: 100vh;
 }
 
+
 .sheet-app__toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "logo title controls";
   gap: 16px;
-  align-items: flex-end;
+  align-items: center;
+}
+
+.sheet-app__logo {
+  grid-area: logo;
+  height: 48px;
+  width: auto;
+}
+
+.sheet-app__title-group {
+  grid-area: title;
+  text-align: center;
 }
 
 .sheet-app__title-group h1 {
   margin: 0;
-  font-size: clamp(1.75rem, 2.5vw, 2.4rem);
+  font-size: clamp(0.875rem, 1.25vw, 1.2rem);
   font-weight: 500;
   letter-spacing: -0.015em;
 }
 
 .sheet-app__controls {
+  grid-area: controls;
   display: flex;
   gap: 8px;
   align-items: center;
+  justify-self: end;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .sheet-app__toolbar {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "logo controls"
+      "title title";
+  }
+
+  .sheet-app__logo {
+    height: 40px;
+  }
+
+  .sheet-app__controls {
+    justify-self: end;
+  }
 }
 
 .theme-toggle {
