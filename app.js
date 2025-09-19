@@ -460,6 +460,12 @@
     })
   );
 
+  const TODAY_DELIVERY_EXCLUDED_STATUS_SET = new Set(
+    ['at destination', 'delivered'].map(function (status) {
+      return status.toLowerCase();
+    })
+  );
+
   function matchesDailyLoadsView(row, context) {
     if (!row || !context || !context.columnMap) {
       return false;
@@ -534,6 +540,63 @@
     return citaDate >= startOfDay && citaDate < endOfWeek;
   }
 
+  function matchesTodayDeliveriesView(row, context) {
+    if (!row || !context || !context.columnMap) {
+      return false;
+    }
+    const columnMap = context.columnMap;
+    const estatusIndex = columnMap.estatus;
+    const citaEntregaIndex = columnMap.citaEntrega;
+    const llegadaEntregaIndex = columnMap.llegadaEntrega;
+    if (estatusIndex == null || citaEntregaIndex == null) {
+      return false;
+    }
+
+    let rawStatus = null;
+    if (estatusIndex < row.length) {
+      rawStatus = row[estatusIndex];
+    }
+    if (rawStatus != null && rawStatus !== '') {
+      const normalizedStatus = String(rawStatus).trim().toLowerCase();
+      if (TODAY_DELIVERY_EXCLUDED_STATUS_SET.has(normalizedStatus)) {
+        return false;
+      }
+    }
+
+    const now = context.now instanceof Date && !isNaN(context.now.getTime()) ? context.now : new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfTomorrow = new Date(startOfToday.getTime());
+    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+    let hasCitaEntrega = false;
+    let isDue = false;
+
+    if (citaEntregaIndex != null && citaEntregaIndex >= 0 && citaEntregaIndex < row.length) {
+      const rawCita = row[citaEntregaIndex];
+      if (rawCita != null && rawCita !== '') {
+        const citaDate = parseDateValue(rawCita);
+        if (citaDate) {
+          hasCitaEntrega = true;
+          if (citaDate < startOfTomorrow) {
+            isDue = true;
+          }
+        }
+      }
+    }
+
+    if (!isDue && llegadaEntregaIndex != null && llegadaEntregaIndex >= 0 && llegadaEntregaIndex < row.length) {
+      const rawLlegada = row[llegadaEntregaIndex];
+      if (rawLlegada != null && rawLlegada !== '') {
+        const llegadaDate = parseDateValue(rawLlegada);
+        if (llegadaDate && llegadaDate < startOfTomorrow) {
+          isDue = true;
+        }
+      }
+    }
+
+    return hasCitaEntrega && isDue;
+  }
+
   const TABLE_VIEWS = [
     {
       id: 'all',
@@ -546,6 +609,11 @@
       id: 'daily-loads',
       label: 'Cargas diarias',
       filter: matchesDailyLoadsView
+    },
+    {
+      id: 'today-deliveries',
+      label: 'Entregas hoy',
+      filter: matchesTodayDeliveriesView
     },
     {
       id: 'inventario-nlar',
