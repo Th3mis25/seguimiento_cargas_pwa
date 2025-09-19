@@ -648,6 +648,21 @@
     return DATE_HEADER_REGEX.test(text);
   }
 
+  function formatHeaderLabel(label) {
+    if (label == null) {
+      return '';
+    }
+    const text = String(label);
+    if (!text) {
+      return '';
+    }
+    const lower = text.toLowerCase();
+    if (!lower) {
+      return '';
+    }
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  }
+
   function getStoredValue(key) {
     try {
       if (global.localStorage) {
@@ -2088,7 +2103,7 @@
         const th = doc.createElement('th');
         const headerLabel = headers[c];
         const label = headerLabel != null && headerLabel !== '' ? headerLabel : columnLetter(c);
-        th.textContent = label;
+        th.textContent = formatHeaderLabel(label);
         if (isDateHeader(label)) {
           th.classList.add('is-date');
         }
