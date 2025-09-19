@@ -4,6 +4,9 @@
   const DEFAULT_LOCALE = 'es-MX';
   const STORAGE_TOKEN_KEY = 'seguimiento_cargas_token';
   const STORAGE_USER_KEY = 'seguimiento_cargas_user';
+  const STORAGE_THEME_KEY = 'seguimiento_cargas_theme';
+  const THEME_LIGHT = 'light';
+  const THEME_DARK = 'dark';
   const DATE_HEADER_REGEX = /(fecha|cita|llegada|salida|hora)/i;
   const COLUMN_CONFIG = [
     { key: 'trip', label: 'Trip' },
@@ -783,6 +786,8 @@
       newRecordButton: doc.querySelector('[data-action="new-record"]'),
       logoutButton: doc.querySelector('[data-action="logout"]'),
       changeTokenButton: doc.querySelector('[data-action="change-token"]'),
+      themeSwitch: doc.querySelector('[data-theme-switch]'),
+      themeLabel: doc.querySelector('[data-theme-label]'),
       filterSearchInput: doc.querySelector('[data-filter-search]'),
       dateFilter: doc.querySelector('[data-date-filter]'),
       dateLabel: doc.querySelector('[data-date-label]'),
@@ -819,6 +824,17 @@
       editSubmitButton: doc.querySelector('[data-edit-submit]')
     };
 
+    const rawStoredTheme = getStoredValue(STORAGE_THEME_KEY);
+    const normalizedStoredTheme = rawStoredTheme ? String(rawStoredTheme).toLowerCase() : '';
+    const hasInitialStoredTheme = normalizedStoredTheme === THEME_DARK || normalizedStoredTheme === THEME_LIGHT;
+    const prefersDarkMedia = typeof global.matchMedia === 'function' ? global.matchMedia('(prefers-color-scheme: dark)') : null;
+    let hasStoredTheme = hasInitialStoredTheme;
+    const initialTheme = hasInitialStoredTheme
+      ? normalizedStoredTheme
+      : prefersDarkMedia && prefersDarkMedia.matches
+        ? THEME_DARK
+        : THEME_LIGHT;
+
     const state = {
       config: global.APP_CONFIG || { API_BASE: '', SECURE_CONFIG_URL: '' },
       token: '',
@@ -830,6 +846,7 @@
       secureConfigLoaded: false,
       editingRecord: null,
       currentViewId: TABLE_VIEWS[0] ? TABLE_VIEWS[0].id : 'all',
+      theme: initialTheme,
       filters: {
         searchText: '',
         dateRange: createTodayRange(),
@@ -842,6 +859,49 @@
       isStatusPopoverOpen: false,
       isClientPopoverOpen: false
     };
+
+    function setTheme(theme, options) {
+      const normalized = theme === THEME_DARK ? THEME_DARK : THEME_LIGHT;
+      state.theme = normalized;
+      doc.documentElement.setAttribute('data-theme', normalized);
+      if (refs.themeSwitch) {
+        refs.themeSwitch.checked = normalized === THEME_DARK;
+        const ariaLabel = normalized === THEME_DARK ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
+        refs.themeSwitch.setAttribute('aria-label', ariaLabel);
+      }
+      if (refs.themeLabel) {
+        refs.themeLabel.textContent = normalized === THEME_DARK ? 'Tema oscuro' : 'Tema claro';
+      }
+      if (!options || options.persist !== false) {
+        setStoredValue(STORAGE_THEME_KEY, normalized);
+        hasStoredTheme = true;
+      }
+      return normalized;
+    }
+
+    function handleThemeSwitchChange(event) {
+      const target = event && event.target;
+      const isChecked = target ? Boolean(target.checked) : false;
+      setTheme(isChecked ? THEME_DARK : THEME_LIGHT);
+    }
+
+    function handleSystemThemeChange(event) {
+      if (hasStoredTheme) {
+        return;
+      }
+      const nextTheme = event && event.matches ? THEME_DARK : THEME_LIGHT;
+      setTheme(nextTheme, { persist: false });
+    }
+
+    setTheme(initialTheme, { persist: false });
+
+    if (prefersDarkMedia) {
+      if (typeof prefersDarkMedia.addEventListener === 'function') {
+        prefersDarkMedia.addEventListener('change', handleSystemThemeChange);
+      } else if (typeof prefersDarkMedia.addListener === 'function') {
+        prefersDarkMedia.addListener(handleSystemThemeChange);
+      }
+    }
 
     let wasDatePopoverOpen = false;
     let wasStatusPopoverOpen = false;
@@ -2454,6 +2514,9 @@
     }
     if (refs.changeTokenButton) {
       refs.changeTokenButton.addEventListener('click', handleChangeToken);
+    }
+    if (refs.themeSwitch) {
+      refs.themeSwitch.addEventListener('change', handleThemeSwitchChange);
     }
     if (refs.filterSearchInput) {
       refs.filterSearchInput.addEventListener('input', handleFilterSearchInput);
