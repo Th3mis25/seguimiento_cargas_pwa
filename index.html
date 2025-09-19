@@ -76,6 +76,26 @@
             </div>
           </div>
         </div>
+        <div class="sheet-grid__filter-field sheet-grid__filter-field--status" data-status-filter>
+          <span class="sheet-grid__filter-label">Estatus:</span>
+          <div class="status-filter">
+            <button
+              type="button"
+              class="status-filter__toggle"
+              data-action="status-toggle"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+            >
+              <span class="status-filter__label" data-status-label>Todos</span>
+              <svg class="status-filter__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M7 10l5 5 5-5H7z" fill="currentColor"></path>
+              </svg>
+            </button>
+            <div class="status-filter__popover" data-status-popover hidden>
+              <ul class="status-filter__list" data-status-list role="listbox" aria-label="Opciones de estatus"></ul>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="sheet-grid__viewport" role="region" aria-live="polite" aria-label="Tabla de seguimiento">
         <table class="sheet-table">

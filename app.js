@@ -793,6 +793,11 @@
       dateNextButton: doc.querySelector('[data-action="date-next"]'),
       dateToggleButton: doc.querySelector('[data-action="date-toggle"]'),
       dateClearButton: doc.querySelector('[data-action="date-clear"]'),
+      statusFilter: doc.querySelector('[data-status-filter]'),
+      statusToggleButton: doc.querySelector('[data-action="status-toggle"]'),
+      statusLabel: doc.querySelector('[data-status-label]'),
+      statusPopover: doc.querySelector('[data-status-popover]'),
+      statusList: doc.querySelector('[data-status-list]'),
       lastUpdated: doc.querySelector('[data-last-updated]'),
       currentUser: doc.querySelector('[data-current-user]'),
       loginModal: doc.querySelector('[data-login-modal]'),
@@ -822,18 +827,23 @@
       currentViewId: TABLE_VIEWS[0] ? TABLE_VIEWS[0].id : 'all',
       filters: {
         searchText: '',
-        dateRange: createTodayRange()
+        dateRange: createTodayRange(),
+        status: ''
       },
-      isDatePopoverOpen: false
+      availableStatuses: [],
+      isDatePopoverOpen: false,
+      isStatusPopoverOpen: false
     };
 
     let wasDatePopoverOpen = false;
+    let wasStatusPopoverOpen = false;
 
     if (refs.filterSearchInput) {
       refs.filterSearchInput.value = state.filters.searchText;
     }
 
     renderDateFilter();
+    renderStatusFilter();
 
     const EDIT_MODAL_CONTENT = {
       edit: {
@@ -910,6 +920,180 @@
       if (refs.dateEndInput) {
         refs.dateEndInput.value = dateToInputDateValue(normalized.end);
       }
+    }
+
+    function normalizeStatusValue(value) {
+      if (value == null) {
+        return '';
+      }
+      return String(value).trim();
+    }
+
+    function isSameStatus(a, b) {
+      return normalizeStatusValue(a).toLowerCase() === normalizeStatusValue(b).toLowerCase();
+    }
+
+    function createStatusOptionElement(value, label, isSelected) {
+      const item = doc.createElement('li');
+      item.className = 'status-filter__option';
+      const button = doc.createElement('button');
+      button.type = 'button';
+      button.className =
+        'status-filter__option-button' + (isSelected ? ' is-selected' : '');
+      button.setAttribute('data-status-value', value);
+      button.setAttribute('role', 'option');
+      button.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      button.textContent = label == null || label === '' ? '—' : label;
+      item.appendChild(button);
+      return item;
+    }
+
+    function updateAvailableStatuses(values) {
+      const locale = state.locale || DEFAULT_LOCALE;
+      const unique = new Map();
+      if (Array.isArray(values)) {
+        values.forEach(function (value) {
+          const normalized = normalizeStatusValue(value);
+          if (!normalized) {
+            return;
+          }
+          const key = normalized.toLowerCase();
+          if (!unique.has(key)) {
+            unique.set(key, normalized);
+          }
+        });
+      }
+      const sorted = Array.from(unique.values()).sort(function (a, b) {
+        return a.localeCompare(b, locale, { sensitivity: 'base' });
+      });
+      const previous = state.availableStatuses || [];
+      const changed =
+        sorted.length !== previous.length ||
+        sorted.some(function (value, index) {
+          return value !== previous[index];
+        });
+      if (changed) {
+        state.availableStatuses = sorted;
+      }
+
+      const selected = normalizeStatusValue(state.filters.status);
+      let canonicalSelected = '';
+      if (selected) {
+        const match = sorted.find(function (value) {
+          return isSameStatus(value, selected);
+        });
+        if (match) {
+          canonicalSelected = match;
+        }
+      }
+
+      if (selected && !canonicalSelected) {
+        state.filters.status = '';
+      } else if (canonicalSelected && state.filters.status !== canonicalSelected) {
+        state.filters.status = canonicalSelected;
+      }
+
+      if (state.availableStatuses.length === 0 && state.isStatusPopoverOpen) {
+        state.isStatusPopoverOpen = false;
+      }
+
+      renderStatusFilter();
+    }
+
+    function renderStatusFilter() {
+      const selected = normalizeStatusValue(state.filters.status);
+      if (refs.statusLabel) {
+        refs.statusLabel.textContent = selected ? state.filters.status : 'Todos';
+      }
+
+      if (refs.statusFilter) {
+        if (state.isStatusPopoverOpen && state.availableStatuses.length > 0) {
+          refs.statusFilter.classList.add('is-open');
+        } else {
+          refs.statusFilter.classList.remove('is-open');
+        }
+        refs.statusFilter.setAttribute('data-has-selection', selected ? 'true' : 'false');
+      }
+
+      if (refs.statusToggleButton) {
+        refs.statusToggleButton.setAttribute('aria-expanded', state.isStatusPopoverOpen ? 'true' : 'false');
+        refs.statusToggleButton.disabled = state.availableStatuses.length === 0;
+      }
+
+      if (refs.statusPopover) {
+        const shouldShow = state.isStatusPopoverOpen && state.availableStatuses.length > 0;
+        refs.statusPopover.hidden = !shouldShow;
+      }
+
+      if (refs.statusList) {
+        const list = refs.statusList;
+        list.innerHTML = '';
+        if (state.availableStatuses.length === 0) {
+          const emptyItem = doc.createElement('li');
+          emptyItem.className = 'status-filter__empty';
+          emptyItem.setAttribute('role', 'presentation');
+          emptyItem.textContent = 'Sin estatus disponibles';
+          list.appendChild(emptyItem);
+        } else {
+          const normalizedSelected = selected;
+          list.appendChild(createStatusOptionElement('', 'Todos', normalizedSelected === ''));
+          state.availableStatuses.forEach(function (status) {
+            const isSelected = normalizedSelected !== '' && isSameStatus(status, normalizedSelected);
+            list.appendChild(createStatusOptionElement(status, status, isSelected));
+          });
+        }
+      }
+
+      if (state.isStatusPopoverOpen && !wasStatusPopoverOpen && refs.statusList) {
+        const focusTarget =
+          refs.statusList.querySelector('.status-filter__option-button.is-selected') ||
+          refs.statusList.querySelector('.status-filter__option-button');
+        if (focusTarget && typeof focusTarget.focus === 'function') {
+          focusTarget.focus();
+        }
+      }
+
+      wasStatusPopoverOpen = state.isStatusPopoverOpen;
+    }
+
+    function openStatusPopover() {
+      if (state.isStatusPopoverOpen || state.availableStatuses.length === 0) {
+        return;
+      }
+      state.isStatusPopoverOpen = true;
+      renderStatusFilter();
+    }
+
+    function closeStatusPopover() {
+      if (!state.isStatusPopoverOpen) {
+        return;
+      }
+      state.isStatusPopoverOpen = false;
+      renderStatusFilter();
+    }
+
+    function toggleStatusPopover() {
+      if (state.isStatusPopoverOpen) {
+        closeStatusPopover();
+      } else {
+        openStatusPopover();
+      }
+    }
+
+    function applyStatusFilter(value) {
+      const normalized = normalizeStatusValue(value);
+      let nextValue = '';
+      if (normalized) {
+        const match = (state.availableStatuses || []).find(function (status) {
+          return isSameStatus(status, normalized);
+        });
+        nextValue = match || normalized;
+      }
+      if (state.filters.status === nextValue) {
+        return;
+      }
+      state.filters.status = nextValue;
+      renderTable();
     }
 
     function renderDateFilter() {
@@ -1031,38 +1215,70 @@
       closeDatePopover();
     }
 
-    function handleDocumentClick(event) {
-      if (!state.isDatePopoverOpen) {
-        return;
+    function handleStatusToggle(event) {
+      if (event) {
+        event.preventDefault();
       }
-      const container = refs.dateFilter;
-      if (!container) {
-        return;
-      }
+      toggleStatusPopover();
+    }
+
+    function handleStatusListClick(event) {
       const target = event && event.target ? event.target : null;
-      if (target && container.contains(target)) {
+      if (!target || typeof target.closest !== 'function') {
         return;
       }
-      closeDatePopover();
+      const button = target.closest('[data-status-value]');
+      if (!button) {
+        return;
+      }
+      event.preventDefault();
+      const value = button.getAttribute('data-status-value') || '';
+      applyStatusFilter(value);
+      closeStatusPopover();
+    }
+
+    function handleDocumentClick(event) {
+      const target = event && event.target ? event.target : null;
+      if (state.isDatePopoverOpen) {
+        const dateContainer = refs.dateFilter;
+        if (!dateContainer || !(target && dateContainer.contains(target))) {
+          closeDatePopover();
+        }
+      }
+      if (state.isStatusPopoverOpen) {
+        const statusContainer = refs.statusFilter;
+        if (!statusContainer || !(target && statusContainer.contains(target))) {
+          closeStatusPopover();
+        }
+      }
     }
 
     function handleDocumentKeydown(event) {
-      if (!state.isDatePopoverOpen) {
+      if (!state.isDatePopoverOpen && !state.isStatusPopoverOpen) {
         return;
       }
       if (event && (event.key === 'Escape' || event.key === 'Esc')) {
-        closeDatePopover();
+        if (state.isDatePopoverOpen) {
+          closeDatePopover();
+        }
+        if (state.isStatusPopoverOpen) {
+          closeStatusPopover();
+        }
       }
     }
 
     function resetFilters() {
       state.filters.searchText = '';
       state.filters.dateRange = createTodayRange();
+      state.filters.status = '';
       state.isDatePopoverOpen = false;
+      state.isStatusPopoverOpen = false;
+      state.availableStatuses = [];
       if (refs.filterSearchInput) {
         refs.filterSearchInput.value = '';
       }
       renderDateFilter();
+      renderStatusFilter();
     }
 
     function getActiveView() {
@@ -1220,6 +1436,7 @@
       clearTable();
 
       if (!Array.isArray(state.data) || state.data.length === 0) {
+        updateAvailableStatuses([]);
         setStatus('No hay datos disponibles en la hoja.', 'info');
         return;
       }
@@ -1244,6 +1461,20 @@
           dateColumnIndices.push(index);
         }
       });
+
+      const statusColumnIndex =
+        typeof columnMap.estatus === 'number' && columnMap.estatus >= 0 ? columnMap.estatus : null;
+      if (statusColumnIndex != null) {
+        const statuses = dataRows.reduce(function (acc, row) {
+          if (Array.isArray(row) && statusColumnIndex < row.length) {
+            acc.push(row[statusColumnIndex]);
+          }
+          return acc;
+        }, []);
+        updateAvailableStatuses(statuses);
+      } else {
+        updateAvailableStatuses([]);
+      }
 
       const rowsWithIndex = dataRows.map(function (row, index) {
         return {
@@ -1304,6 +1535,21 @@
             }
           }
           return false;
+        });
+      }
+
+      const selectedStatus = normalizeStatusValue(state.filters.status);
+      if (statusColumnIndex != null && selectedStatus) {
+        rowsToRender = rowsToRender.filter(function (entry) {
+          const row = Array.isArray(entry.row) ? entry.row : [];
+          if (statusColumnIndex >= row.length) {
+            return false;
+          }
+          const cellValue = row[statusColumnIndex];
+          if (cellValue == null) {
+            return false;
+          }
+          return isSameStatus(cellValue, selectedStatus);
         });
       }
 
@@ -1961,6 +2207,12 @@
     }
     if (refs.dateClearButton) {
       refs.dateClearButton.addEventListener('click', handleDateClear);
+    }
+    if (refs.statusToggleButton) {
+      refs.statusToggleButton.addEventListener('click', handleStatusToggle);
+    }
+    if (refs.statusList) {
+      refs.statusList.addEventListener('click', handleStatusListClick);
     }
     if (refs.viewMenu) {
       refs.viewMenu.addEventListener('click', handleViewMenuClick);
