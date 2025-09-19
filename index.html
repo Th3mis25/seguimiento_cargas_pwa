@@ -96,6 +96,26 @@
             </div>
           </div>
         </div>
+        <div class="sheet-grid__filter-field sheet-grid__filter-field--client" data-client-filter>
+          <span class="sheet-grid__filter-label">Cliente:</span>
+          <div class="client-filter">
+            <button
+              type="button"
+              class="client-filter__toggle"
+              data-action="client-toggle"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+            >
+              <span class="client-filter__label" data-client-label>Todos</span>
+              <svg class="client-filter__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M7 10l5 5 5-5H7z" fill="currentColor"></path>
+              </svg>
+            </button>
+            <div class="client-filter__popover" data-client-popover hidden>
+              <ul class="client-filter__list" data-client-list role="listbox" aria-label="Opciones de cliente"></ul>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="sheet-grid__viewport" role="region" aria-live="polite" aria-label="Tabla de seguimiento">
         <table class="sheet-table">

@@ -798,6 +798,11 @@
       statusLabel: doc.querySelector('[data-status-label]'),
       statusPopover: doc.querySelector('[data-status-popover]'),
       statusList: doc.querySelector('[data-status-list]'),
+      clientFilter: doc.querySelector('[data-client-filter]'),
+      clientToggleButton: doc.querySelector('[data-action="client-toggle"]'),
+      clientLabel: doc.querySelector('[data-client-label]'),
+      clientPopover: doc.querySelector('[data-client-popover]'),
+      clientList: doc.querySelector('[data-client-list]'),
       lastUpdated: doc.querySelector('[data-last-updated]'),
       currentUser: doc.querySelector('[data-current-user]'),
       loginModal: doc.querySelector('[data-login-modal]'),
@@ -828,15 +833,19 @@
       filters: {
         searchText: '',
         dateRange: createTodayRange(),
-        status: ''
+        status: '',
+        client: ''
       },
       availableStatuses: [],
+      availableClients: [],
       isDatePopoverOpen: false,
-      isStatusPopoverOpen: false
+      isStatusPopoverOpen: false,
+      isClientPopoverOpen: false
     };
 
     let wasDatePopoverOpen = false;
     let wasStatusPopoverOpen = false;
+    let wasClientPopoverOpen = false;
 
     if (refs.filterSearchInput) {
       refs.filterSearchInput.value = state.filters.searchText;
@@ -844,6 +853,7 @@
 
     renderDateFilter();
     renderStatusFilter();
+    renderClientFilter();
 
     const EDIT_MODAL_CONTENT = {
       edit: {
@@ -948,6 +958,32 @@
       return item;
     }
 
+    function normalizeClientValue(value) {
+      if (value == null) {
+        return '';
+      }
+      return String(value).trim();
+    }
+
+    function isSameClient(a, b) {
+      return normalizeClientValue(a).toLowerCase() === normalizeClientValue(b).toLowerCase();
+    }
+
+    function createClientOptionElement(value, label, isSelected) {
+      const item = doc.createElement('li');
+      item.className = 'client-filter__option';
+      const button = doc.createElement('button');
+      button.type = 'button';
+      button.className =
+        'client-filter__option-button' + (isSelected ? ' is-selected' : '');
+      button.setAttribute('data-client-value', value);
+      button.setAttribute('role', 'option');
+      button.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      button.textContent = label == null || label === '' ? '—' : label;
+      item.appendChild(button);
+      return item;
+    }
+
     function updateAvailableStatuses(values) {
       const locale = state.locale || DEFAULT_LOCALE;
       const unique = new Map();
@@ -998,6 +1034,58 @@
       }
 
       renderStatusFilter();
+    }
+
+    function updateAvailableClients(values) {
+      const locale = state.locale || DEFAULT_LOCALE;
+      const unique = new Map();
+      if (Array.isArray(values)) {
+        values.forEach(function (value) {
+          const normalized = normalizeClientValue(value);
+          if (!normalized) {
+            return;
+          }
+          const key = normalized.toLowerCase();
+          if (!unique.has(key)) {
+            unique.set(key, normalized);
+          }
+        });
+      }
+      const sorted = Array.from(unique.values()).sort(function (a, b) {
+        return a.localeCompare(b, locale, { sensitivity: 'base' });
+      });
+      const previous = state.availableClients || [];
+      const changed =
+        sorted.length !== previous.length ||
+        sorted.some(function (value, index) {
+          return value !== previous[index];
+        });
+      if (changed) {
+        state.availableClients = sorted;
+      }
+
+      const selected = normalizeClientValue(state.filters.client);
+      let canonicalSelected = '';
+      if (selected) {
+        const match = sorted.find(function (value) {
+          return isSameClient(value, selected);
+        });
+        if (match) {
+          canonicalSelected = match;
+        }
+      }
+
+      if (selected && !canonicalSelected) {
+        state.filters.client = '';
+      } else if (canonicalSelected && state.filters.client !== canonicalSelected) {
+        state.filters.client = canonicalSelected;
+      }
+
+      if (state.availableClients.length === 0 && state.isClientPopoverOpen) {
+        state.isClientPopoverOpen = false;
+      }
+
+      renderClientFilter();
     }
 
     function renderStatusFilter() {
@@ -1056,12 +1144,79 @@
       wasStatusPopoverOpen = state.isStatusPopoverOpen;
     }
 
+    function renderClientFilter() {
+      const selected = normalizeClientValue(state.filters.client);
+      if (refs.clientLabel) {
+        refs.clientLabel.textContent = selected ? state.filters.client : 'Todos';
+      }
+
+      if (refs.clientFilter) {
+        if (state.isClientPopoverOpen && state.availableClients.length > 0) {
+          refs.clientFilter.classList.add('is-open');
+        } else {
+          refs.clientFilter.classList.remove('is-open');
+        }
+        refs.clientFilter.setAttribute('data-has-selection', selected ? 'true' : 'false');
+      }
+
+      if (refs.clientToggleButton) {
+        refs.clientToggleButton.setAttribute('aria-expanded', state.isClientPopoverOpen ? 'true' : 'false');
+        refs.clientToggleButton.disabled = state.availableClients.length === 0;
+      }
+
+      if (refs.clientPopover) {
+        const shouldShow = state.isClientPopoverOpen && state.availableClients.length > 0;
+        refs.clientPopover.hidden = !shouldShow;
+      }
+
+      if (refs.clientList) {
+        const list = refs.clientList;
+        list.innerHTML = '';
+        if (state.availableClients.length === 0) {
+          const emptyItem = doc.createElement('li');
+          emptyItem.className = 'client-filter__empty';
+          emptyItem.setAttribute('role', 'presentation');
+          emptyItem.textContent = 'Sin clientes disponibles';
+          list.appendChild(emptyItem);
+        } else {
+          const normalizedSelected = selected;
+          list.appendChild(createClientOptionElement('', 'Todos', normalizedSelected === ''));
+          state.availableClients.forEach(function (client) {
+            const isSelected = normalizedSelected !== '' && isSameClient(client, normalizedSelected);
+            list.appendChild(createClientOptionElement(client, client, isSelected));
+          });
+        }
+      }
+
+      if (state.isClientPopoverOpen && !wasClientPopoverOpen && refs.clientList) {
+        const focusTarget =
+          refs.clientList.querySelector('.client-filter__option-button.is-selected') ||
+          refs.clientList.querySelector('.client-filter__option-button');
+        if (focusTarget && typeof focusTarget.focus === 'function') {
+          focusTarget.focus();
+        }
+      }
+
+      wasClientPopoverOpen = state.isClientPopoverOpen;
+    }
+
     function openStatusPopover() {
       if (state.isStatusPopoverOpen || state.availableStatuses.length === 0) {
         return;
       }
       state.isStatusPopoverOpen = true;
       renderStatusFilter();
+    }
+
+    function openClientPopover() {
+      if (state.isClientPopoverOpen || state.availableClients.length === 0) {
+        return;
+      }
+      if (state.isStatusPopoverOpen) {
+        closeStatusPopover();
+      }
+      state.isClientPopoverOpen = true;
+      renderClientFilter();
     }
 
     function closeStatusPopover() {
@@ -1072,11 +1227,28 @@
       renderStatusFilter();
     }
 
+    function closeClientPopover() {
+      if (!state.isClientPopoverOpen) {
+        return;
+      }
+      state.isClientPopoverOpen = false;
+      renderClientFilter();
+    }
+
     function toggleStatusPopover() {
       if (state.isStatusPopoverOpen) {
         closeStatusPopover();
       } else {
+        closeClientPopover();
         openStatusPopover();
+      }
+    }
+
+    function toggleClientPopover() {
+      if (state.isClientPopoverOpen) {
+        closeClientPopover();
+      } else {
+        openClientPopover();
       }
     }
 
@@ -1093,6 +1265,22 @@
         return;
       }
       state.filters.status = nextValue;
+      renderTable();
+    }
+
+    function applyClientFilter(value) {
+      const normalized = normalizeClientValue(value);
+      let nextValue = '';
+      if (normalized) {
+        const match = (state.availableClients || []).find(function (client) {
+          return isSameClient(client, normalized);
+        });
+        nextValue = match || normalized;
+      }
+      if (state.filters.client === nextValue) {
+        return;
+      }
+      state.filters.client = nextValue;
       renderTable();
     }
 
@@ -1237,6 +1425,28 @@
       closeStatusPopover();
     }
 
+    function handleClientToggle(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      toggleClientPopover();
+    }
+
+    function handleClientListClick(event) {
+      const target = event && event.target ? event.target : null;
+      if (!target || typeof target.closest !== 'function') {
+        return;
+      }
+      const button = target.closest('[data-client-value]');
+      if (!button) {
+        return;
+      }
+      event.preventDefault();
+      const value = button.getAttribute('data-client-value') || '';
+      applyClientFilter(value);
+      closeClientPopover();
+    }
+
     function handleDocumentClick(event) {
       const target = event && event.target ? event.target : null;
       if (state.isDatePopoverOpen) {
@@ -1251,10 +1461,16 @@
           closeStatusPopover();
         }
       }
+      if (state.isClientPopoverOpen) {
+        const clientContainer = refs.clientFilter;
+        if (!clientContainer || !(target && clientContainer.contains(target))) {
+          closeClientPopover();
+        }
+      }
     }
 
     function handleDocumentKeydown(event) {
-      if (!state.isDatePopoverOpen && !state.isStatusPopoverOpen) {
+      if (!state.isDatePopoverOpen && !state.isStatusPopoverOpen && !state.isClientPopoverOpen) {
         return;
       }
       if (event && (event.key === 'Escape' || event.key === 'Esc')) {
@@ -1264,6 +1480,9 @@
         if (state.isStatusPopoverOpen) {
           closeStatusPopover();
         }
+        if (state.isClientPopoverOpen) {
+          closeClientPopover();
+        }
       }
     }
 
@@ -1271,14 +1490,18 @@
       state.filters.searchText = '';
       state.filters.dateRange = createTodayRange();
       state.filters.status = '';
+      state.filters.client = '';
       state.isDatePopoverOpen = false;
       state.isStatusPopoverOpen = false;
+      state.isClientPopoverOpen = false;
       state.availableStatuses = [];
+      state.availableClients = [];
       if (refs.filterSearchInput) {
         refs.filterSearchInput.value = '';
       }
       renderDateFilter();
       renderStatusFilter();
+      renderClientFilter();
     }
 
     function getActiveView() {
@@ -1437,6 +1660,7 @@
 
       if (!Array.isArray(state.data) || state.data.length === 0) {
         updateAvailableStatuses([]);
+        updateAvailableClients([]);
         setStatus('No hay datos disponibles en la hoja.', 'info');
         return;
       }
@@ -1474,6 +1698,20 @@
         updateAvailableStatuses(statuses);
       } else {
         updateAvailableStatuses([]);
+      }
+
+      const clientColumnIndex =
+        typeof columnMap.cliente === 'number' && columnMap.cliente >= 0 ? columnMap.cliente : null;
+      if (clientColumnIndex != null) {
+        const clients = dataRows.reduce(function (acc, row) {
+          if (Array.isArray(row) && clientColumnIndex < row.length) {
+            acc.push(row[clientColumnIndex]);
+          }
+          return acc;
+        }, []);
+        updateAvailableClients(clients);
+      } else {
+        updateAvailableClients([]);
       }
 
       const rowsWithIndex = dataRows.map(function (row, index) {
@@ -1550,6 +1788,21 @@
             return false;
           }
           return isSameStatus(cellValue, selectedStatus);
+        });
+      }
+
+      const selectedClient = normalizeClientValue(state.filters.client);
+      if (clientColumnIndex != null && selectedClient) {
+        rowsToRender = rowsToRender.filter(function (entry) {
+          const row = Array.isArray(entry.row) ? entry.row : [];
+          if (clientColumnIndex >= row.length) {
+            return false;
+          }
+          const cellValue = row[clientColumnIndex];
+          if (cellValue == null) {
+            return false;
+          }
+          return isSameClient(cellValue, selectedClient);
         });
       }
 
@@ -2228,6 +2481,12 @@
     }
     if (refs.statusList) {
       refs.statusList.addEventListener('click', handleStatusListClick);
+    }
+    if (refs.clientToggleButton) {
+      refs.clientToggleButton.addEventListener('click', handleClientToggle);
+    }
+    if (refs.clientList) {
+      refs.clientList.addEventListener('click', handleClientListClick);
     }
     if (refs.viewMenu) {
       refs.viewMenu.addEventListener('click', handleViewMenuClick);

@@ -285,11 +285,13 @@ body {
   z-index: 20;
 }
 
-.status-filter {
+.status-filter,
+.client-filter {
   position: relative;
 }
 
-.status-filter__toggle {
+.status-filter__toggle,
+.client-filter__toggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -305,29 +307,34 @@ body {
   box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
 }
 
-.status-filter__toggle:hover:not(:disabled) {
+.status-filter__toggle:hover:not(:disabled),
+.client-filter__toggle:hover:not(:disabled) {
   border-color: rgba(26, 115, 232, 0.35);
   color: var(--accent);
 }
 
-.status-filter__toggle:focus {
+.status-filter__toggle:focus,
+.client-filter__toggle:focus {
   outline: none;
   border-color: rgba(26, 115, 232, 0.6);
   box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.25);
 }
 
-.status-filter__toggle:disabled {
+.status-filter__toggle:disabled,
+.client-filter__toggle:disabled {
   cursor: not-allowed;
   opacity: 0.6;
   color: var(--sheet-text-soft);
   box-shadow: none;
 }
 
-.status-filter__label {
+.status-filter__label,
+.client-filter__label {
   color: var(--sheet-text);
 }
 
-.status-filter__icon {
+.status-filter__icon,
+.client-filter__icon {
   width: 18px;
   height: 18px;
   color: var(--sheet-text-soft);
@@ -339,7 +346,14 @@ body {
   color: var(--accent);
 }
 
-.status-filter__popover {
+.sheet-grid__filter-field--client.is-open .client-filter__toggle,
+.sheet-grid__filter-field--client[data-has-selection='true'] .client-filter__toggle {
+  border-color: rgba(26, 115, 232, 0.5);
+  color: var(--accent);
+}
+
+.status-filter__popover,
+.client-filter__popover {
   position: absolute;
   top: calc(100% + 10px);
   left: 0;
@@ -352,7 +366,8 @@ body {
   z-index: 20;
 }
 
-.status-filter__list {
+.status-filter__list,
+.client-filter__list {
   list-style: none;
   margin: 0;
   padding: 4px 0;
@@ -360,11 +375,13 @@ body {
   overflow-y: auto;
 }
 
-.status-filter__option {
+.status-filter__option,
+.client-filter__option {
   margin: 0;
 }
 
-.status-filter__option-button {
+.status-filter__option-button,
+.client-filter__option-button {
   width: 100%;
   padding: 8px 12px;
   border: none;
@@ -378,18 +395,22 @@ body {
 }
 
 .status-filter__option-button:hover,
-.status-filter__option-button:focus {
+.status-filter__option-button:focus,
+.client-filter__option-button:hover,
+.client-filter__option-button:focus {
   outline: none;
   background: rgba(26, 115, 232, 0.08);
 }
 
-.status-filter__option-button.is-selected {
+.status-filter__option-button.is-selected,
+.client-filter__option-button.is-selected {
   background: rgba(26, 115, 232, 0.15);
   color: var(--accent);
   font-weight: 600;
 }
 
-.status-filter__empty {
+.status-filter__empty,
+.client-filter__empty {
   padding: 12px;
   font-size: 0.9rem;
   color: var(--sheet-text-soft);
