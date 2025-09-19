@@ -745,6 +745,10 @@ body {
   background: var(--sheet-surface);
 }
 
+.sheet-table tbody td {
+  transition: background var(--transition), box-shadow var(--transition);
+}
+
 .sheet-table thead th {
   position: sticky;
   top: 0;
@@ -762,6 +766,17 @@ body {
 
 .sheet-table tbody tr:nth-child(even) td {
   background: var(--sheet-surface-muted);
+}
+
+.sheet-table tbody tr:hover td {
+  background: var(--accent-surface);
+  box-shadow: inset 0.25rem 0 0 var(--accent-border-weak);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-table tbody td {
+    transition: none;
+  }
 }
 
 .sheet-table tbody td.is-empty {
