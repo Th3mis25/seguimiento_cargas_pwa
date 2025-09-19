@@ -22,6 +22,18 @@
   --accent-shadow: rgba(26, 115, 232, 0.25);
   --danger: #d93025;
   --success: #188038;
+  --status-default-bg: rgba(95, 99, 104, 0.12);
+  --status-default-text: #3c4043;
+  --status-in-transit-bg: rgba(26, 115, 232, 0.16);
+  --status-in-transit-text: #174ea6;
+  --status-delivered-bg: rgba(24, 128, 56, 0.14);
+  --status-delivered-text: #0b5e2c;
+  --status-pending-bg: rgba(251, 188, 5, 0.2);
+  --status-pending-text: #7c4a00;
+  --status-cancelled-bg: rgba(217, 48, 37, 0.2);
+  --status-cancelled-text: #8a1312;
+  --status-delayed-bg: rgba(240, 124, 0, 0.18);
+  --status-delayed-text: #7a2d00;
   --button-background: #ffffff;
   --button-background-hover: rgba(26, 115, 232, 0.08);
   --button-primary-text: #ffffff;
@@ -65,6 +77,18 @@
   --accent-shadow: rgba(45, 110, 194, 0.45);
   --danger: #ff9f95;
   --success: #7dd5a2;
+  --status-default-bg: rgba(124, 154, 197, 0.22);
+  --status-default-text: #e0ebff;
+  --status-in-transit-bg: rgba(98, 176, 255, 0.3);
+  --status-in-transit-text: #ecf6ff;
+  --status-delivered-bg: rgba(125, 213, 162, 0.32);
+  --status-delivered-text: #e7ffee;
+  --status-pending-bg: rgba(255, 204, 0, 0.28);
+  --status-pending-text: #fff1b3;
+  --status-cancelled-bg: rgba(255, 159, 149, 0.3);
+  --status-cancelled-text: #ffe1dd;
+  --status-delayed-bg: rgba(255, 183, 77, 0.3);
+  --status-delayed-text: #ffe8c5;
   --button-background: #172a47;
   --button-background-hover: rgba(98, 176, 255, 0.18);
   --button-primary-text: #f2f7ff;
@@ -742,6 +766,52 @@ body {
 
 .sheet-table tbody td.is-empty {
   color: var(--table-empty-color);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.125rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  background: var(--status-default-bg);
+  color: var(--status-default-text);
+  border: 1px solid transparent;
+  text-transform: none;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.status-badge--en-transito {
+  background: var(--status-in-transit-bg);
+  color: var(--status-in-transit-text);
+}
+
+.status-badge--entregado {
+  background: var(--status-delivered-bg);
+  color: var(--status-delivered-text);
+}
+
+.status-badge--pendiente,
+.status-badge--en-espera {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
+}
+
+.status-badge--cancelado,
+.status-badge--cancelada {
+  background: var(--status-cancelled-bg);
+  color: var(--status-cancelled-text);
+}
+
+.status-badge--demorado,
+.status-badge--retrasado {
+  background: var(--status-delayed-bg);
+  color: var(--status-delayed-text);
 }
 
 .sheet-table th.is-date,
