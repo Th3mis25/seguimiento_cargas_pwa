@@ -53,12 +53,6 @@ body {
   letter-spacing: -0.015em;
 }
 
-.sheet-app__subtitle {
-  margin: 4px 0 0;
-  color: var(--sheet-text-soft);
-  font-size: 0.95rem;
-}
-
 .sheet-app__controls {
   display: flex;
   gap: 8px;
@@ -106,36 +100,46 @@ body {
   color: var(--sheet-text-soft);
 }
 
-.sheet-app__status {
-  min-height: 24px;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  font-size: 0.95rem;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+.sheet-app__footer-item--status {
+  min-width: 0;
 }
 
-.sheet-app__status[hidden] {
+.sheet-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.sheet-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.sheet-status[hidden] {
   display: none;
 }
 
-.sheet-app__status.is-info {
-  border-color: rgba(26, 115, 232, 0.25);
+.sheet-status.is-info {
   color: var(--accent);
-  background: rgba(26, 115, 232, 0.08);
+  opacity: 1;
 }
 
-.sheet-app__status.is-success {
-  border-color: rgba(24, 128, 56, 0.25);
+.sheet-status.is-success {
   color: var(--success);
-  background: rgba(24, 128, 56, 0.08);
+  opacity: 1;
 }
 
-.sheet-app__status.is-error {
-  border-color: rgba(217, 48, 37, 0.25);
+.sheet-status.is-error {
   color: var(--danger);
-  background: rgba(217, 48, 37, 0.08);
+  opacity: 1;
 }
 
 .sheet-grid {
