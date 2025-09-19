@@ -488,6 +488,52 @@
     return citaDate < startOfTomorrow;
   }
 
+  function matchesInventarioNlarView(row, context) {
+    if (!row || !context || !context.columnMap) {
+      return false;
+    }
+    const columnMap = context.columnMap;
+    const estatusIndex = columnMap.estatus;
+    if (estatusIndex == null) {
+      return false;
+    }
+    const rawStatus = row[estatusIndex];
+    if (rawStatus == null || rawStatus === '') {
+      return false;
+    }
+    const normalizedStatus = String(rawStatus).trim().toLowerCase();
+    return normalizedStatus === 'nuevo laredo yard';
+  }
+
+  function matchesWeeklyProgramView(row, context) {
+    if (!row || !context || !context.columnMap) {
+      return false;
+    }
+    const columnMap = context.columnMap;
+    const citaCargaIndex = columnMap.citaCarga;
+    if (citaCargaIndex == null) {
+      return false;
+    }
+    const rawDate = row[citaCargaIndex];
+    if (rawDate == null || rawDate === '') {
+      return false;
+    }
+    const citaDate = parseDateValue(rawDate);
+    if (!citaDate) {
+      return false;
+    }
+    const reference =
+      context.now instanceof Date && !isNaN(context.now.getTime()) ? new Date(context.now.getTime()) : new Date();
+    const startOfDay = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
+    const day = startOfDay.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    startOfDay.setDate(startOfDay.getDate() + diffToMonday);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfDay.getTime());
+    endOfWeek.setDate(endOfWeek.getDate() + 7);
+    return citaDate >= startOfDay && citaDate < endOfWeek;
+  }
+
   const TABLE_VIEWS = [
     {
       id: 'all',
@@ -500,6 +546,16 @@
       id: 'daily-loads',
       label: 'Cargas diarias',
       filter: matchesDailyLoadsView
+    },
+    {
+      id: 'inventario-nlar',
+      label: 'Inventario Nlar',
+      filter: matchesInventarioNlarView
+    },
+    {
+      id: 'weekly-program',
+      label: 'Programa semanal',
+      filter: matchesWeeklyProgramView
     }
   ];
 
