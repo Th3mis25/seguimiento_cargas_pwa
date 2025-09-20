@@ -43,96 +43,104 @@
     <div class="sheet-grid">
       <div class="sheet-grid__views" data-view-menu role="toolbar" aria-label="Vistas de la tabla"></div>
       <div class="sheet-grid__filters" data-filter-panel>
-        <label class="sheet-grid__filter-field" for="filterSearch">
-          <span class="sheet-grid__filter-label">Buscar:</span>
-          <input
-            id="filterSearch"
-            type="search"
-            name="filterSearch"
-            placeholder="Trip, Caja o Referencia"
-            autocomplete="off"
-            spellcheck="false"
-            data-filter-search
-          />
-        </label>
-        <div class="sheet-grid__filter-field sheet-grid__filter-field--date" data-date-filter>
-          <span class="sheet-grid__filter-label">Fecha:</span>
-          <div class="date-filter">
-            <button type="button" class="date-filter__nav" data-action="date-prev" aria-label="Rango anterior">
-              <span aria-hidden="true">&#x2039;</span>
-            </button>
-            <button
-              type="button"
-              class="date-filter__toggle"
-              data-action="date-toggle"
-              aria-haspopup="dialog"
-              aria-expanded="false"
-            >
-              <svg class="date-filter__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path
-                  d="M7 2a1 1 0 0 0-1 1v1H5a3 3 0 0 0-3 3v11a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3h-1V3a1 1 0 1 0-2 0v1H8V3a1 1 0 0 0-1-1Zm12 6H5v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
-                  fill="currentColor"
-                ></path>
-              </svg>
-              <span class="date-filter__label" data-date-label>Hoy</span>
-            </button>
-            <button type="button" class="date-filter__nav" data-action="date-next" aria-label="Rango siguiente">
-              <span aria-hidden="true">&#x203A;</span>
-            </button>
-          </div>
-          <div class="date-filter__popover" data-date-popover hidden>
-            <div class="date-filter__group">
-              <label>
-                <span>Desde</span>
-                <input type="date" data-date-start />
-              </label>
-              <label>
-                <span>Hasta</span>
-                <input type="date" data-date-end />
-              </label>
+        <div class="filter-card filter-card--search">
+          <label class="sheet-grid__filter-field" for="filterSearch">
+            <span class="sheet-grid__filter-label">Buscar:</span>
+            <input
+              id="filterSearch"
+              type="search"
+              name="filterSearch"
+              placeholder="Trip, Caja o Referencia"
+              autocomplete="off"
+              spellcheck="false"
+              data-filter-search
+            />
+          </label>
+        </div>
+        <div class="filter-card filter-card--date">
+          <div class="sheet-grid__filter-field sheet-grid__filter-field--date" data-date-filter>
+            <span class="sheet-grid__filter-label">Fecha:</span>
+            <div class="date-filter">
+              <button type="button" class="date-filter__nav" data-action="date-prev" aria-label="Rango anterior">
+                <span aria-hidden="true">&#x2039;</span>
+              </button>
+              <button
+                type="button"
+                class="date-filter__toggle"
+                data-action="date-toggle"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+              >
+                <svg class="date-filter__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    d="M7 2a1 1 0 0 0-1 1v1H5a3 3 0 0 0-3 3v11a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3h-1V3a1 1 0 1 0-2 0v1H8V3a1 1 0 0 0-1-1Zm12 6H5v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
+                    fill="currentColor"
+                  ></path>
+                </svg>
+                <span class="date-filter__label" data-date-label>Hoy</span>
+              </button>
+              <button type="button" class="date-filter__nav" data-action="date-next" aria-label="Rango siguiente">
+                <span aria-hidden="true">&#x203A;</span>
+              </button>
             </div>
-            <div class="date-filter__actions">
-              <button type="button" class="date-filter__clear" data-action="date-clear">Limpiar</button>
+            <div class="date-filter__popover" data-date-popover hidden>
+              <div class="date-filter__group">
+                <label>
+                  <span>Desde</span>
+                  <input type="date" data-date-start />
+                </label>
+                <label>
+                  <span>Hasta</span>
+                  <input type="date" data-date-end />
+                </label>
+              </div>
+              <div class="date-filter__actions">
+                <button type="button" class="date-filter__clear" data-action="date-clear">Limpiar</button>
+              </div>
             </div>
           </div>
         </div>
-        <div class="sheet-grid__filter-field sheet-grid__filter-field--status" data-status-filter>
-          <span class="sheet-grid__filter-label">Estatus:</span>
-          <div class="status-filter">
-            <button
-              type="button"
-              class="status-filter__toggle"
-              data-action="status-toggle"
-              aria-haspopup="listbox"
-              aria-expanded="false"
-            >
-              <span class="status-filter__label" data-status-label>Todos</span>
-              <svg class="status-filter__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M7 10l5 5 5-5H7z" fill="currentColor"></path>
-              </svg>
-            </button>
-            <div class="status-filter__popover" data-status-popover hidden>
-              <ul class="status-filter__list" data-status-list role="listbox" aria-label="Opciones de estatus"></ul>
+        <div class="filter-card filter-card--status">
+          <div class="sheet-grid__filter-field sheet-grid__filter-field--status" data-status-filter>
+            <span class="sheet-grid__filter-label">Estatus:</span>
+            <div class="status-filter">
+              <button
+                type="button"
+                class="status-filter__toggle"
+                data-action="status-toggle"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+              >
+                <span class="status-filter__label" data-status-label>Todos</span>
+                <svg class="status-filter__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M7 10l5 5 5-5H7z" fill="currentColor"></path>
+                </svg>
+              </button>
+              <div class="status-filter__popover" data-status-popover hidden>
+                <ul class="status-filter__list" data-status-list role="listbox" aria-label="Opciones de estatus"></ul>
+              </div>
             </div>
           </div>
         </div>
-        <div class="sheet-grid__filter-field sheet-grid__filter-field--client" data-client-filter>
-          <span class="sheet-grid__filter-label">Cliente:</span>
-          <div class="client-filter">
-            <button
-              type="button"
-              class="client-filter__toggle"
-              data-action="client-toggle"
-              aria-haspopup="listbox"
-              aria-expanded="false"
-            >
-              <span class="client-filter__label" data-client-label>Todos</span>
-              <svg class="client-filter__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M7 10l5 5 5-5H7z" fill="currentColor"></path>
-              </svg>
-            </button>
-            <div class="client-filter__popover" data-client-popover hidden>
-              <ul class="client-filter__list" data-client-list role="listbox" aria-label="Opciones de cliente"></ul>
+        <div class="filter-card filter-card--client">
+          <div class="sheet-grid__filter-field sheet-grid__filter-field--client" data-client-filter>
+            <span class="sheet-grid__filter-label">Cliente:</span>
+            <div class="client-filter">
+              <button
+                type="button"
+                class="client-filter__toggle"
+                data-action="client-toggle"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+              >
+                <span class="client-filter__label" data-client-label>Todos</span>
+                <svg class="client-filter__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M7 10l5 5 5-5H7z" fill="currentColor"></path>
+                </svg>
+              </button>
+              <div class="client-filter__popover" data-client-popover hidden>
+                <ul class="client-filter__list" data-client-list role="listbox" aria-label="Opciones de cliente"></ul>
+              </div>
             </div>
           </div>
         </div>
