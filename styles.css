@@ -819,6 +819,7 @@ body {
 
 .sheet-table tbody td {
   transition: background var(--transition), box-shadow var(--transition);
+  white-space: nowrap;
 }
 
 .sheet-table thead th {
