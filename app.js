@@ -29,6 +29,7 @@
   ];
   const DATE_FIELD_KEYS = ['citaCarga', 'llegadaCarga', 'citaEntrega', 'llegadaEntrega'];
   const DATE_FIELD_SET = new Set(DATE_FIELD_KEYS);
+  const NOWRAP_COLUMN_KEYS = new Set(['trip', 'caja', 'trmx', 'trusa']);
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const COLUMN_LABEL_TO_KEY = COLUMN_CONFIG.reduce(function (acc, column) {
     if (column && column.label) {
@@ -1878,6 +1879,9 @@
       }
 
       const headers = state.data[0] || [];
+      const columnKeys = headers.map(function (header) {
+        return getColumnKeyFromHeader(header);
+      });
       const dataRows = state.data.slice(1);
       let columnCount = headers.length;
       for (let i = 0; i < dataRows.length; i++) {
@@ -1889,7 +1893,7 @@
       const columnMap = {};
       const dateColumnIndices = [];
       headers.forEach(function (header, index) {
-        const key = getColumnKeyFromHeader(header);
+        const key = columnKeys[index];
         if (key) {
           columnMap[key] = index;
         }
@@ -2107,6 +2111,10 @@
         if (isDateHeader(label)) {
           th.classList.add('is-date');
         }
+        const columnKey = c < columnKeys.length ? columnKeys[c] : null;
+        if (columnKey && NOWRAP_COLUMN_KEYS.has(columnKey)) {
+          th.classList.add('is-nowrap');
+        }
         headerRow.appendChild(th);
       }
 
@@ -2120,15 +2128,18 @@
         for (let c = 0; c < columnCount; c++) {
           const td = doc.createElement('td');
           const headerLabel = headers[c];
+          const columnKey = c < columnKeys.length ? columnKeys[c] : null;
           let value = row && row[c] != null ? row[c] : '';
-          const normalizedHeader = headerLabel == null ? '' : String(headerLabel).trim().toLowerCase();
-          const isTripColumn = normalizedHeader === 'trip';
-          const isTrackingColumn = normalizedHeader === 'tracking';
-          const isStatusColumn = normalizedHeader === 'estatus';
+          const isTripColumn = columnKey === 'trip';
+          const isTrackingColumn = columnKey === 'tracking';
+          const isStatusColumn = columnKey === 'estatus';
           if (isDateHeader(headerLabel) && value !== '') {
             const formatted = fmtDate(value, state.locale);
             value = formatted || value;
             td.classList.add('is-date');
+          }
+          if (columnKey && NOWRAP_COLUMN_KEYS.has(columnKey)) {
+            td.classList.add('is-nowrap');
           }
           if (value === null || value === undefined || value === '') {
             td.classList.add('is-empty');

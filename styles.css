@@ -731,7 +731,7 @@ body {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   table-layout: auto;
 }
 
@@ -739,9 +739,9 @@ body {
 .sheet-table tbody td,
 .sheet-table tbody th {
   border: none;
-  padding: 10px 12px;
-  line-height: 1.4;
-  white-space: nowrap;
+  padding: 14px 12px;
+  line-height: 1.45;
+  white-space: normal;
   background: var(--sheet-surface);
 }
 
@@ -781,6 +781,11 @@ body {
 
 .sheet-table tbody td.is-empty {
   color: var(--table-empty-color);
+}
+
+.sheet-table th.is-nowrap,
+.sheet-table td.is-nowrap {
+  white-space: nowrap;
 }
 
 .status-badge {
